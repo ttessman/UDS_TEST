@@ -3,7 +3,7 @@
 This frontend should prefer reusable core primitives over duplicated implementations, without forcing every UI into one abstraction.
 
 ## Component Direction
-
+pre
 - The second similar implementation is a signal to evaluate a shared primitive.
 - Shared structure, styling, behavior, and rendering should live in core components.
 - Page-level code should stay focused on intent, content, and user experience.

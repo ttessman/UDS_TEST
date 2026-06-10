@@ -2,20 +2,70 @@
 
 Run `make` or `make help` to print the command list.
 
-## First Run
+## Fresh macOS Checkout
+
+Use this order when the repo exists but local tooling, dependencies, and the UDS demo cluster may not be ready yet:
+
+```bash
+make setup
+make deploy-uds
+make run dev
+```
+
+| Command | Purpose |
+| --- | --- |
+| `make setup` | Sets up local tools, installs npm dependencies, and creates `server/.env`. |
+| `make deploy-uds` | Runs the official UDS Core local demo deploy and verifies the cluster. Docker Desktop must already be installed and running. |
+| `make run dev` | Verifies setup completed, then starts the Express API and Vite frontend. |
+
+Expanded setup path:
 
 ```bash
 make setup-macos
-make env
 make install
-make dev
+make env
+make deploy-uds
+make verify-uds
 ```
+
+`make setup` stops at local repo setup. `make deploy-uds` performs the official UDS local demo deploy step. Internally, `make deploy-core` is the lower-level target that creates/updates the local k3d cluster and verifies it.
 
 Open:
 
 ```text
 http://localhost:5173
 ```
+
+To test a specific Core demo bundle, run `UDS_CORE_BUNDLE_REF=k3d-core-demo:<version> make deploy-uds`.
+
+Retry and workaround commands:
+
+If the official deploy fails with the known macOS k3d/seccomp issue, use this full alternate flow:
+
+```bash
+make setup
+make deploy-uds-macos
+make run dev
+```
+
+| Command | Purpose |
+| --- | --- |
+| `make deploy-uds-macos` | Experimental macOS workaround for the known k3d/seccomp failure. |
+| `make down` | Stops local dev servers and deletes the local `uds` k3d cluster for a clean retry. |
+| `make down-dev` | Stops local dev servers only. |
+| `make down-uds` | Deletes the local `uds` k3d cluster and project-owned k3d leftovers only. |
+
+## App-Only Run
+
+Use this when UDS Core/local Kubernetes is already running, or when you only want to inspect backend prerequisite/catalog behavior.
+
+```bash
+make install
+make env
+make run dev
+```
+
+`make run dev` refuses to start if local setup or UDS deployment did not finish. It checks `server/.env`, `node_modules`, Kubernetes reachability, and installed Package CRs before launching the dev servers.
 
 ## Verification
 
@@ -25,6 +75,12 @@ make build
 make verify-uds
 ```
 
+`make check-prereqs` is a diagnostic target only. It prints local tool status without installing anything. `make setup-macos` is the installer path for Homebrew and Homebrew-managed tools. It does not check Kubernetes because the cluster is created by `make deploy-core`.
+
+`make check-run-ready` is a blocking run preflight. It is used by `make run dev`.
+
+`make verify-uds` verifies the active cluster and prints installed Package CRs. Use `make installed-packages` later only when you want to rerun the installed package query by itself.
+
 ## UDS Helpers
 
 ```bash
@@ -33,7 +89,22 @@ make installed-packages
 make deploy-core
 ```
 
-`make deploy-core` defaults to the official local demo bundle `k3d-core-demo:latest`.
+- `make inspect-packages` inspects configured `UDS_REGISTRY_PACKAGE_REFS`.
+- `make installed-packages` runs `uds zarf tools kubectl get package -A -o json`.
+- `make deploy-uds` deploys and verifies the official local demo bundle.
+- `make deploy-uds-macos` deletes/recreates the local `uds` k3d cluster with kubelet seccomp disabled, maps local HTTP/HTTPS ports, disables default k3s Traefik, waits for CoreDNS, then deploys selected non-cluster packages from `k3d-core-slim-dev:latest`.
+- `make down` runs both `down-dev` and `down-uds`.
+- `make down-dev` stops local dev servers on ports `3001` and `5173`.
+- `make down-uds` deletes the local `uds` k3d cluster, related k3d containers, `k3d-uds` network, and `k3d-uds-images` volume.
+- `make deploy-core` is the lower-level bundle deploy target and defaults to `k3d-core-demo:latest`.
+- `make setup` runs local tool setup, `install`, and `env`.
+- `make setup-local-demo` is an alias for `make deploy-uds`.
+
+`make deploy-uds` checks that the active Docker runtime reports seccomp support before deploying, because the k3d demo needs it for pods such as CoreDNS.
+
+Known upstream issue for the same failure signature: [Deployment issues on Mac M4 for `deploy k3d-core-demo:latest`](https://github.com/defenseunicorns/uds-core/issues/2237).
+
+Use `make deploy-uds-macos` when the official path repeatedly fails with `seccomp is not supported`. The workaround skips the bundle's `uds-k3d-dev` package so the pre-created cluster is not deleted and recreated without the macOS seccomp flag. It defaults to `--skip-signature-validation` because the selected package deploy can fail without verification material in this local workaround path.
 
 ## Common Environment
 

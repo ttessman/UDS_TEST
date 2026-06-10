@@ -12,6 +12,65 @@ Frontend component direction: [docs/FRONTEND_ARCHITECTURE.md](docs/FRONTEND_ARCH
 
 Agent/coding guidance: [AGENTS.md](AGENTS.md)
 
+## Start From a Fresh macOS Checkout
+
+This path assumes the repo exists on macOS, but local tooling, dependencies, and the UDS demo cluster may not be ready yet.
+
+```bash
+make setup
+make deploy-uds
+make run dev
+```
+
+| Command | Purpose |
+| --- | --- |
+| `make setup` | Sets up local tools, installs npm dependencies, and creates `server/.env`. |
+| `make deploy-uds` | Runs the official UDS Core local demo deploy and verifies the cluster. Docker Desktop must already be installed and running. |
+| `make run dev` | Verifies setup completed, then starts the Express API and Vite frontend. |
+
+Expanded setup path:
+
+```bash
+make setup-macos
+make install
+make env
+make deploy-uds
+make verify-uds
+```
+
+`make setup` stops at local repo setup. `make deploy-uds` performs the official UDS local demo deploy step. Internally, `make deploy-core` is the lower-level target that creates/updates the local k3d cluster and verifies it.
+
+To test a specific Core demo bundle, run `UDS_CORE_BUNDLE_REF=k3d-core-demo:<version> make deploy-uds`.
+
+Retry and workaround commands:
+
+If the official deploy fails with the known macOS k3d/seccomp issue, use this full alternate flow:
+
+```bash
+make setup
+make deploy-uds-macos
+make run dev
+```
+
+| Command | Purpose |
+| --- | --- |
+| `make deploy-uds-macos` | Experimental macOS workaround for the known k3d/seccomp failure. |
+| `make down` | Stops local dev servers and deletes the local `uds` k3d cluster for a clean retry. |
+| `make down-dev` | Stops local dev servers only. |
+| `make down-uds` | Deletes the local `uds` k3d cluster and project-owned k3d leftovers only. |
+
+Open:
+
+```text
+http://localhost:5173
+```
+
+The backend listens on:
+
+```text
+http://localhost:3001
+```
+
 ## Metadata Sources
 
 This POC does not invent a registry package schema. The shared types are derived from live sources:
@@ -27,8 +86,9 @@ Unknown fields stay `null` until a real source is available. Registry auth is se
 
 ```bash
 make setup-macos
-make check-prereqs
 ```
+
+`make setup-macos` installs/checks Homebrew, then installs/checks Homebrew-managed CLI tools where possible and runs the local tool prerequisite check. It is the local-tools phase used by `make setup`. Use `make check-prereqs` later only when you want to reprint local tool status without installing anything.
 
 The backend checks the same prerequisites at runtime.
 
@@ -36,7 +96,15 @@ More detail: [docs/PROJECT_REQUIREMENTS.md](docs/PROJECT_REQUIREMENTS.md)
 
 ## UDS Core Local Demo Path
 
-Follow the current official UDS Core local demo/install documentation for your target runtime. For this POC, the important local verification commands are:
+Follow the current official UDS Core local demo/install documentation for your target runtime. To deploy UDS Core with the official local demo path:
+
+```bash
+make deploy-uds
+```
+
+By default this runs `uds deploy k3d-core-demo:latest --confirm` through `make deploy-core`, matching the official local demo. Override with `UDS_CORE_BUNDLE_REF=k3d-core-demo:<version>` only when testing a specific version.
+
+Verify the deployment and print installed Package CRs with:
 
 ```bash
 make verify-uds
@@ -44,13 +112,38 @@ make verify-uds
 
 If UDS Core is running, the backend marks `coreRunning` as true when it finds namespaces named `uds-core` or prefixed with `uds-core-`.
 
-To deploy UDS Core with the official local demo path:
+If CoreDNS gets stuck in `ContainerCreating` with `seccomp is not supported`, the active Docker runtime is not compatible with the k3d demo. Switch to Docker Desktop as the active Docker context and rerun `make deploy-uds`.
+
+Known upstream issue: [Deployment issues on Mac M4 for `deploy k3d-core-demo:latest`](https://github.com/defenseunicorns/uds-core/issues/2237). The failure is a k3d/kubelet/container-runtime seccomp compatibility issue. The official `k3d-core-demo` bundle creates its own k3d cluster, so custom flags from a separately-created cluster are not inherited by that deploy path.
+
+If the official deploy keeps failing with that seccomp error on macOS, use the workaround target:
 
 ```bash
-make deploy-core
+make deploy-uds-macos
 ```
 
-By default this runs `uds deploy k3d-core-demo:latest --confirm`, matching the official local demo. Override with `UDS_CORE_BUNDLE_REF=k3d-core-demo:<version>` only when testing a specific version.
+This deletes/recreates the local `uds` k3d cluster with the kubelet seccomp flag from the upstream issue, maps local HTTP/HTTPS ports, disables the default k3s Traefik addon, waits for CoreDNS, then deploys selected non-cluster packages from `k3d-core-slim-dev:latest`. It skips the bundle's `uds-k3d-dev` package so the workaround cluster is not deleted and recreated without the macOS flag. Because this is a local experimental workaround, it defaults to `--skip-signature-validation` for the selected package deploy.
+
+This workaround does not fully replace `uds-k3d-dev`. It does not preload the UDS k3d airgap image set or reproduce every cluster bootstrap action from that package. It is scoped to getting a compatible local k3d cluster running on macOS so the POC can deploy Core packages and read installed Package CRs.
+
+Signature verification is not the blocker for the local POC goal. The immediate success condition is a working UDS cluster plus installed Package CRs, so the app can show the deployed package count and package status. Proper signature verification should be added before treating registry publish/deploy as a production workflow.
+
+Override the bundle or package list if needed:
+
+```bash
+UDS_MACOS_WORKAROUND_BUNDLE_REF=k3d-core-slim-dev:<version> make deploy-uds-macos
+UDS_MACOS_WORKAROUND_PACKAGES=init,core-base,core-identity-authorization make deploy-uds-macos
+UDS_MACOS_WORKAROUND_SIGNATURE_FLAG= make deploy-uds-macos
+UDS_K3D_API_PORT=6550 UDS_K3D_HTTP_PORT=80 UDS_K3D_HTTPS_PORT=443 make deploy-uds-macos
+```
+
+To clean up before retrying either deploy path:
+
+```bash
+make down
+```
+
+This stops local dev servers on ports `3001` and `5173`, then removes the local `uds` k3d cluster, related k3d containers, the `k3d-uds` Docker network, and the `k3d-uds-images` volume. It does not prune unrelated Docker containers or images. Use `make down-dev` or `make down-uds` when you only want one side of that cleanup.
 
 ## Configure Package Inspection
 
@@ -100,8 +193,10 @@ UDS_POC_ENABLE_INSTALL=true
 ```bash
 make install
 make env
-make dev
+make run dev
 ```
+
+`make run dev` refuses to start if local setup or UDS deployment did not finish. It checks `server/.env`, `node_modules`, Kubernetes reachability, and installed Package CRs before launching the dev servers.
 
 Open:
 
@@ -119,6 +214,8 @@ http://localhost:3001
 
 ```bash
 make dev
+make run dev
+make check-run-ready
 make build
 make typecheck
 make start
@@ -136,9 +233,14 @@ Full Make target list: [docs/MAKE_TARGETS.md](docs/MAKE_TARGETS.md)
 - `GET /api/uds/installed-packages`
 - `POST /api/uds/packages/:id/install`
 
-## Current Limits and TODOs
+## Completion Blockers and Implementation Details
 
-- TODO: Replace configurable `UDS_REGISTRY_CATALOG_URL` with the confirmed stable public/authorized UDS Registry catalog endpoint once Defense Unicorns documents it.
-- TODO: Add bundle-level support with `uds inspect <oci-ref> --list-variables` and `uds deploy <oci-ref> --confirm` for UDS bundles.
-- TODO: Derive auth-required state from an authenticated registry client or explicit OCI challenge result instead of leaving it unknown.
-- TODO: Expand UDS Core health checks beyond namespace presence by checking the official Core components for the installed version.
+These are the current gaps that prevent the POC from being a complete launcher/installer experience.
+
+| Area | Current state | What blocks completion | Action needed |
+| --- | --- | --- | --- |
+| Registry catalog source | The backend can read catalog JSON from `UDS_REGISTRY_CATALOG_URL` or `UDS_REGISTRY_CATALOG_PATH`. | A stable public/authorized Defense Unicorns Registry catalog endpoint is not confirmed in this repo. | Confirm the registry API/index source, then replace the configurable placeholder with a real catalog client. |
+| Bundle support | The model supports registry catalog entries and Zarf package definitions. | UDS bundles have different inspect/deploy behavior than plain Zarf packages. | Add bundle inspection with `uds inspect <oci-ref> --list-variables` and deployment with `uds deploy <oci-ref> --confirm`. |
+| Registry authentication | `authRequired` is intentionally `null`. | The backend does not yet challenge/probe OCI auth or use an authenticated registry client. | Add server-side auth probing and keep credentials out of the frontend. |
+| UDS Core health | `coreRunning` checks for `uds-core` namespaces. | Namespace presence does not prove the installed Core version is healthy. | Inspect official Core components, pod health, versions, and conditions for the installed release. |
+| Signature verification | The macOS workaround skips signature validation for a local selected-package deploy. | Proper verification material is not wired into this POC flow. | Add a signed package/bundle verification strategy before production registry publish/deploy workflows. |

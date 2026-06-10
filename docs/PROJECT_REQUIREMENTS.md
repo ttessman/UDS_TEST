@@ -47,6 +47,8 @@ The official k3d demo also requires a Docker runtime with seccomp support. If Co
 
 Known upstream issue: [Deployment issues on Mac M4 for `deploy k3d-core-demo:latest`](https://github.com/defenseunicorns/uds-core/issues/2237). In that failure mode, the UDS-created k3d cluster does not inherit custom k3s/kubelet flags from a manually-created cluster.
 
+Full workaround history and agent notes: [MACOS_UDS_WORKAROUND.md](MACOS_UDS_WORKAROUND.md)
+
 If the official deploy repeatedly fails with that seccomp error on macOS, use:
 
 ```bash

@@ -17,6 +17,20 @@ https_port="${UDS_K3D_HTTPS_PORT:-443}"
 agents="${UDS_K3D_AGENTS:-1}"
 gateway_patch_interval_seconds="${UDS_GATEWAY_PATCH_INTERVAL_SECONDS:-2}"
 gateway_status_ip="${UDS_GATEWAY_STATUS_IP:-127.0.0.1}"
+deploy_progress_interval_seconds="${UDS_DEPLOY_PROGRESS_INTERVAL_SECONDS:-60}"
+
+phase() {
+  echo
+  echo "==> $1"
+}
+
+elapsed_seconds() {
+  local started_at="$1"
+  local now
+
+  now="$(date +%s)"
+  echo "$((now - started_at))"
+}
 
 if ! command -v k3d >/dev/null 2>&1; then
   echo "k3d is required. Run: make setup"
@@ -29,6 +43,9 @@ if ! docker info >/dev/null 2>&1; then
 fi
 
 patch_gateway_loadbalancer_status() {
+  # ServiceLB is disabled in this workaround to avoid local svclb host-port
+  # conflicts across UDS gateway LoadBalancer services. Patch status only so
+  # UDS/Core waits see an external IP without changing the service type.
   local services=(
     "istio-admin-gateway/admin-ingressgateway"
     "istio-tenant-gateway/tenant-ingressgateway"
@@ -69,6 +86,15 @@ patch_gateway_loadbalancer_status() {
   done
 }
 
+report_deploy_progress() {
+  local started_at="$1"
+
+  while true; do
+    sleep "$deploy_progress_interval_seconds"
+    echo "Still deploying UDS packages after $(elapsed_seconds "$started_at")s. For another terminal: make uds-debug"
+  done
+}
+
 cat <<EOF
 Deploying UDS with the macOS k3d seccomp workaround.
 
@@ -99,10 +125,18 @@ Gateway service workaround:
   Status IP: $gateway_status_ip
   Patch interval: ${gateway_patch_interval_seconds}s
 
+Progress output:
+  Phase banners plus a deploy heartbeat every ${deploy_progress_interval_seconds}s.
+
 EOF
 
+phase "Phase 1/6: delete existing local uds k3d cluster if present"
 k3d cluster delete uds >/dev/null 2>&1 || true
 
+phase "Phase 2/6: create macOS-compatible uds k3d cluster"
+# The official k3d-core-demo path creates its own cluster and does not inherit
+# this kubelet flag. Keep cluster creation here unless UDS adds a supported
+# flag passthrough or existing-cluster deploy path for the seccomp issue.
 k3d cluster create uds \
   --agents "$agents" \
   --api-port "$api_port" \
@@ -112,8 +146,7 @@ k3d cluster create uds \
   --k3s-arg "--flannel-backend=vxlan@server:0" \
   --k3s-arg "--kubelet-arg=seccomp-default=false@server:0"
 
-echo
-echo "Waiting for CoreDNS in the workaround cluster..."
+phase "Phase 3/6: wait for CoreDNS"
 if ! kubectl wait pod -n kube-system -l k8s-app=kube-dns --for=condition=Ready --timeout=180s; then
   echo "CoreDNS did not become ready in the workaround cluster."
   kubectl get pods -n kube-system
@@ -126,28 +159,66 @@ if [ -n "$signature_flag" ]; then
   signature_args+=("$signature_flag")
 fi
 
-echo
-echo "Deploying selected UDS packages to workaround cluster: $bundle_ref"
+phase "Phase 4/6: prepare selected UDS package deploy"
+echo "Bundle: $bundle_ref"
 echo "Skipping the bundle's uds-k3d-dev package so it does not recreate the cluster without the macOS seccomp flag."
 echo "Using --packages $packages_csv"
 
+phase "Phase 5/6: run UDS deploy with progress heartbeat"
+echo "Starting gateway LoadBalancer status watcher and deploy heartbeat."
 patch_gateway_loadbalancer_status &
 gateway_patch_pid="$!"
-cleanup_gateway_patch_watcher() {
-  kill "$gateway_patch_pid" >/dev/null 2>&1 || true
+
+deploy_started_at="$(date +%s)"
+report_deploy_progress "$deploy_started_at" &
+deploy_progress_pid="$!"
+
+cleanup_background_processes() {
+  local cleaned_up="false"
+
+  if [ -n "${gateway_patch_pid:-}" ]; then
+    kill "$gateway_patch_pid" >/dev/null 2>&1 || true
+    wait "$gateway_patch_pid" >/dev/null 2>&1 || true
+    gateway_patch_pid=""
+    cleaned_up="true"
+  fi
+
+  if [ -n "${deploy_progress_pid:-}" ]; then
+    kill "$deploy_progress_pid" >/dev/null 2>&1 || true
+    wait "$deploy_progress_pid" >/dev/null 2>&1 || true
+    deploy_progress_pid=""
+    cleaned_up="true"
+  fi
+
+  if [ "$cleaned_up" = "true" ]; then
+    echo "Cleanup: stopped macOS workaround background processes."
+  fi
 }
-trap cleanup_gateway_patch_watcher EXIT
+
+handle_interrupt() {
+  echo
+  echo "Interrupted. Cleaning up macOS workaround background processes."
+  cleanup_background_processes
+  exit 130
+}
+trap cleanup_background_processes EXIT
+trap handle_interrupt INT TERM
 
 set +e
 uds deploy "$bundle_ref" --confirm "${signature_args[@]}" --packages "$packages_csv"
 deploy_status="$?"
 set -e
 
-cleanup_gateway_patch_watcher
-trap - EXIT
+cleanup_background_processes
+trap - EXIT INT TERM
 
 if [ "$deploy_status" -ne 0 ]; then
+  echo "UDS package deploy failed after $(elapsed_seconds "$deploy_started_at")s."
+  echo "Run 'make uds-debug' for cluster status and recent warning events."
   exit "$deploy_status"
 fi
 
+echo "UDS package deploy finished after $(elapsed_seconds "$deploy_started_at")s."
+
+phase "Phase 6/6: verify UDS cluster and installed packages"
 ./scripts/verify-uds.sh

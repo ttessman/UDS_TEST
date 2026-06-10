@@ -17,6 +17,36 @@ Lower-level files own rendering, styling, layout, repeated behavior, and infrast
 
 ---
 
+## UDS macOS Workaround Context
+
+Start with the seccomp issue.
+
+The macOS deploy workaround exists because the official UDS local demo can fail in k3d before Core is useful:
+
+```text
+CoreDNS stuck in ContainerCreating
+FailedCreatePodSandBox
+failed to generate seccomp spec opts: seccomp is not supported
+```
+
+Known upstream issue: [Deployment issues on Mac M4 for `deploy k3d-core-demo:latest`](https://github.com/defenseunicorns/uds-core/issues/2237)
+
+The official `k3d-core-demo` bundle creates its own k3d cluster, so a separately pre-created cluster with `--kubelet-arg=seccomp-default=false` is not reused by that path. The workaround target creates the cluster itself with the seccomp flag, then deploys selected non-cluster packages from `k3d-core-slim-dev:latest`.
+
+Operational rules for future agents:
+
+- Prefer `make deploy-uds` when the active Docker runtime supports seccomp.
+- Use `make deploy-uds-macos` only for the macOS/k3d seccomp failure path.
+- Do not remove the `uds-k3d-dev` skip from the workaround without replacing how the cluster keeps the seccomp flag.
+- Do not replace the gateway status patch with `NodePort`; UDS Core Pepr policy rejects NodePort services.
+- Do not remove the ServiceLB disablement casually. It avoids local `svclb-*` host-port conflicts across UDS gateway LoadBalancer services.
+- Do not remove the gateway `LoadBalancer` status patch casually. With ServiceLB disabled, the patch gives deploy waits an external IP value.
+- Use `make uds-debug`, `make verify-uds`, and `make stop-uds-workaround` when diagnosing stuck deploys.
+
+Detailed history and rationale: [docs/MACOS_UDS_WORKAROUND.md](docs/MACOS_UDS_WORKAROUND.md)
+
+---
+
 ## Core Architecture Rule
 
 Prefer:

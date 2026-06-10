@@ -99,7 +99,7 @@ make deploy-core
 - `make uds-debug` prints a concise operational snapshot for diagnosing local UDS deploy waits.
 - `make stop-uds-workaround` stops a stale `deploy-uds-macos` workaround process without deleting the cluster.
 - `make deploy-uds` deploys and verifies the official local demo bundle.
-- `make deploy-uds-macos` deletes/recreates the local `uds` k3d cluster with kubelet seccomp disabled, adds one k3d agent by default, maps local HTTP/HTTPS ports, disables default k3s Traefik and ServiceLB, waits for CoreDNS, patches Core gateway `LoadBalancer` service status while deploying, then deploys selected non-cluster packages from `k3d-core-slim-dev:latest`.
+- `make deploy-uds-macos` deletes/recreates the local `uds` k3d cluster with kubelet seccomp disabled, adds one k3d agent by default, maps local HTTP/HTTPS ports, disables default k3s Traefik and ServiceLB, waits for CoreDNS, patches Core gateway `LoadBalancer` service status while deploying, prints phase/heartbeat progress output, then deploys selected non-cluster packages from `k3d-core-slim-dev:latest`.
 - `make down` runs both `down-dev` and `down-uds`.
 - `make down-dev` stops local dev servers on ports `3001` and `5173`.
 - `make down-uds` deletes the local `uds` k3d cluster, related k3d containers, `k3d-uds` network, and `k3d-uds-images` volume.
@@ -110,6 +110,8 @@ make deploy-core
 `make deploy-uds` checks that the active Docker runtime reports seccomp support before deploying, because the k3d demo needs it for pods such as CoreDNS.
 
 Known upstream issue for the same failure signature: [Deployment issues on Mac M4 for `deploy k3d-core-demo:latest`](https://github.com/defenseunicorns/uds-core/issues/2237).
+
+Full workaround history and agent notes: [MACOS_UDS_WORKAROUND.md](MACOS_UDS_WORKAROUND.md)
 
 Use `make deploy-uds-macos` when the official path repeatedly fails with `seccomp is not supported`. The workaround skips the bundle's `uds-k3d-dev` package so the pre-created cluster is not deleted and recreated without the macOS seccomp flag. It also disables k3s ServiceLB because Core gateway LoadBalancers can otherwise create competing `svclb-*` pods for host ports `80` and `443`. Since ServiceLB is disabled, the script patches gateway `LoadBalancer` status to `UDS_GATEWAY_STATUS_IP` while UDS deploys so Helm does not wait forever for an external IP. It does not patch gateway services to `NodePort` because UDS Core policy rejects NodePort services. It defaults to `--skip-signature-validation` because the selected package deploy can fail without verification material in this local workaround path.
 

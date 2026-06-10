@@ -48,12 +48,20 @@ patch_gateway_loadbalancer_status() {
       )"
 
       if [ "$service_type" = "LoadBalancer" ]; then
-        echo "macOS workaround: setting LoadBalancer status for $namespace/$service_name to $gateway_status_ip"
-        kubectl patch svc "$service_name" \
+        if kubectl patch svc "$service_name" \
           -n "$namespace" \
           --subresource=status \
           --type merge \
-          -p "{\"status\":{\"loadBalancer\":{\"ingress\":[{\"ip\":\"$gateway_status_ip\"}]}}}" >/dev/null || true
+          -p "{\"status\":{\"loadBalancer\":{\"ingress\":[{\"ip\":\"$gateway_status_ip\"}]}}}" >/dev/null; then
+          local patched_key="${namespace}_${service_name}"
+          patched_key="${patched_key//-/_}"
+          local patched_var="patched_${patched_key}"
+
+          if [ -z "${!patched_var:-}" ]; then
+            printf -v "$patched_var" "true"
+            echo "macOS workaround: set LoadBalancer status for $namespace/$service_name to $gateway_status_ip"
+          fi
+        fi
       fi
     done
 
@@ -130,6 +138,16 @@ cleanup_gateway_patch_watcher() {
 }
 trap cleanup_gateway_patch_watcher EXIT
 
+set +e
 uds deploy "$bundle_ref" --confirm "${signature_args[@]}" --packages "$packages_csv"
+deploy_status="$?"
+set -e
+
+cleanup_gateway_patch_watcher
+trap - EXIT
+
+if [ "$deploy_status" -ne 0 ]; then
+  exit "$deploy_status"
+fi
 
 ./scripts/verify-uds.sh

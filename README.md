@@ -116,6 +116,12 @@ If a local deploy appears stuck, print the focused debug snapshot with:
 make uds-debug
 ```
 
+If a live-edited macOS workaround run leaves the gateway status watcher printing after the deploy is done, stop only that stale process with:
+
+```bash
+make stop-uds-workaround
+```
+
 If UDS Core is running, the backend marks `coreRunning` as true when it finds namespaces named `uds-core` or prefixed with `uds-core-`.
 
 If CoreDNS gets stuck in `ContainerCreating` with `seccomp is not supported`, the active Docker runtime is not compatible with the k3d demo. Switch to Docker Desktop as the active Docker context and rerun `make deploy-uds`.

@@ -82,7 +82,7 @@ make uds-debug
 
 `make verify-uds` verifies the active cluster and prints installed Package CRs. Use `make installed-packages` later only when you want to rerun the installed package query by itself.
 
-`make uds-debug` prints a focused deploy/debug snapshot: nodes, pods, deployments, gateway services, installed Package CRs, Helm releases, recent warning events, and any running `uds deploy` process. Use it while `make deploy-uds` or `make deploy-uds-macos` appears stuck.
+`make uds-debug` prints a focused deploy/debug snapshot: nodes, pods, deployments, gateway services, installed Package CRs, Helm releases, recent warning events, any running `uds deploy` process, and any running macOS workaround process. Use it while `make deploy-uds` or `make deploy-uds-macos` appears stuck.
 
 ## UDS Helpers
 
@@ -90,12 +90,14 @@ make uds-debug
 make inspect-packages
 make installed-packages
 make uds-debug
+make stop-uds-workaround
 make deploy-core
 ```
 
 - `make inspect-packages` inspects configured `UDS_REGISTRY_PACKAGE_REFS`.
 - `make installed-packages` runs `uds zarf tools kubectl get package -A -o json`.
 - `make uds-debug` prints a concise operational snapshot for diagnosing local UDS deploy waits.
+- `make stop-uds-workaround` stops a stale `deploy-uds-macos` workaround process without deleting the cluster.
 - `make deploy-uds` deploys and verifies the official local demo bundle.
 - `make deploy-uds-macos` deletes/recreates the local `uds` k3d cluster with kubelet seccomp disabled, adds one k3d agent by default, maps local HTTP/HTTPS ports, disables default k3s Traefik and ServiceLB, waits for CoreDNS, patches Core gateway `LoadBalancer` service status while deploying, then deploys selected non-cluster packages from `k3d-core-slim-dev:latest`.
 - `make down` runs both `down-dev` and `down-uds`.

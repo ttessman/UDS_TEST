@@ -37,3 +37,6 @@ kubectl get events -A --sort-by=.lastTimestamp | grep -E 'Warning|Failed|Error|U
 
 section "Running UDS deploy processes"
 ps -axo pid,etime,command | grep '[u]ds deploy' || true
+
+section "Running macOS workaround processes"
+ps -axo pid,etime,command | grep '[d]eploy-uds-macos-workaround.sh' || true

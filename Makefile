@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install env dev run run-dev server client build typecheck start check-prereqs check-run-ready setup setup-macos deploy-uds deploy-uds-macos down down-dev down-uds setup-uds setup-dev setup-local-demo verify-uds uds-debug inspect-packages installed-packages deploy-core git-status
+.PHONY: help install env dev run run-dev server client build typecheck start check-prereqs check-run-ready setup setup-macos deploy-uds deploy-uds-macos stop-uds-workaround down down-dev down-uds setup-uds setup-dev setup-local-demo verify-uds uds-debug inspect-packages installed-packages deploy-core git-status
 
 help:
 	@printf "UDS Core local POC commands\n\n"
@@ -12,6 +12,7 @@ help:
 	@printf "  make setup               Set up local tools, npm dependencies, and env file\n"
 	@printf "  make deploy-uds          Deploy and verify the official UDS Core local demo\n"
 	@printf "  make deploy-uds-macos    Experimental macOS seccomp workaround deploy\n"
+	@printf "  make stop-uds-workaround Stop a stale macOS workaround deploy/watcher process\n"
 	@printf "  make down                Stop dev servers and delete local UDS/k3d cluster\n"
 	@printf "  make down-dev            Stop local dev servers only\n"
 	@printf "  make down-uds            Delete local UDS/k3d cluster only\n"
@@ -98,6 +99,9 @@ deploy-uds:
 
 deploy-uds-macos:
 	./scripts/deploy-uds-macos-workaround.sh
+
+stop-uds-workaround:
+	./scripts/stop-uds-workaround.sh
 
 down: down-dev down-uds
 

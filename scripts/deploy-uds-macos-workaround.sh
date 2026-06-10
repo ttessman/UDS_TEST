@@ -14,6 +14,9 @@ signature_flag="${UDS_MACOS_WORKAROUND_SIGNATURE_FLAG:---skip-signature-validati
 api_port="${UDS_K3D_API_PORT:-6550}"
 http_port="${UDS_K3D_HTTP_PORT:-80}"
 https_port="${UDS_K3D_HTTPS_PORT:-443}"
+agents="${UDS_K3D_AGENTS:-1}"
+gateway_patch_interval_seconds="${UDS_GATEWAY_PATCH_INTERVAL_SECONDS:-2}"
+gateway_status_ip="${UDS_GATEWAY_STATUS_IP:-127.0.0.1}"
 
 if ! command -v k3d >/dev/null 2>&1; then
   echo "k3d is required. Run: make setup"
@@ -25,6 +28,39 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
+patch_gateway_loadbalancer_status() {
+  local services=(
+    "istio-admin-gateway/admin-ingressgateway"
+    "istio-tenant-gateway/tenant-ingressgateway"
+    "istio-passthrough-gateway/passthrough-ingressgateway"
+  )
+
+  while true; do
+    for service_ref in "${services[@]}"; do
+      local namespace="${service_ref%%/*}"
+      local service_name="${service_ref##*/}"
+      local service_type
+
+      service_type="$(
+        kubectl get svc "$service_name" \
+          -n "$namespace" \
+          -o jsonpath='{.spec.type}' 2>/dev/null || true
+      )"
+
+      if [ "$service_type" = "LoadBalancer" ]; then
+        echo "macOS workaround: setting LoadBalancer status for $namespace/$service_name to $gateway_status_ip"
+        kubectl patch svc "$service_name" \
+          -n "$namespace" \
+          --subresource=status \
+          --type merge \
+          -p "{\"status\":{\"loadBalancer\":{\"ingress\":[{\"ip\":\"$gateway_status_ip\"}]}}}" >/dev/null || true
+      fi
+    done
+
+    sleep "$gateway_patch_interval_seconds"
+  done
+}
+
 cat <<EOF
 Deploying UDS with the macOS k3d seccomp workaround.
 
@@ -32,7 +68,8 @@ This follows the workaround shape documented in:
   https://github.com/defenseunicorns/uds-core/issues/2237
 
 It deletes/recreates the local k3d cluster named "uds" with kubelet seccomp
-default disabled, then deploys selected non-cluster packages from:
+default disabled and k3s ServiceLB disabled, then deploys selected non-cluster
+packages from:
   $bundle_ref
 
 Cluster ports:
@@ -40,21 +77,30 @@ Cluster ports:
   HTTP: $http_port
   HTTPS: $https_port
 
+k3d agents:
+  $agents
+
 Selected packages:
   $packages_csv
 
 Signature mode:
   $signature_flag
 
+Gateway service workaround:
+  Patch UDS Core gateway LoadBalancer status while deploying.
+  Status IP: $gateway_status_ip
+  Patch interval: ${gateway_patch_interval_seconds}s
+
 EOF
 
 k3d cluster delete uds >/dev/null 2>&1 || true
 
 k3d cluster create uds \
+  --agents "$agents" \
   --api-port "$api_port" \
   --port "$http_port:80@loadbalancer" \
   --port "$https_port:443@loadbalancer" \
-  --k3s-arg "--disable=traefik@server:0" \
+  --k3s-arg "--disable=traefik,servicelb@server:0" \
   --k3s-arg "--flannel-backend=vxlan@server:0" \
   --k3s-arg "--kubelet-arg=seccomp-default=false@server:0"
 
@@ -76,6 +122,14 @@ echo
 echo "Deploying selected UDS packages to workaround cluster: $bundle_ref"
 echo "Skipping the bundle's uds-k3d-dev package so it does not recreate the cluster without the macOS seccomp flag."
 echo "Using --packages $packages_csv"
+
+patch_gateway_loadbalancer_status &
+gateway_patch_pid="$!"
+cleanup_gateway_patch_watcher() {
+  kill "$gateway_patch_pid" >/dev/null 2>&1 || true
+}
+trap cleanup_gateway_patch_watcher EXIT
+
 uds deploy "$bundle_ref" --confirm "${signature_args[@]}" --packages "$packages_csv"
 
 ./scripts/verify-uds.sh

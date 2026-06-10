@@ -73,6 +73,7 @@ make run dev
 make typecheck
 make build
 make verify-uds
+make uds-debug
 ```
 
 `make check-prereqs` is a diagnostic target only. It prints local tool status without installing anything. `make setup-macos` is the installer path for Homebrew and Homebrew-managed tools. It does not check Kubernetes because the cluster is created by `make deploy-core`.
@@ -81,18 +82,22 @@ make verify-uds
 
 `make verify-uds` verifies the active cluster and prints installed Package CRs. Use `make installed-packages` later only when you want to rerun the installed package query by itself.
 
+`make uds-debug` prints a focused deploy/debug snapshot: nodes, pods, deployments, gateway services, installed Package CRs, Helm releases, recent warning events, and any running `uds deploy` process. Use it while `make deploy-uds` or `make deploy-uds-macos` appears stuck.
+
 ## UDS Helpers
 
 ```bash
 make inspect-packages
 make installed-packages
+make uds-debug
 make deploy-core
 ```
 
 - `make inspect-packages` inspects configured `UDS_REGISTRY_PACKAGE_REFS`.
 - `make installed-packages` runs `uds zarf tools kubectl get package -A -o json`.
+- `make uds-debug` prints a concise operational snapshot for diagnosing local UDS deploy waits.
 - `make deploy-uds` deploys and verifies the official local demo bundle.
-- `make deploy-uds-macos` deletes/recreates the local `uds` k3d cluster with kubelet seccomp disabled, maps local HTTP/HTTPS ports, disables default k3s Traefik, waits for CoreDNS, then deploys selected non-cluster packages from `k3d-core-slim-dev:latest`.
+- `make deploy-uds-macos` deletes/recreates the local `uds` k3d cluster with kubelet seccomp disabled, adds one k3d agent by default, maps local HTTP/HTTPS ports, disables default k3s Traefik and ServiceLB, waits for CoreDNS, patches Core gateway `LoadBalancer` service status while deploying, then deploys selected non-cluster packages from `k3d-core-slim-dev:latest`.
 - `make down` runs both `down-dev` and `down-uds`.
 - `make down-dev` stops local dev servers on ports `3001` and `5173`.
 - `make down-uds` deletes the local `uds` k3d cluster, related k3d containers, `k3d-uds` network, and `k3d-uds-images` volume.
@@ -104,7 +109,7 @@ make deploy-core
 
 Known upstream issue for the same failure signature: [Deployment issues on Mac M4 for `deploy k3d-core-demo:latest`](https://github.com/defenseunicorns/uds-core/issues/2237).
 
-Use `make deploy-uds-macos` when the official path repeatedly fails with `seccomp is not supported`. The workaround skips the bundle's `uds-k3d-dev` package so the pre-created cluster is not deleted and recreated without the macOS seccomp flag. It defaults to `--skip-signature-validation` because the selected package deploy can fail without verification material in this local workaround path.
+Use `make deploy-uds-macos` when the official path repeatedly fails with `seccomp is not supported`. The workaround skips the bundle's `uds-k3d-dev` package so the pre-created cluster is not deleted and recreated without the macOS seccomp flag. It also disables k3s ServiceLB because Core gateway LoadBalancers can otherwise create competing `svclb-*` pods for host ports `80` and `443`. Since ServiceLB is disabled, the script patches gateway `LoadBalancer` status to `UDS_GATEWAY_STATUS_IP` while UDS deploys so Helm does not wait forever for an external IP. It does not patch gateway services to `NodePort` because UDS Core policy rejects NodePort services. It defaults to `--skip-signature-validation` because the selected package deploy can fail without verification material in this local workaround path.
 
 ## Common Environment
 

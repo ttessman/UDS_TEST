@@ -110,6 +110,12 @@ Verify the deployment and print installed Package CRs with:
 make verify-uds
 ```
 
+If a local deploy appears stuck, print the focused debug snapshot with:
+
+```bash
+make uds-debug
+```
+
 If UDS Core is running, the backend marks `coreRunning` as true when it finds namespaces named `uds-core` or prefixed with `uds-core-`.
 
 If CoreDNS gets stuck in `ContainerCreating` with `seccomp is not supported`, the active Docker runtime is not compatible with the k3d demo. Switch to Docker Desktop as the active Docker context and rerun `make deploy-uds`.
@@ -122,9 +128,9 @@ If the official deploy keeps failing with that seccomp error on macOS, use the w
 make deploy-uds-macos
 ```
 
-This deletes/recreates the local `uds` k3d cluster with the kubelet seccomp flag from the upstream issue, maps local HTTP/HTTPS ports, disables the default k3s Traefik addon, waits for CoreDNS, then deploys selected non-cluster packages from `k3d-core-slim-dev:latest`. It skips the bundle's `uds-k3d-dev` package so the workaround cluster is not deleted and recreated without the macOS flag. Because this is a local experimental workaround, it defaults to `--skip-signature-validation` for the selected package deploy.
+This deletes/recreates the local `uds` k3d cluster with the kubelet seccomp flag from the upstream issue, adds one k3d agent node by default, maps local HTTP/HTTPS ports, disables the default k3s Traefik addon, disables k3s ServiceLB, waits for CoreDNS, then deploys selected non-cluster packages from `k3d-core-slim-dev:latest`. It skips the bundle's `uds-k3d-dev` package so the workaround cluster is not deleted and recreated without the macOS flag. ServiceLB is disabled because Core creates more than one gateway LoadBalancer; in this local workaround, ServiceLB creates `svclb-*` DaemonSets that compete for host ports `80` and `443` and can keep tenant gateway load balancer pods pending. While deploying, the script patches UDS Core gateway `LoadBalancer` service status to `127.0.0.1` so Helm does not wait forever for an external IP from the disabled ServiceLB controller. It does not change gateway services to `NodePort`, because UDS Core policy rejects NodePort services. Because this is a local experimental workaround, it defaults to `--skip-signature-validation` for the selected package deploy.
 
-This workaround does not fully replace `uds-k3d-dev`. It does not preload the UDS k3d airgap image set or reproduce every cluster bootstrap action from that package. It is scoped to getting a compatible local k3d cluster running on macOS so the POC can deploy Core packages and read installed Package CRs.
+This workaround does not fully replace `uds-k3d-dev`. It does not preload the UDS k3d airgap image set, reproduce every cluster bootstrap action from that package, or prove local browser ingress through both Core gateways. It is scoped to getting a compatible local k3d cluster running on macOS so the POC can deploy Core packages and read installed Package CRs.
 
 Signature verification is not the blocker for the local POC goal. The immediate success condition is a working UDS cluster plus installed Package CRs, so the app can show the deployed package count and package status. Proper signature verification should be added before treating registry publish/deploy as a production workflow.
 
@@ -134,7 +140,7 @@ Override the bundle or package list if needed:
 UDS_MACOS_WORKAROUND_BUNDLE_REF=k3d-core-slim-dev:<version> make deploy-uds-macos
 UDS_MACOS_WORKAROUND_PACKAGES=init,core-base,core-identity-authorization make deploy-uds-macos
 UDS_MACOS_WORKAROUND_SIGNATURE_FLAG= make deploy-uds-macos
-UDS_K3D_API_PORT=6550 UDS_K3D_HTTP_PORT=80 UDS_K3D_HTTPS_PORT=443 make deploy-uds-macos
+UDS_K3D_AGENTS=1 UDS_GATEWAY_STATUS_IP=127.0.0.1 UDS_K3D_API_PORT=6550 UDS_K3D_HTTP_PORT=80 UDS_K3D_HTTPS_PORT=443 make deploy-uds-macos
 ```
 
 To clean up before retrying either deploy path:

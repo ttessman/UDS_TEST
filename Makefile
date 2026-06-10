@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install env dev run run-dev server client build typecheck start check-prereqs check-run-ready setup setup-macos deploy-uds deploy-uds-macos down down-dev down-uds setup-uds setup-dev setup-local-demo verify-uds inspect-packages installed-packages deploy-core git-status
+.PHONY: help install env dev run run-dev server client build typecheck start check-prereqs check-run-ready setup setup-macos deploy-uds deploy-uds-macos down down-dev down-uds setup-uds setup-dev setup-local-demo verify-uds uds-debug inspect-packages installed-packages deploy-core git-status
 
 help:
 	@printf "UDS Core local POC commands\n\n"
@@ -31,7 +31,8 @@ help:
 	@printf "  make typecheck           Run TypeScript checks\n"
 	@printf "  make build               Build shared, server, and client\n"
 	@printf "  make check-run-ready     Verify setup completed before running dev servers\n"
-	@printf "  make verify-uds          Verify UDS CLI, cluster reachability, Core namespace, Package CRs\n\n"
+	@printf "  make verify-uds          Verify UDS CLI, cluster reachability, Core namespace, Package CRs\n"
+	@printf "  make uds-debug           Print a focused UDS/k3d deploy debugging snapshot\n\n"
 	@printf "UDS/Zarf helpers:\n"
 	@printf "  make inspect-packages    Inspect configured UDS_REGISTRY_PACKAGE_REFS\n"
 	@printf "  make installed-packages  Print installed Zarf Package CRs\n"
@@ -114,6 +115,9 @@ setup-local-demo: deploy-uds
 
 verify-uds:
 	./scripts/verify-uds.sh
+
+uds-debug:
+	./scripts/uds-debug.sh
 
 inspect-packages: env
 	./scripts/inspect-packages.sh

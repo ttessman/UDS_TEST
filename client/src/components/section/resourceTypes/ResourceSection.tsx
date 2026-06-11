@@ -8,9 +8,8 @@ import { ResourceCard, type ResourceCardDefinition } from "../../card/resourceTy
 import { SearchField } from "../../form/resourceTypes/SearchField.js";
 import { Section, sectionTemplate } from "../Section.js";
 
-export type ResourceSectionContent<T extends object, C = undefined> = {
+export type ResourceSectionContentConfig<T extends object, C = undefined> = {
   emptyMessage: string;
-  layout?: ListLayout;
   loadingMessage?: string;
   refreshLabel?: (count: number) => string;
   refreshTooltip?: (args: { busy: boolean; count: number }) => string;
@@ -39,13 +38,26 @@ export type ResourceSectionContext<T extends object, C = undefined> = {
   status?: ListState;
 };
 
+const defaultResourceSectionLayout = {
+  alignItems: "stretch",
+  gap: 2,
+  gridTemplateColumns: {
+    xs: "1fr",
+    sm: "repeat(2, minmax(0, 1fr))",
+    lg: "repeat(3, minmax(0, 1fr))",
+    xl: "repeat(4, minmax(0, 1fr))"
+  },
+  justifyContent: "stretch",
+  justifyItems: "stretch"
+} as const satisfies ListLayout;
+
 export function ResourceSection<T extends object, C = undefined>({
   context,
   content,
   data
 }: {
   context: ResourceSectionContext<T, C>;
-  content: ResourceSectionContent<T, C>;
+  content: ResourceSectionContentConfig<T, C>;
   data: T[];
 }) {
   const listStatus = context.status ?? "ready";
@@ -53,11 +65,11 @@ export function ResourceSection<T extends object, C = undefined>({
   const resourceCards = useMemo(
     () =>
       data.map((item, index) => (
-        <ListItem key={getResourceItemKey(item, index)} maxWidth={content.layout?.itemMaxWidth}>
+        <ListItem key={getResourceItemKey(item, index)}>
           <ResourceCard item={item} definition={content.resource} context={context.getItemContext(item)} />
         </ListItem>
       )),
-    [context, content, data]
+    [context, content.resource, data]
   );
 
   return (
@@ -99,7 +111,7 @@ export function ResourceSection<T extends object, C = undefined>({
       </sectionTemplate.subtitle>
       <sectionTemplate.content>
         <List
-          layout={content.layout}
+          layout={defaultResourceSectionLayout}
           state={{
             emptyMessage: content.emptyMessage,
             isEmpty: data.length === 0,

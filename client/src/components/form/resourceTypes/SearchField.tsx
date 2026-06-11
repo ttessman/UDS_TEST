@@ -69,7 +69,11 @@ export function SearchField({
       initial={false}
       sx={[
         { display: "flex", justifyContent: "flex-end", maxWidth: 280, minWidth: 48 },
-        ...rootSx
+        ...rootSx,
+        {
+          flex: isExpanded ? undefined : "0 0 48px",
+          maxWidth: isExpanded ? undefined : 48
+        }
       ]}
       transition={reduceMotion ? { duration: 0 } : searchFieldMotion.transition}
     >

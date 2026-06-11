@@ -9,7 +9,7 @@ import {
 } from "./api/uds.js";
 import { StatusIndicatorList } from "./components/list/resourceTypes/StatusIndicatorList.js";
 import { BackendCommandOutputModal } from "./components/modal/resourceTypes/BackendCommandOutputModal.js";
-import type { ResourceSectionContent } from "./components/section/resourceTypes/ResourceSection.js";
+import type { ResourceSectionContentConfig } from "./components/section/resourceTypes/ResourceSection.js";
 import { ResourceSection } from "./components/section/resourceTypes/ResourceSection.js";
 import { SiteShell, siteContentSx, siteTemplate } from "./components/site/SiteShell.js";
 import { SiteFooter } from "./components/site/SiteFooter.js";
@@ -21,19 +21,6 @@ import {
   type RegistryPackageResourceContext
 } from "./features/packages/packageResourceDefinitions.js";
 import { udsStatusIndicators } from "./features/status/statusDefinitions.js";
-
-const packageCardGrid = {
-  alignItems: "stretch",
-  gap: 2,
-  gridTemplateColumns: {
-    xs: "1fr",
-    sm: "repeat(2, minmax(0, 430px))",
-    xl: "repeat(3, minmax(0, 430px))"
-  },
-  itemMaxWidth: 430,
-  justifyContent: "start",
-  justifyItems: "stretch"
-} as const;
 
 export function App() {
   const [status, setStatus] = useState<UdsStatus | null>(null);
@@ -115,7 +102,6 @@ export function App() {
         title: "Airgap Store",
         resource: registryPackageResource,
         emptyMessage: "No registry packages were found.",
-        layout: packageCardGrid,
         loadingMessage: "Loading registry packages...",
         refreshLabel: (count) => `${count} Airgap Store packages`,
         refreshTooltip: ({ busy: isRefreshing, count }) =>
@@ -126,7 +112,7 @@ export function App() {
           packages.length === items.length
             ? "Catalog entries discovered from registry/OCI metadata. These are install candidates, not proof they are running."
             : `${packages.length} total registry packages, ${items.length} matching the current search.`
-      }) satisfies ResourceSectionContent<RegistryPackage, RegistryPackageResourceContext>,
+      }) satisfies ResourceSectionContentConfig<RegistryPackage, RegistryPackageResourceContext>,
     [packages.length]
   );
 
@@ -136,13 +122,12 @@ export function App() {
         title: "Installed Packages",
         resource: installedPackageResource,
         emptyMessage: "No installed Package CRs were returned by the cluster.",
-        layout: packageCardGrid,
         loadingMessage: "Loading installed packages...",
         refreshLabel: (count) => `${count} installed packages`,
         refreshTooltip: ({ busy: isRefreshing, count }) =>
           `${count} installed packages. ${isRefreshing ? "Refreshing package data" : "Refresh package data"}`,
         subtitle: () => "Packages reported by Kubernetes Package custom resources in the active cluster."
-      }) satisfies ResourceSectionContent<InstalledPackage, InstalledPackageResourceContext>,
+      }) satisfies ResourceSectionContentConfig<InstalledPackage, InstalledPackageResourceContext>,
     []
   );
 

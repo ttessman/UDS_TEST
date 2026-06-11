@@ -123,7 +123,7 @@ The renderer owns the repeated structure. Definitions describe what changes.
 
 `DefinitionList` is the current config-driven renderer for repeatable object fields. Use that pattern when the display is systematic and should reveal field changes over time.
 
-`ResourceSection` is the section-level renderer. Product code should describe which resources are shown, what business context matters, and what render state applies. The renderer owns grid/list layout, section framing, empty-state rendering, loading-state rendering, and repeated resource-card mapping.
+`ResourceSection` is the section-level renderer. Product code should describe which resources are shown, what visible content belongs to the section, and what runtime state matters. The renderer owns grid/list layout, section framing, empty-state rendering, loading-state rendering, search placement, count/refresh placement, and repeated resource-card mapping.
 
 Current hierarchy:
 
@@ -145,14 +145,19 @@ Renderer API shape:
 
 ```tsx
 <ResourceSection
-  items={packages}
-  definition={registryPackagesSection(totalPackages)}
+  data={packages}
+  content={sectionContent}
   context={sectionContext}
-  state={state}
 />
 ```
 
-If renderer props start growing into one-off values such as `title`, `emptyMessage`, `getKey`, `gridTemplateColumns`, or `loadingMessage`, move those values into the typed definition.
+Use the three-bucket contract:
+
+- `data`: incoming records/resources.
+- `content`: visible copy, labels, placeholders, and resource presentation config.
+- `context`: runtime state and behavior, including callbacks, busy state, selected IDs, permissions, and search values.
+
+Do not add more top-level props when the concern fits one of those buckets. Do not place layout styles in `content`; layout belongs to the renderer or a lower-level shell.
 
 Acceptance check: if two feature files contain mostly identical layout, grid, empty-state, loading-state, or card-mapping code, the abstraction is incomplete.
 

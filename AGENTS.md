@@ -193,7 +193,13 @@ Props/config own renderer behavior:
 
 The call site should make visible content easy to discern while the component handles what to do with state. Avoid hiding stable content behind generic `children` or pushing shell-specific state up into pages.
 
-For layout templates, bias toward reducing props to behavior/state and moving visible content into named slots. Data renderers can still accept `items`, `definition`, and `context` because those are the resource rendering contract.
+For layout templates, bias toward reducing props to behavior/state and moving visible content into named slots. Resource renderers should generally use the `data`, `content`, and `context` contract:
+
+- `data`: incoming records/resources.
+- `content`: visible copy, labels, placeholders, and resource presentation config.
+- `context`: runtime state, callbacks, permissions, busy state, and selected values.
+
+Do not add more top-level renderer props when the concern fits one of those buckets. Do not put layout styles into `content`.
 
 Base renderers should be slot shells, not data-mapping containers. A base component such as `List`, `Section`, `Card`, `Modal`, or `Accordion` owns shared layout, spacing, state handling, and styling. Specialized resource components render the actual children and place that resolved content into named slots.
 
@@ -232,9 +238,9 @@ Slots should usually receive resolved visible content, not render callbacks that
 Prefer:
 
 ```tsx
-<Section items={items} definition={definition} state={state}>
+<Section state={{ isEmpty: data.length === 0, status }}>
   <sectionTemplate.content>
-    <ResourceList items={items} definition={resourceDefinition} />
+    <ResourceList data={data} content={content} context={context} />
   </sectionTemplate.content>
 </Section>
 ```
@@ -254,7 +260,7 @@ Reusable primitives should live in their own base family, not under the first co
 Prefer:
 
 ```tsx
-<ResourceSection items={items} definition={definition} context={context} state={state} />
+<ResourceSection data={data} content={content} context={context} />
 ```
 
 ```tsx
@@ -402,10 +408,11 @@ Prefer:
 
 Renderer inputs should generally be:
 
-- Data/content
-- Definition/config
-- Context
-- Render state
+- `data`: incoming records/resources.
+- `content`: visible copy, labels, placeholders, and resource presentation config.
+- `context`: runtime behavior/state such as callbacks, busy state, selected IDs, permissions, and search values.
+
+Render state should usually live inside `context` unless it belongs to a lower-level shell such as `List` or `Modal`.
 
 ---
 

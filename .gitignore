@@ -7,3 +7,4 @@ npm-debug.log*
 client/dist
 server/dist
 shared/dist
+client/src/components/aide-forms/

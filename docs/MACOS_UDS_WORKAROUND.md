@@ -100,7 +100,10 @@ It does not fully replace `uds-k3d-dev` because it does not:
 - Preload the full UDS k3d airgap image set.
 - Reproduce every cluster bootstrap action from the `uds-k3d-dev` package.
 - Prove browser ingress through every UDS Core gateway.
-- Establish a production registry publish/deploy or signature verification workflow.
+- Establish a production registry publish/deploy promotion workflow.
+- Establish a package signature verification workflow.
+
+This does not mean a local registry is impossible. A local OCI registry is required for testing real app packages end to end. It should let the repo package/push a UDS or Zarf app package locally, point the backend at that local OCI reference or catalog export, deploy from that source, and verify the installed Package CR count/status. That is different from proving a production registry workflow with auth, promotion, signatures, and long-lived catalog indexing.
 
 For this POC, the immediate success condition is narrower:
 
@@ -113,6 +116,12 @@ uds zarf tools kubectl get package -A -o json
 ```
 
 That gets the frontend/backend close to the end goal of showing deployed package count and status from the cluster.
+
+The data model should stay split the same way when local registry support is added:
+
+- Available local registry packages remain `RegistryPackage` records.
+- Deployed cluster packages remain `InstalledPackage` records read from Package CRs.
+- A future launch/install flow connects them through OCI reference, package name, version/tag, architecture/flavor, variables, and backend-generated install/deploy actions.
 
 ## Debug And Cleanup
 

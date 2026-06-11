@@ -133,7 +133,10 @@ EOF
 phase "Phase 1/6: delete existing local uds k3d cluster if present"
 k3d cluster delete uds >/dev/null 2>&1 || true
 
-phase "Phase 2/6: create macOS-compatible uds k3d cluster"
+phase "Phase 2/7: check host ports"
+./scripts/check-host-ports.sh "$http_port" "$https_port"
+
+phase "Phase 3/7: create macOS-compatible uds k3d cluster"
 # The official k3d-core-demo path creates its own cluster and does not inherit
 # this kubelet flag. Keep cluster creation here unless UDS adds a supported
 # flag passthrough or existing-cluster deploy path for the seccomp issue.
@@ -146,7 +149,7 @@ k3d cluster create uds \
   --k3s-arg "--flannel-backend=vxlan@server:0" \
   --k3s-arg "--kubelet-arg=seccomp-default=false@server:0"
 
-phase "Phase 3/6: wait for CoreDNS"
+phase "Phase 4/7: wait for CoreDNS"
 if ! kubectl wait pod -n kube-system -l k8s-app=kube-dns --for=condition=Ready --timeout=180s; then
   echo "CoreDNS did not become ready in the workaround cluster."
   kubectl get pods -n kube-system
@@ -159,12 +162,12 @@ if [ -n "$signature_flag" ]; then
   signature_args+=("$signature_flag")
 fi
 
-phase "Phase 4/6: prepare selected UDS package deploy"
+phase "Phase 5/7: prepare selected UDS package deploy"
 echo "Bundle: $bundle_ref"
 echo "Skipping the bundle's uds-k3d-dev package so it does not recreate the cluster without the macOS seccomp flag."
 echo "Using --packages $packages_csv"
 
-phase "Phase 5/6: run UDS deploy with progress heartbeat"
+phase "Phase 6/7: run UDS deploy with progress heartbeat"
 echo "Starting gateway LoadBalancer status watcher and deploy heartbeat."
 patch_gateway_loadbalancer_status &
 gateway_patch_pid="$!"
@@ -220,5 +223,5 @@ fi
 
 echo "UDS package deploy finished after $(elapsed_seconds "$deploy_started_at")s."
 
-phase "Phase 6/6: verify UDS cluster and installed packages"
+phase "Phase 7/7: verify UDS cluster and installed packages"
 ./scripts/verify-uds.sh

@@ -1,8 +1,92 @@
 :root {
-  background: #030712;
-  color: #e5e7eb;
+  --app-bg-default: #030712;
+  --app-bg-paper: #111827;
+  --app-bg-paper-hover: #132033;
+  --app-bg-shell: #070d1a;
+  --app-border: #334155;
+  --app-border-strong: #64748b;
+  --app-brand-bg: #1d4ed8;
+  --app-code-bg: #020617;
+  --app-code-border: #1f2937;
+  --app-code-text: #dbeafe;
+  --app-error-bg: #2a1111;
+  --app-error-border: #7f1d1d;
+  --app-error-text: #fecaca;
+  --app-text-primary: #f8fafc;
+  --app-text-secondary: #b6c2d2;
+  --app-text-inverse: #020617;
+  --app-shadow-modal: 0 24px 80px rgba(0, 0, 0, 0.48);
+  --app-shadow-nav: 0 10px 32px rgba(0, 0, 0, 0.28);
+  --app-scrim: rgba(148, 163, 184, 0.12);
+  --app-scrim-brightness: 1.18;
+  --app-status-error-bg: rgba(127, 29, 29, 0.18);
+  --app-status-error-border: rgba(248, 113, 113, 0.5);
+  --app-status-error-main: #f87171;
+  --app-status-error-text: #fecaca;
+  --app-status-info-bg: rgba(30, 64, 175, 0.16);
+  --app-status-info-border: rgba(96, 165, 250, 0.45);
+  --app-status-info-main: #60a5fa;
+  --app-status-info-text: #bfdbfe;
+  --app-status-neutral-bg: rgba(51, 65, 85, 0.22);
+  --app-status-neutral-border: rgba(148, 163, 184, 0.42);
+  --app-status-neutral-main: #94a3b8;
+  --app-status-neutral-text: #cbd5e1;
+  --app-status-success-bg: rgba(20, 83, 45, 0.18);
+  --app-status-success-border: rgba(74, 222, 128, 0.45);
+  --app-status-success-main: #4ade80;
+  --app-status-success-text: #bbf7d0;
+  --app-status-warning-bg: rgba(113, 63, 18, 0.18);
+  --app-status-warning-border: rgba(251, 191, 36, 0.5);
+  --app-status-warning-main: #fbbf24;
+  --app-status-warning-text: #fde68a;
+  background: var(--app-bg-default);
+  color: var(--app-text-primary);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:root[data-color-mode="light"],
+body[data-color-mode="light"] {
+  --app-bg-default: #f8fafc;
+  --app-bg-paper: #ffffff;
+  --app-bg-paper-hover: #f1f5f9;
+  --app-bg-shell: #f1f5f9;
+  --app-border: #cbd5e1;
+  --app-border-strong: #64748b;
+  --app-brand-bg: #1d4ed8;
+  --app-code-bg: #f8fafc;
+  --app-code-border: #cbd5e1;
+  --app-code-text: #0f172a;
+  --app-error-bg: #fff1f2;
+  --app-error-border: #fda4af;
+  --app-error-text: #9f1239;
+  --app-text-primary: #0f172a;
+  --app-text-secondary: #475569;
+  --app-text-inverse: #f8fafc;
+  --app-shadow-modal: 0 24px 80px rgba(15, 23, 42, 0.2);
+  --app-shadow-nav: 0 10px 32px rgba(15, 23, 42, 0.08);
+  --app-scrim: rgba(15, 23, 42, 0.18);
+  --app-scrim-brightness: 0.92;
+  --app-status-error-bg: #fff1f2;
+  --app-status-error-border: #fb7185;
+  --app-status-error-main: #be123c;
+  --app-status-error-text: #9f1239;
+  --app-status-info-bg: #eff6ff;
+  --app-status-info-border: #60a5fa;
+  --app-status-info-main: #1d4ed8;
+  --app-status-info-text: #1e40af;
+  --app-status-neutral-bg: #f8fafc;
+  --app-status-neutral-border: #94a3b8;
+  --app-status-neutral-main: #475569;
+  --app-status-neutral-text: #334155;
+  --app-status-success-bg: #ecfdf5;
+  --app-status-success-border: #10b981;
+  --app-status-success-main: #047857;
+  --app-status-success-text: #065f46;
+  --app-status-warning-bg: #fffbeb;
+  --app-status-warning-border: #f59e0b;
+  --app-status-warning-main: #b45309;
+  --app-status-warning-text: #92400e;
 }
 
 * {
@@ -12,6 +96,13 @@
 body {
   margin: 0;
   min-width: 320px;
+}
+
+html,
+body,
+#root {
+  background: var(--app-bg-default);
+  min-height: 100%;
 }
 
 h1,
@@ -31,10 +122,10 @@ dl {
 
 code,
 pre {
-  border: 1px solid #1f2937;
+  border: 1px solid var(--app-code-border);
   border-radius: 6px;
-  background: #020617;
-  color: #dbeafe;
+  background: var(--app-code-bg);
+  color: var(--app-code-text);
   display: block;
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 12px;
@@ -51,18 +142,18 @@ pre {
 }
 
 .dot.ok {
-  background: #34d399;
+  background: var(--app-status-success-main);
 }
 
 .dot.bad {
-  background: #f87171;
+  background: var(--app-status-error-main);
 }
 
 .stderr,
 .error {
-  background: #2a1111;
-  border: 1px solid #7f1d1d;
-  color: #fecaca;
+  background: var(--app-error-bg);
+  border: 1px solid var(--app-error-border);
+  color: var(--app-error-text);
 }
 
 .error {
@@ -71,8 +162,8 @@ pre {
 }
 
 .empty {
-  border: 1px dashed #334155;
+  border: 1px dashed var(--app-border);
   border-radius: 8px;
-  color: #cbd5e1;
+  color: var(--app-text-secondary);
   padding: 18px;
 }

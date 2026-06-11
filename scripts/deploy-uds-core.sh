@@ -80,6 +80,8 @@ EOF
   exit 1
 fi
 
+./scripts/check-host-ports.sh 80 443
+
 echo "Deploying UDS Core local demo bundle: $bundle_ref"
 echo "Official demo docs: https://docs.defenseunicorns.com/core/getting-started/local-demo/overview/"
 if ! uds deploy "$bundle_ref" --confirm; then

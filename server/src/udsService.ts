@@ -95,17 +95,28 @@ export async function getUdsStatus(): Promise<UdsStatus> {
   });
   checks.push(namespaces);
 
+  const packageCrs = await runCommand("uds", ["zarf", "tools", "kubectl", "get", "package", "-A", "-o", "json"], {
+    timeoutMs: 30_000
+  });
+  checks.push(packageCrs);
+
   let coreNamespaces: string[] = [];
   if (namespaces.ok) {
     coreNamespaces = extractCoreNamespaces(namespaces.stdout);
   }
+
+  const coreEvidence = [
+    ...coreNamespaces.map((namespace) => `Namespace ${namespace}`),
+    ...(packageCrs.ok ? extractCorePackageEvidence(packageCrs.stdout) : [])
+  ];
 
   return {
     udsInstalled: prerequisites.uds.installed,
     udsVersion: prerequisites.uds.version,
     zarfVersion: zarfVersion.ok ? firstLine(zarfVersion.stdout || zarfVersion.stderr) : null,
     clusterReachable: cluster.ok,
-    coreRunning: namespaces.ok ? coreNamespaces.length > 0 : null,
+    coreRunning: cluster.ok ? coreEvidence.length > 0 : null,
+    coreEvidence,
     coreNamespaces,
     prerequisites,
     checks
@@ -122,6 +133,63 @@ function extractCoreNamespaces(json: string): string[] {
   } catch {
     return [];
   }
+}
+
+function extractCorePackageEvidence(json: string): string[] {
+  try {
+    const parsed = JSON.parse(json) as {
+      items?: Array<{
+        metadata?: {
+          labels?: Record<string, string | undefined>;
+          name?: string;
+          namespace?: string;
+        };
+        status?: {
+          phase?: string;
+          conditions?: Array<{ status?: string; type?: string }>;
+        };
+      }>;
+    };
+
+    return (parsed.items ?? [])
+      .filter((item) => isCorePackageCr(item))
+      .filter((item) => isPackageReady(item))
+      .map((item) => {
+        const namespace = item.metadata?.namespace ?? "default";
+        const name = item.metadata?.name ?? "unknown";
+        const phase = item.status?.phase ?? "Ready";
+        return `Package CR ${namespace}/${name} ${phase}`;
+      });
+  } catch {
+    return [];
+  }
+}
+
+function isCorePackageCr(item: {
+  metadata?: { labels?: Record<string, string | undefined>; name?: string; namespace?: string };
+}): boolean {
+  const name = item.metadata?.name ?? "";
+  const namespace = item.metadata?.namespace ?? "";
+  const zarfPackage = item.metadata?.labels?.["zarf.dev/package"] ?? "";
+
+  return (
+    name === "keycloak" ||
+    name === "authservice" ||
+    namespace === "keycloak" ||
+    namespace === "authservice" ||
+    zarfPackage === "core" ||
+    zarfPackage.startsWith("core-")
+  );
+}
+
+function isPackageReady(item: {
+  status?: { phase?: string; conditions?: Array<{ status?: string; type?: string }> };
+}): boolean {
+  if (item.status?.phase === "Ready") {
+    return true;
+  }
+
+  return (item.status?.conditions ?? []).some((condition) => condition.type === "Ready" && condition.status === "True");
 }
 
 export async function getRegistryPackages(): Promise<PackagesResponse> {

@@ -90,6 +90,7 @@ make uds-debug
 make inspect-packages
 make installed-packages
 make uds-debug
+make fix-uds-ports
 make stop-uds-workaround
 make deploy-core
 ```
@@ -97,6 +98,7 @@ make deploy-core
 - `make inspect-packages` inspects configured `UDS_REGISTRY_PACKAGE_REFS`.
 - `make installed-packages` runs `uds zarf tools kubectl get package -A -o json`.
 - `make uds-debug` prints a concise operational snapshot for diagnosing local UDS deploy waits.
+- `make fix-uds-ports` removes project-owned k3d leftovers, then re-checks host ports `80` and `443`; if another owner remains, it prints exact `docker stop ...`, safe `kill ...`, or Docker Desktop stale-forwarding guidance.
 - `make stop-uds-workaround` stops a stale `deploy-uds-macos` workaround process without deleting the cluster.
 - `make deploy-uds` deploys and verifies the official local demo bundle.
 - `make deploy-uds-macos` deletes/recreates the local `uds` k3d cluster with kubelet seccomp disabled, adds one k3d agent by default, maps local HTTP/HTTPS ports, disables default k3s Traefik and ServiceLB, waits for CoreDNS, patches Core gateway `LoadBalancer` service status while deploying, prints phase/heartbeat progress output, then deploys selected non-cluster packages from `k3d-core-slim-dev:latest`.

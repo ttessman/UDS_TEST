@@ -1,7 +1,5 @@
-import type { ReactNode } from "react";
+import type { Slot, SlotChildren } from "@beqa/react-slots";
 
-export type SectionDefinition<T> = {
-  count?: (items: T[]) => number;
-  subtitle?: (items: T[]) => ReactNode;
-  title: string;
-};
+export type SectionChildren = SlotChildren<
+  Slot<"header"> | Slot<"title"> | Slot<"subtitle"> | Slot<"actions"> | Slot<"content">
+>;

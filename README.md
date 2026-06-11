@@ -14,9 +14,9 @@ Agent/coding guidance: [AGENTS.md](AGENTS.md)
 
 macOS seccomp workaround details: [docs/MACOS_UDS_WORKAROUND.md](docs/MACOS_UDS_WORKAROUND.md)
 
-## Start From a Fresh macOS Checkout
+## Start From a Fresh Checkout
 
-This path assumes the repo exists on macOS, but local tooling, dependencies, and the UDS demo cluster may not be ready yet.
+This path assumes the repo exists, but local tooling, dependencies, and the UDS demo cluster may not be ready yet. See 'deploy-uds-macos' if problems on mac / docker-desktop.
 
 ```bash
 make setup
@@ -80,7 +80,7 @@ This POC does not invent a registry package schema. The shared types are derived
 - Registry catalog metadata: UDS Registry catalog JSON shaped like `catalog.<org>.repos[]`, matching the card shape observed from `registry.defenseunicorns.com` (`title`, `tagline`, `icon`, `kind`, `repo`, `latest_tag`, `tag_count`, `last_updated`, `architectures`, `flavors`, `categories`).
 - Package fallback metadata: `zarf package inspect definition <oci-ref>`, which emits the package `zarf.yaml`.
 - Installed package state: `uds zarf tools kubectl get package -A -o json`, which returns Kubernetes Package CRs.
-- UDS status: `uds version`, `zarf version`, `kubectl cluster-info`, and namespace discovery.
+- UDS status: `uds version`, `zarf version`, `kubectl cluster-info`, namespace discovery, and ready Core Package CR evidence for slim/workaround deployments.
 
 Unknown fields stay `null` until a real source is available. Registry auth is server-only via environment variables and is never sent to the frontend.
 
@@ -124,7 +124,7 @@ If a live-edited macOS workaround run leaves the gateway status watcher printing
 make stop-uds-workaround
 ```
 
-If UDS Core is running, the backend marks `coreRunning` as true when it finds namespaces named `uds-core` or prefixed with `uds-core-`.
+If UDS Core is running, the backend marks `coreRunning` as true when it finds namespaces named `uds-core` or prefixed with `uds-core-`, or ready Core Package CR evidence such as `keycloak`/`authservice` from the slim local workaround deployment.
 
 If CoreDNS gets stuck in `ContainerCreating` with `seccomp is not supported`, the active Docker runtime is not compatible with the k3d demo. Switch to Docker Desktop as the active Docker context and rerun `make deploy-uds`.
 
@@ -142,7 +142,7 @@ This deletes/recreates the local `uds` k3d cluster with the kubelet seccomp flag
 
 This workaround does not fully replace `uds-k3d-dev`. It does not preload the UDS k3d airgap image set, reproduce every cluster bootstrap action from that package, or prove local browser ingress through both Core gateways. It is scoped to getting a compatible local k3d cluster running on macOS so the POC can deploy Core packages and read installed Package CRs.
 
-Signature verification is not the blocker for the local POC goal. The immediate success condition is a working UDS cluster plus installed Package CRs, so the app can show the deployed package count and package status. Proper signature verification should be added before treating registry publish/deploy as a production workflow.
+Signature verification is not the blocker for the local POC goal. The immediate success condition is a working UDS cluster plus installed Package CRs, so the app can show the deployed package count and package status. A local OCI registry is required for the next app-package testing loop: package locally, push to local registry, read it as a registry package source, deploy it into the cluster, then verify the installed Package CR count/status. Proper auth, promotion, catalog indexing, and signature verification should be added before treating registry publish/deploy as a production workflow.
 
 Override the bundle or package list if needed:
 
@@ -160,6 +160,14 @@ make down
 ```
 
 This stops local dev servers on ports `3001` and `5173`, then removes the local `uds` k3d cluster, related k3d containers, the `k3d-uds` Docker network, and the `k3d-uds-images` volume. It does not prune unrelated Docker containers or images. Use `make down-dev` or `make down-uds` when you only want one side of that cleanup.
+
+If `make deploy-uds` fails with `Bind for 0.0.0.0:80 failed: port is already allocated`, run:
+
+```bash
+make fix-uds-ports
+```
+
+This removes project-owned k3d leftovers and re-checks ports `80` and `443`. If another app or container still owns a port, the check prints the exact `docker stop ...` or `kill ...` command to run. If `lsof` shows `com.docker`, Docker Desktop is holding the port-forwarding socket; run `make fix-uds-ports`, inspect `docker ps`, and restart Docker Desktop if no container still owns the port. The official demo expects `80/443` to be free; the macOS workaround can use alternate host ports with `UDS_K3D_HTTP_PORT=8080 UDS_K3D_HTTPS_PORT=8443 make deploy-uds-macos`.
 
 ## Configure Package Inspection
 
@@ -256,7 +264,8 @@ These are the current gaps that prevent the POC from being a complete launcher/i
 | Area | Current state | What blocks completion | Action needed |
 | --- | --- | --- | --- |
 | Registry catalog source | The backend can read catalog JSON from `UDS_REGISTRY_CATALOG_URL` or `UDS_REGISTRY_CATALOG_PATH`. | A stable public/authorized Defense Unicorns Registry catalog endpoint is not confirmed in this repo. | Confirm the registry API/index source, then replace the configurable placeholder with a real catalog client. |
+| Local registry workflow | The backend can inspect configured OCI refs and can read catalog JSON from a local file/URL. | The repo does not yet start a local OCI registry, package/push a sample app package, generate/read a local catalog, or prove deploy from that registry. | Add local registry up/down targets, push one sample package, generate/read a catalog export or inspect the OCI ref, deploy by OCI ref, and verify installed Package CR count/status. |
 | Bundle support | The model supports registry catalog entries and Zarf package definitions. | UDS bundles have different inspect/deploy behavior than plain Zarf packages. | Add bundle inspection with `uds inspect <oci-ref> --list-variables` and deployment with `uds deploy <oci-ref> --confirm`. |
 | Registry authentication | `authRequired` is intentionally `null`. | The backend does not yet challenge/probe OCI auth or use an authenticated registry client. | Add server-side auth probing and keep credentials out of the frontend. |
-| UDS Core health | `coreRunning` checks for `uds-core` namespaces. | Namespace presence does not prove the installed Core version is healthy. | Inspect official Core components, pod health, versions, and conditions for the installed release. |
-| Signature verification | The macOS workaround skips signature validation for a local selected-package deploy. | Proper verification material is not wired into this POC flow. | Add a signed package/bundle verification strategy before production registry publish/deploy workflows. |
+| UDS Core health | `coreRunning` checks for `uds-core` namespaces and ready Core Package CR evidence. | This proves the local POC has Core package evidence, but it still does not fully validate every official Core component/version. | Inspect official Core components, pod health, versions, and conditions for the installed release. |
+| Signature verification | The macOS workaround skips signature validation for a local selected-package deploy. | Proper verification material is not wired into this POC flow. | Add a signed package/bundle verification strategy before production registry workflows. |

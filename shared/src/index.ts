@@ -26,6 +26,8 @@ export type UdsStatus = {
   zarfVersion: string | null;
   clusterReachable: boolean;
   coreRunning: boolean | null;
+  /** Source: backend-derived from UDS Core namespaces and Package CRs observed in the active cluster. */
+  coreEvidence: string[];
   coreNamespaces: string[];
   prerequisites: PrerequisiteStatus;
   checks: CommandState[];

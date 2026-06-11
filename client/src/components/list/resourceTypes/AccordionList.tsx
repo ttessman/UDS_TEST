@@ -1,45 +1,53 @@
-import type { ReactNode } from "react";
-import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { List } from "../List.js";
-import type { ListDefinition, ListState } from "../list.types.js";
+import { useMemo, type ReactNode } from "react";
+import { Accordion, accordionTemplate } from "../../accordion/Accordion.js";
+import { List, listTemplate } from "../List.js";
+import type { ListState } from "../list.types.js";
 
-export type AccordionListDefinition<T, C = undefined> = {
-  defaultExpanded?: (item: T, index: number, context: C) => boolean;
-  details: (item: T, index: number, context: C) => ReactNode;
-  emptyMessage?: string;
-  getKey: (item: T, index: number) => string;
-  loadingMessage?: string;
-  summary: (item: T, index: number, context: C) => ReactNode;
+export type AccordionListItem = {
+  defaultExpanded?: boolean;
+  details: ReactNode;
+  key: string;
+  summary: ReactNode;
 };
 
-export function AccordionList<T, C = undefined>({
-  context,
+export type AccordionListDefinition = {
+  emptyMessage?: string;
+  loadingMessage?: string;
+};
+
+export function AccordionList({
   definition,
   items,
   state = "ready"
 }: {
-  context: C;
-  definition: AccordionListDefinition<T, C>;
-  items: T[];
+  definition: AccordionListDefinition;
+  items: AccordionListItem[];
   state?: ListState;
 }) {
-  const listDefinition = {
-    emptyMessage: definition.emptyMessage,
-    getKey: definition.getKey,
-    layout: { gap: 1 },
-    loadingMessage: definition.loadingMessage,
-    renderItem: ({ context: listContext, index, item }) => (
-      <Accordion
-        defaultExpanded={definition.defaultExpanded?.(item, index, listContext)}
-        disableGutters
-        variant="outlined"
-      >
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>{definition.summary(item, index, listContext)}</AccordionSummary>
-        <AccordionDetails>{definition.details(item, index, listContext)}</AccordionDetails>
-      </Accordion>
-    )
-  } satisfies ListDefinition<T, C>;
+  const accordionItems = useMemo(
+    () =>
+      items.map((item) => (
+        <Accordion key={item.key} defaultExpanded={item.defaultExpanded}>
+          <accordionTemplate.summary>{item.summary}</accordionTemplate.summary>
+          <accordionTemplate.details>{item.details}</accordionTemplate.details>
+        </Accordion>
+      )),
+    [items]
+  );
 
-  return <List items={items} definition={listDefinition} context={context} state={state} />;
+  return (
+    <List
+      layout={{ gap: 1 }}
+      state={{
+        emptyMessage: definition.emptyMessage,
+        isEmpty: items.length === 0,
+        loadingMessage: definition.loadingMessage,
+        status: state
+      }}
+    >
+      <listTemplate.content>
+        <>{accordionItems}</>
+      </listTemplate.content>
+    </List>
+  );
 }

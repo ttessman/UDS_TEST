@@ -76,6 +76,7 @@ Required for best `GET /api/uds/packages` behavior:
 - A UDS Registry catalog JSON URL in `UDS_REGISTRY_CATALOG_URL`, or a captured catalog JSON file in `UDS_REGISTRY_CATALOG_PATH`
 - Network access to that catalog URL if using URL mode
 - Server-side credentials if the future catalog endpoint requires auth
+- Local OCI registry support for testing app package push/read/deploy loops
 
 The registry catalog shape observed from `registry.defenseunicorns.com` is:
 
@@ -101,6 +102,18 @@ UDS_REGISTRY_PASSWORD=...
 
 Blocker: the exact stable public/authorized UDS Registry catalog endpoint is configurable, not hardcoded, until it is documented or confirmed. Completion needs a real catalog client wired to that source.
 
+Local registry path: local push/pull is required to test real app packages end to end. The current model can support a local registry without changing the core package shape. A local registry package should still map to `RegistryPackage` because it is available to install. Once deployed, the cluster state should still come from `InstalledPackage` records read from Package CRs.
+
+The missing implementation is operational:
+
+1. Start or discover a local OCI registry.
+2. Package one sample UDS/Zarf app package.
+3. Push the package to the local registry.
+4. Generate/read a local catalog or inspect the pushed OCI ref.
+5. Show that package as available in `GET /api/uds/packages`.
+6. Deploy/install it through the backend.
+7. Verify the installed app package through Package CRs and surface the deployed count/status in the UI.
+
 ## 3. Kubernetes and UDS Core
 
 Required for installed package state:
@@ -114,7 +127,7 @@ The backend reads installed packages with:
 uds zarf tools kubectl get package -A -o json
 ```
 
-UDS Core is considered running when namespaces named `uds-core` or prefixed with `uds-core-` exist. That is a deliberately lightweight POC check. A production check should inspect the official UDS Core components and their health for the installed version.
+UDS Core is considered running when namespaces named `uds-core` or prefixed with `uds-core-` exist, or when ready Core Package CR evidence is present. The slim macOS workaround may not create a literal `uds-core` namespace, but it does create ready Package CRs such as `keycloak` and `authservice` from `core-identity-authorization`. A production check should inspect the official UDS Core components and their health for the installed version.
 
 Use:
 
@@ -190,7 +203,8 @@ These are actionable gaps that prevent this POC from being a complete launcher/i
 | Area | Current state | What blocks completion | Action needed |
 | --- | --- | --- | --- |
 | Registry catalog source | Catalog JSON can come from `UDS_REGISTRY_CATALOG_URL` or `UDS_REGISTRY_CATALOG_PATH`. | The repo does not yet have a confirmed stable public/authorized Defense Unicorns Registry catalog endpoint. | Confirm the registry API/index source and replace the configurable placeholder with a real catalog client. |
+| Local registry workflow | Configured OCI refs can be inspected, and catalog JSON can be read from a URL/path. | The repo does not yet run a local OCI registry, push a sample app package, build/read a local catalog/index, or prove deploy from that registry. | Add make targets/scripts for local registry up/down, package push, catalog export or OCI inspection, backend deploy-by-ref, and installed Package CR verification. |
 | Bundle support | Package definitions and registry catalog entries are modeled. | UDS bundles need `uds inspect` and `uds deploy` behavior, which differs from plain Zarf package deployment. | Add bundle inspection with `uds inspect <oci-ref> --list-variables` and deployment with `uds deploy <oci-ref> --confirm`. |
 | Registry authentication | Registry credentials are server-side only, and `authRequired` remains unknown when not discoverable. | The backend does not yet perform OCI challenge/auth probing. | Add server-side auth probing through an authenticated registry client or explicit OCI challenge result. |
-| UDS Core health | Core detection checks `uds-core` namespaces. | Namespace presence does not prove Core is healthy or identify the installed version. | Inspect official Core components, pod health, versions, and Kubernetes conditions. |
-| Signature verification | The macOS workaround skips signature validation for a local selected-package deploy. | Proper verification material is not wired into this POC flow. | Add a signed package/bundle verification strategy before production registry publish/deploy workflows. |
+| UDS Core health | Core detection checks `uds-core` namespaces and ready Core Package CR evidence. | This is enough for local POC state, but does not fully prove every official Core component is healthy or identify the installed version. | Inspect official Core components, pod health, versions, and Kubernetes conditions. |
+| Signature verification | The macOS workaround skips signature validation for a local selected-package deploy. | Proper verification material is not wired into this POC flow. | Add a signed package/bundle verification strategy before production registry workflows. |

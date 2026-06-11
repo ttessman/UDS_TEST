@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Box, Button, Container, Divider, Stack, TextField, Typography } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
+import { Alert, Container, Stack } from "@mui/material";
 import type { CommandState, InstalledPackage, RegistryPackage, UdsStatus } from "@uds-poc/shared";
 import {
   getInstalledPackages,
@@ -8,12 +7,33 @@ import {
   getUdsStatus,
   requestPackageInstall
 } from "./api/uds.js";
-import { MetricTileList } from "./components/list/resourceTypes/MetricTileList.js";
+import { StatusIndicatorList } from "./components/list/resourceTypes/StatusIndicatorList.js";
+import { BackendCommandOutputModal } from "./components/modal/resourceTypes/BackendCommandOutputModal.js";
+import type { ResourceSectionContent } from "./components/section/resourceTypes/ResourceSection.js";
 import { ResourceSection } from "./components/section/resourceTypes/ResourceSection.js";
-import { ListSection } from "./components/section/resourceTypes/ListSection.js";
-import { commandLogsSection } from "./features/logs/logDefinitions.js";
-import { installedPackagesSection, registryPackagesSection } from "./features/packages/packageResourceDefinitions.js";
-import { udsStatusMetrics } from "./features/status/statusDefinitions.js";
+import { SiteShell, siteContentSx, siteTemplate } from "./components/site/SiteShell.js";
+import { SiteFooter } from "./components/site/SiteFooter.js";
+import { SiteHeader } from "./components/site/SiteHeader.js";
+import {
+  installedPackageResource,
+  type InstalledPackageResourceContext,
+  registryPackageResource,
+  type RegistryPackageResourceContext
+} from "./features/packages/packageResourceDefinitions.js";
+import { udsStatusIndicators } from "./features/status/statusDefinitions.js";
+
+const packageCardGrid = {
+  alignItems: "stretch",
+  gap: 2,
+  gridTemplateColumns: {
+    xs: "1fr",
+    sm: "repeat(2, minmax(0, 430px))",
+    xl: "repeat(3, minmax(0, 430px))"
+  },
+  itemMaxWidth: 430,
+  justifyContent: "start",
+  justifyItems: "stretch"
+} as const;
 
 export function App() {
   const [status, setStatus] = useState<UdsStatus | null>(null);
@@ -54,6 +74,16 @@ export function App() {
     () => new Set(installedPackages.map((item) => item.name.toLowerCase())),
     [installedPackages]
   );
+  const packagesByName = useMemo(() => {
+    const byName = new Map<string, RegistryPackage>();
+
+    packages.forEach((pkg) => {
+      byName.set(pkg.packageName.toLowerCase(), pkg);
+      byName.set(pkg.displayTitle.toLowerCase(), pkg);
+    });
+
+    return byName;
+  }, [packages]);
 
   const filteredPackages = useMemo(() => {
     const query = packageQuery.trim().toLowerCase();
@@ -79,6 +109,43 @@ export function App() {
     );
   }, [packageQuery, packages]);
 
+  const registryPackagesContent = useMemo(
+    () =>
+      ({
+        title: "Airgap Store",
+        resource: registryPackageResource,
+        emptyMessage: "No registry packages were found.",
+        layout: packageCardGrid,
+        loadingMessage: "Loading registry packages...",
+        refreshLabel: (count) => `${count} Airgap Store packages`,
+        refreshTooltip: ({ busy: isRefreshing, count }) =>
+          `${count} packages. ${isRefreshing ? "Refreshing package data" : "Refresh package data"}`,
+        searchLabel: "Search Airgap Store packages",
+        searchPlaceholder: "Search store",
+        subtitle: (items) =>
+          packages.length === items.length
+            ? "Catalog entries discovered from registry/OCI metadata. These are install candidates, not proof they are running."
+            : `${packages.length} total registry packages, ${items.length} matching the current search.`
+      }) satisfies ResourceSectionContent<RegistryPackage, RegistryPackageResourceContext>,
+    [packages.length]
+  );
+
+  const installedPackagesContent = useMemo(
+    () =>
+      ({
+        title: "Installed Packages",
+        resource: installedPackageResource,
+        emptyMessage: "No installed Package CRs were returned by the cluster.",
+        layout: packageCardGrid,
+        loadingMessage: "Loading installed packages...",
+        refreshLabel: (count) => `${count} installed packages`,
+        refreshTooltip: ({ busy: isRefreshing, count }) =>
+          `${count} installed packages. ${isRefreshing ? "Refreshing package data" : "Refresh package data"}`,
+        subtitle: () => "Packages reported by Kubernetes Package custom resources in the active cluster."
+      }) satisfies ResourceSectionContent<InstalledPackage, InstalledPackageResourceContext>,
+    []
+  );
+
   async function installPackage(packageId: string) {
     setBusy(true);
     setError(null);
@@ -100,72 +167,61 @@ export function App() {
   }
 
   return (
-    <Container component="main" maxWidth="xl" sx={{ py: 5 }}>
-      <Box
-        sx={{
-          alignItems: { xs: "stretch", md: "center" },
-          display: "flex",
-          flexDirection: { xs: "column", md: "row" },
-          gap: 2.5,
-          justifyContent: "space-between",
-          mb: 3
-        }}
-      >
-        <Box>
-          <Typography component="h1" sx={{ fontSize: 42, fontWeight: 900, letterSpacing: 0, lineHeight: 1.1 }}>
-            App Catalog
-          </Typography>
-          <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-            UDS Registry package metadata, local cluster state, and install readiness.
-          </Typography>
-        </Box>
-        <Stack direction={{ xs: "column", sm: "row" }} sx={{ gap: 1.5, minWidth: { md: 520 } }}>
-          <TextField
-            aria-label="Search packages"
-            onChange={(event) => setPackageQuery(event.target.value)}
-            placeholder="Search"
-            size="small"
-            slotProps={{
-              input: {
-                startAdornment: <SearchIcon sx={{ color: "text.secondary", mr: 1 }} />
-              }
-            }}
-            value={packageQuery}
-          />
-          <Button onClick={() => void refresh()} disabled={busy} variant="outlined">
-            {busy ? "Refreshing" : "Refresh"}
-          </Button>
-        </Stack>
-      </Box>
-      <Divider sx={{ borderColor: "#334155", mb: 3 }} />
+    <SiteShell>
+      <siteTemplate.header>
+        <SiteHeader />
+      </siteTemplate.header>
+      <siteTemplate.content>
+        <Container maxWidth={false} sx={{ ...siteContentSx, py: 3 }}>
+          <Stack sx={{ gap: 3.25 }}>
+            {error ? <Alert severity="error">{error}</Alert> : null}
 
-      <Stack sx={{ gap: 3.25 }}>
-        {error ? <Alert severity="error">{error}</Alert> : null}
+            <StatusIndicatorList item={status} definition={udsStatusIndicators} context={undefined} />
 
-        <MetricTileList item={status} definition={udsStatusMetrics} />
-        <ResourceSection
-          items={filteredPackages}
-          definition={registryPackagesSection(packages.length)}
-          context={(pkg) => ({
-            disabled: busy,
-            installed: installedNames.has(pkg.packageName.toLowerCase()),
-            onInstall: (id: string) => void installPackage(id)
-          })}
-          state={busy && filteredPackages.length === 0 ? "loading" : "ready"}
+            <ResourceSection<RegistryPackage, RegistryPackageResourceContext>
+              data={filteredPackages}
+              content={registryPackagesContent}
+              context={{
+                getItemContext: (pkg) => ({
+                  disabled: busy,
+                  installed: installedNames.has(pkg.packageName.toLowerCase()),
+                  onInstall: (id: string) => void installPackage(id)
+                }),
+                refresh: {
+                  disabled: busy,
+                  onClick: () => void refresh()
+                },
+                search: {
+                  enabled: true,
+                  onChange: setPackageQuery,
+                  value: packageQuery
+                },
+                status: busy && filteredPackages.length === 0 ? "loading" : "ready"
+              }}
+            />
+            <ResourceSection<InstalledPackage, InstalledPackageResourceContext>
+              data={installedPackages}
+              content={installedPackagesContent}
+              context={{
+                getItemContext: (pkg) => ({ registryPackage: packagesByName.get(pkg.name.toLowerCase()) ?? null }),
+                refresh: {
+                  disabled: busy,
+                  onClick: () => void refresh()
+                },
+                status: busy && installedPackages.length === 0 ? "loading" : "ready"
+              }}
+            />
+          </Stack>
+        </Container>
+      </siteTemplate.content>
+      <siteTemplate.footer>
+        <SiteFooter />
+        <BackendCommandOutputModal
+          logs={logs}
+          logState={busy && logs.length === 0 ? "loading" : "ready"}
+          status={status}
         />
-        <ResourceSection
-          items={installedPackages}
-          definition={installedPackagesSection}
-          context={() => undefined}
-          state={busy && installedPackages.length === 0 ? "loading" : "ready"}
-        />
-        <ListSection
-          items={logs}
-          definition={commandLogsSection}
-          context={undefined}
-          state={busy && logs.length === 0 ? "loading" : "ready"}
-        />
-      </Stack>
-    </Container>
+      </siteTemplate.footer>
+    </SiteShell>
   );
 }

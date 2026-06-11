@@ -1,7 +1,7 @@
-import type { ReactNode } from "react";
-import { Box, Typography } from "@mui/material";
-import { List } from "../List.js";
-import type { ListDefinition } from "../list.types.js";
+import { useMemo, type ReactNode } from "react";
+import { DefinitionItem } from "../items/DefinitionItem.js";
+import { List, listTemplate } from "../List.js";
+import { isEmptyRenderValue } from "../list.utils.js";
 
 export type DefinitionField<T> = {
   key: keyof T | string;
@@ -10,8 +10,10 @@ export type DefinitionField<T> = {
 };
 
 export type DefinitionListDefinition<T> = {
+  density?: "comfortable" | "compact";
   emptyValue?: ReactNode;
   fields: Array<DefinitionField<T>>;
+  omitEmptyValues?: boolean;
 };
 
 export function DefinitionList<T extends object>({
@@ -21,26 +23,30 @@ export function DefinitionList<T extends object>({
   definition: DefinitionListDefinition<T>;
   item: T;
 }) {
-  const listDefinition = {
-    getKey: (field) => String(field.key),
-    layout: { gap: 1 },
-    renderItem: ({ item: field, context }) => (
-      <DefinitionRow label={field.label} value={field.value(context) ?? definition.emptyValue ?? "unknown"} />
-    )
-  } satisfies ListDefinition<DefinitionField<T>, T>;
+  const fields = definition.fields
+    .map((field) => ({ ...field, resolvedValue: field.value(item) }))
+    .filter((field) => !definition.omitEmptyValues || !isEmptyRenderValue(field.resolvedValue));
+  const definitionRows = useMemo(
+    () =>
+      fields.map((field) => (
+        <DefinitionItem
+          key={String(field.key)}
+          density={definition.density ?? "comfortable"}
+          label={field.label}
+          value={field.resolvedValue ?? definition.emptyValue ?? "unknown"}
+        />
+      )),
+    [definition.density, definition.emptyValue, fields]
+  );
 
-  return <List items={definition.fields} definition={listDefinition} context={item} />;
-}
-
-function DefinitionRow({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <Box sx={{ display: "grid", gap: 0.5, gridTemplateColumns: { xs: "1fr", sm: "150px minmax(0, 1fr)" } }}>
-      <Typography color="text.secondary" component="dt">
-        {label}
-      </Typography>
-      <Typography component="dd" sx={{ m: 0, overflowWrap: "anywhere" }}>
-        {value}
-      </Typography>
-    </Box>
+    <List
+      layout={{ gap: definition.density === "compact" ? 0.75 : 1 }}
+      state={{ isEmpty: fields.length === 0 }}
+    >
+      <listTemplate.content>
+        <>{definitionRows}</>
+      </listTemplate.content>
+    </List>
   );
 }

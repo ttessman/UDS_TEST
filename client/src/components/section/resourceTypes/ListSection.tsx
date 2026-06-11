@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 import type { ListState } from "../../list/list.types.js";
-import { Section } from "../Section.js";
-import type { SectionDefinition } from "../section.types.js";
+import { Section, sectionTemplate } from "../Section.js";
 
-export type ListSectionDefinition<T, C = undefined> = SectionDefinition<T> & {
+export type ListSectionDefinition<T, C = undefined> = {
+  actions?: ReactNode;
   renderList: (args: { context: C; items: T[]; state: ListState }) => ReactNode;
+  subtitle?: (items: T[]) => ReactNode;
+  title: ReactNode;
 };
 
 export function ListSection<T, C = undefined>({
@@ -19,8 +21,19 @@ export function ListSection<T, C = undefined>({
   state?: ListState;
 }) {
   return (
-    <Section items={items} definition={definition}>
-      {definition.renderList({ context, items, state })}
+    <Section>
+      <sectionTemplate.title>
+        {definition.title}
+      </sectionTemplate.title>
+      <sectionTemplate.actions>
+        <>{definition.actions}</>
+      </sectionTemplate.actions>
+      <sectionTemplate.subtitle>
+        <>{definition.subtitle?.(items)}</>
+      </sectionTemplate.subtitle>
+      <sectionTemplate.content>
+        {definition.renderList({ context, items, state })}
+      </sectionTemplate.content>
     </Section>
   );
 }

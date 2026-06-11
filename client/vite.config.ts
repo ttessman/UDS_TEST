@@ -1,8 +1,9 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import unplugin from "@beqa/unplugin-transform-react-slots";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [unplugin.vite(), react()],
   server: {
     port: 5173,
     proxy: {

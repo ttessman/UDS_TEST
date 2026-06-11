@@ -1,40 +1,51 @@
+import { createTemplate, useSlot } from "@beqa/react-slots";
 import { Box, CircularProgress, Stack, Typography } from "@mui/material";
-import type { ListDefinition, ListState } from "./list.types.js";
+import type { SxProps, Theme } from "@mui/material/styles";
+import type { ListChildren, ListLayout, ListRenderState } from "./list.types.js";
 
-export function List<T, C = undefined>({
-  context,
-  definition,
-  items,
-  state = "ready"
+export function List({
+  children,
+  layout,
+  state = {},
+  sx
 }: {
-  context: C;
-  definition: ListDefinition<T, C>;
-  items: T[];
-  state?: ListState;
+  children: ListChildren;
+  layout?: ListLayout;
+  state?: ListRenderState;
+  sx?: SxProps<Theme>;
 }) {
-  const showLoading = state === "loading" && items.length === 0;
-  const columns = definition.layout?.gridTemplateColumns;
+  const { hasSlot, slot } = useSlot(children);
+  const showLoading = state.status === "loading" && state.isEmpty;
+  const showEmpty = state.isEmpty && !showLoading;
+  const columns = layout?.gridTemplateColumns;
 
   return (
     <Box
       sx={{
+        alignItems: layout?.alignItems,
         display: "grid",
-        gap: definition.layout?.gap ?? (columns?.lg || columns?.md ? 3 : 1.5),
-        gridTemplateColumns: columns ?? { xs: "1fr" }
+        gap: layout?.gap ?? (columns?.lg || columns?.md ? 3 : 1.5),
+        gridAutoRows: "1fr",
+        gridTemplateColumns: columns ?? { xs: "1fr" },
+        justifyContent: layout?.justifyContent,
+        justifyItems: layout?.justifyItems,
+        ...sx
       }}
     >
       {showLoading ? (
-        <Stack className="empty" direction="row" role="status" sx={{ alignItems: "center", gap: 1.5 }}>
+        <Stack className="empty" direction="row" role="status" sx={{ alignItems: "center", gap: 1.5, gridColumn: "1 / -1", width: "100%" }}>
           <CircularProgress size={18} />
-          <Typography>{definition.loadingMessage ?? "Loading..."}</Typography>
+          {hasSlot.loading ? <slot.loading /> : <Typography>{state.loadingMessage ?? "Loading..."}</Typography>}
         </Stack>
-      ) : items.length === 0 && definition.emptyMessage ? (
-        <Typography className="empty">{definition.emptyMessage}</Typography>
+      ) : showEmpty && (hasSlot.empty || state.emptyMessage) ? (
+        <Typography className="empty" sx={{ gridColumn: "1 / -1", width: "100%" }}>
+          {hasSlot.empty ? <slot.empty /> : state.emptyMessage}
+        </Typography>
       ) : (
-        items.map((item, index) => (
-          <Box key={definition.getKey(item, index)}>{definition.renderItem({ context, index, item })}</Box>
-        ))
+        <slot.content />
       )}
     </Box>
   );
 }
+
+export const listTemplate = createTemplate<ListChildren>();

@@ -1,17 +1,20 @@
 import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
 import { Avatar, Chip, Stack, Typography } from "@mui/material";
 import { formatBytes, relativeAge, yesNo } from "../../lib/format.js";
-import { ActionButton } from "../../components/button/resourceTypes/ActionButton.js";
+import { IconActionButton } from "../../components/button/resourceTypes/IconActionButton.js";
 import type { ResourceCardDefinition } from "../../components/card/resourceTypes/ResourceCard.js";
 import type { DefinitionField } from "../../components/list/resourceTypes/DefinitionList.js";
 import { MetaList, type MetaListDefinition } from "../../components/list/resourceTypes/MetaList.js";
 import { StatusIndicatorButton } from "../../components/button/resourceTypes/StatusIndicatorButton.js";
 import type { StatusIndicatorTone } from "../../components/status/status.types.js";
+import { StateChip } from "../../components/status/StateChip.js";
 
 export type RegistryPackageResourceContext = {
   disabled: boolean;
   installed: boolean;
+  installedPackage: InstalledPackage | null;
   onInstall: (id: string) => void;
+  onOpen: (url: string) => void;
 };
 
 export type InstalledPackageResourceContext = {
@@ -36,6 +39,7 @@ const registryPackageFields = [
 const installedPackageFields = [
   { key: "namespace", label: "Namespace", value: (pkg) => valueChips([pkg.namespace]) },
   { key: "version", label: "Version", value: (pkg) => valueChips([pkg.version]) },
+  { key: "lastUpdated", label: "Updated", value: (pkg) => relativeAge(pkg.lastUpdated) },
   { key: "architecture", label: "Architecture", value: (pkg) => valueChips([pkg.architecture]) },
   { key: "generation", label: "Generation", value: (pkg) => pkg.generation },
   { key: "phase", label: "Phase", value: (pkg) => pkg.phase },
@@ -49,19 +53,26 @@ const registryPackageMeta = {
     {
       key: "lastUpdated",
       icon: "packageUpdated",
-      tooltip: ({ value }) => `Last updated ${value}`,
+      label: "Last updated",
+      tooltip: ({ value }) => `Last updated: ${value}`,
       value: ({ item }) => relativeAge(item.lastUpdated)
     },
     {
-      key: "tagCount",
+      key: "tag",
       icon: "packageTags",
-      tooltip: ({ item, value }) =>
-        item.tagCount != null
-          ? `${item.tagCount} tag${item.tagCount === 1 ? "" : "s"}`
-          : item.latestTag
-            ? `Latest tag: ${item.latestTag}`
-            : `Tag: ${value}`,
-      value: ({ item }) => item.tagCount ?? item.latestTag ?? item.version ?? item.tag
+      label: "Tag",
+      tooltip: ({ value }) => `Tag: ${value}`,
+      value: ({ item }) => item.latestTag ?? item.tag
+    },
+    {
+      key: "version",
+      icon: "packageVersion",
+      label: "Version",
+      tooltip: ({ value }) => `Version: ${value}`,
+      value: ({ item }) => {
+        const tag = item.latestTag ?? item.tag;
+        return item.version && item.version !== tag ? item.version : null;
+      }
     },
     {
       key: "categories",
@@ -76,10 +87,25 @@ const installedPackageMeta = {
   omitEmptyValues: true,
   fields: [
     {
-      key: "generation",
+      key: "version",
+      icon: "packageVersion",
+      label: "Version",
+      tooltip: ({ value }) => `Version: ${value}`,
+      value: ({ context, item }) => getInstalledPackageVersion(item, context.registryPackage)
+    },
+    {
+      key: "registryTag",
+      icon: "packageTags",
+      label: "Tag",
+      tooltip: ({ value }) => `Tag: ${value}`,
+      value: ({ context, item }) => getInstalledPackageTag(item, context.registryPackage)
+    },
+    {
+      key: "lastUpdated",
       icon: "packageUpdated",
-      tooltip: ({ item }) => `Kubernetes metadata.generation ${item.generation}`,
-      value: ({ item }) => (item.generation == null ? null : `gen ${item.generation}`)
+      label: "Last updated",
+      tooltip: ({ value }) => `Last updated: ${value}`,
+      value: ({ context, item }) => relativeAge(item.lastUpdated ?? context.registryPackage?.lastUpdated)
     }
   ]
 } satisfies MetaListDefinition<InstalledPackage, InstalledPackageResourceContext>;
@@ -88,9 +114,11 @@ export const registryPackageResource = {
   label: ({ item }) => packageKindLabel(item.kind),
   title: ({ item }) => item.displayTitle || item.packageName,
   icon: ({ item }) => <PackageIcon icon={item.icon} title={item.displayTitle || item.packageName} />,
-  status: ({ context }) => (context.installed ? <Chip color="success" label="installed" size="small" /> : null),
+  status: ({ context }) => (context.installed ? <StateChip label="installed" state="success" variant="outline" /> : null),
+  menuStatus: ({ context, item }) =>
+    context.installed ? <StateChip label={`${item.displayTitle || item.packageName} Installed`} state="success" variant="plain" /> : null,
   summary: ({ item }) => item.tagline ?? item.description ?? "No registry description discovered.",
-  meta: ({ context, item }) => <MetaList item={item} context={context} definition={registryPackageMeta} />,
+  meta: ({ context, item, presentation }) => <MetaList item={item} context={context} definition={registryPackageMeta} presentation={presentation} />,
   fields: registryPackageFields,
   details: ({ item }) => (
     <>
@@ -110,10 +138,36 @@ export const registryPackageResource = {
     title: "Discovered registry/package object shape",
     value: ({ item }) => item.rawMetadata
   },
-  actions: ({ item, context }) =>
-    item.installable && item.installAction ? (
-      <ActionButton disabled={context.disabled} icon="install" label="Install" onClick={() => context.onInstall(item.id)} variant="contained" />
-    ) : null,
+  primaryAction: ({ item, context }) => {
+    return item.installable && item.installAction && !context.installed ? (
+      <IconActionButton
+        disabled={context.disabled}
+        icon="install"
+        label={`Install ${item.displayTitle || item.packageName}`}
+        onClick={() => context.onInstall(item.id)}
+      />
+    ) : null;
+  },
+  menuActions: ({ context, item }) => {
+    const launchUrl = context.installedPackage ? getLiveLaunchUrl(context.installedPackage) : null;
+
+    return launchUrl
+      ? [
+          {
+            icon: "open",
+            label: "Open App",
+            onSelect: () => context.onOpen(launchUrl)
+          }
+        ]
+      : [];
+  },
+  onSelect: ({ context }) => {
+    const launchUrl = context.installedPackage ? getLiveLaunchUrl(context.installedPackage) : null;
+
+    if (launchUrl) {
+      context.onOpen(launchUrl);
+    }
+  },
   commandPreview: ({ item }) => item.installAction?.commandPreview,
   aspectRatio: "4 / 3",
   minHeight: 245
@@ -127,15 +181,33 @@ export const installedPackageResource = {
   ),
   status: ({ item }) => <PackageStatusDot status={item.phase ?? item.status} />,
   statusPlacement: "icon",
+  menuStatus: ({ item }) => (
+    <StateChip
+      label={`${item.name} ${item.phase === "Ready" || item.status === "Ready" ? "Deployed" : item.phase ?? item.status ?? "Reported"}`}
+      state={item.phase === "Ready" || item.status === "Ready" ? "success" : "neutral"}
+      variant="plain"
+    />
+  ),
   summary: ({ context, item }) => context.registryPackage?.tagline ?? context.registryPackage?.description ?? `Reported by Package CR in namespace ${item.namespace}.`,
-  meta: ({ context, item }) => <MetaList item={item} context={context} definition={installedPackageMeta} />,
-  actions: ({ context, item }) =>
-    item.launchUrl ? (
-      <ActionButton icon="open" label="Open" onClick={() => context.onOpen(item.launchUrl as string)} variant="contained" />
-    ) : null,
+  meta: ({ context, item, presentation }) => <MetaList item={item} context={context} definition={installedPackageMeta} presentation={presentation} />,
+  menuActions: ({ context, item }) => {
+    const launchUrl = getLiveLaunchUrl(item);
+
+    return launchUrl
+      ? [
+          {
+            icon: "open",
+            label: "Open App",
+            onSelect: () => context.onOpen(launchUrl)
+          }
+        ]
+      : [];
+  },
   onSelect: ({ context, item }) => {
-    if (item.launchUrl) {
-      context.onOpen(item.launchUrl);
+    const launchUrl = getLiveLaunchUrl(item);
+
+    if (launchUrl) {
+      context.onOpen(launchUrl);
     }
   },
   fields: installedPackageFields,
@@ -149,6 +221,17 @@ export const installedPackageResource = {
   aspectRatio: "4 / 3",
   minHeight: 245
 } satisfies ResourceCardDefinition<InstalledPackage, InstalledPackageResourceContext>;
+
+function getInstalledPackageVersion(item: InstalledPackage, registryPackage: RegistryPackage | null) {
+  return item.version ?? registryPackage?.version ?? null;
+}
+
+function getInstalledPackageTag(item: InstalledPackage, registryPackage: RegistryPackage | null) {
+  const version = getInstalledPackageVersion(item, registryPackage);
+  const tag = registryPackage?.latestTag ?? registryPackage?.tag ?? null;
+
+  return tag && tag !== version ? tag : null;
+}
 
 function PackageIcon({ icon, title }: { icon: string | null; title: string }) {
   if (icon) {
@@ -211,6 +294,10 @@ function PackageStatusDot({ status }: { status: string | null }) {
       view="dot"
     />
   );
+}
+
+function getLiveLaunchUrl(item: InstalledPackage) {
+  return item.launchUrl && (item.phase === "Ready" || item.status === "Ready") ? item.launchUrl : null;
 }
 
 function packageKindLabel(kind: string | null): string {

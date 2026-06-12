@@ -42,8 +42,10 @@ const defaultResourceSectionLayout = {
   alignItems: "stretch",
   gap: 2,
   gridTemplateColumns: {
-    xs: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
-    md: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))"
+    xs: "minmax(0, 1fr)",
+    sm: "repeat(2, minmax(0, 1fr))",
+    md: "repeat(3, minmax(0, 1fr))",
+    xl: "repeat(4, minmax(0, 1fr))"
   },
   justifyContent: "stretch",
   justifyItems: "stretch"
@@ -96,7 +98,11 @@ export function ResourceSection<T extends object, C = undefined>({
               label={content.searchLabel ?? `Search ${String(content.title)}`}
               onChange={context.search.onChange}
               placeholder={content.searchPlaceholder ?? "Search"}
-              sx={{ flex: "1 1 220px", maxWidth: 280, minWidth: 0 }}
+              sx={{
+                flex: { xs: "1 1 100%", lg: "0 1 280px" },
+                maxWidth: { xs: "100%", lg: 280 },
+                minWidth: 0
+              }}
               value={context.search.value}
             />
           ) : null}

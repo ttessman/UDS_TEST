@@ -8,6 +8,7 @@ import { CommandOutputDialog } from "../../modal/resourceTypes/CommandOutputDial
 import { DefinitionItem } from "../../list/items/DefinitionItem.js";
 import { List, listTemplate } from "../../list/List.js";
 import type { CommandLogListDefinition } from "../../list/resourceTypes/commandLog.types.js";
+import { Card, cardTemplate } from "../Card.js";
 
 export function CommandLogCard({ definition, log }: { definition: CommandLogListDefinition; log: CommandState }) {
   const outputModalId = useId();
@@ -51,57 +52,56 @@ export function CommandLogCard({ definition, log }: { definition: CommandLogList
 
   return (
     <>
-      <Box
-        sx={{
-          bgcolor: "background.paper",
-          border: "1px solid",
-          borderColor: summary.tone === "error" ? "error.main" : "divider",
-          borderRadius: 1,
-          display: "flex",
-          flexDirection: "column",
-          gap: 1,
-          height: "100%",
-          minHeight: 132,
-          p: 1.25,
-          position: "relative"
+      <Card
+        content={{
+          sx: {
+            gap: 1,
+            p: 1.25
+          }
         }}
+        definition={{ minHeight: 132 }}
       >
-        {hasOutput ? (
-          <Box sx={{ position: "absolute", right: 8, top: 8 }}>
-            <IconActionButton icon="terminal" label="View raw command output" onClick={outputModal.openModal} />
-          </Box>
-        ) : null}
+        <cardTemplate.header>
+          <Stack direction="row" sx={{ alignItems: "flex-start", gap: 1, justifyContent: "space-between", minWidth: 0 }}>
+            <Stack direction="row" sx={{ alignItems: "center", gap: 1, minWidth: 0 }}>
+              <Box sx={{ pt: 0.1 }}>
+                <StatusIndicatorButton
+                  iconOnly
+                  label={summary.tone === "error" ? `${summary.title}: needs attention` : `${summary.title}: completed`}
+                  state={summary.tone}
+                  tooltip={summary.tone === "error" ? "Needs attention" : "Command completed"}
+                />
+              </Box>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography sx={{ color: "var(--app-text-primary)", fontSize: 13, fontWeight: 800, overflowWrap: "anywhere" }}>
+                  {summary.title}
+                </Typography>
+              </Box>
+            </Stack>
+            {hasOutput ? (
+              <Box sx={{ flex: "0 0 auto" }}>
+                <IconActionButton icon="terminal" label="View raw command output" onClick={outputModal.openModal} />
+              </Box>
+            ) : null}
+          </Stack>
+        </cardTemplate.header>
 
-        <Stack direction="row" sx={{ alignItems: "center", gap: 1, minWidth: 0, pr: hasOutput ? 4 : 0 }}>
-          <Box sx={{ pt: 0.1 }}>
-            <StatusIndicatorButton
-              iconOnly
-              label={summary.tone === "error" ? `${summary.title}: needs attention` : `${summary.title}: completed`}
-              state={summary.tone}
-              tooltip={summary.tone === "error" ? "Needs attention" : "Command completed"}
-            />
-          </Box>
-          <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ color: "var(--app-text-primary)", fontSize: 13, fontWeight: 800, overflowWrap: "anywhere" }}>
-              {summary.title}
-            </Typography>
-          </Box>
-        </Stack>
+        <cardTemplate.content>
+          <Typography sx={{ color: "var(--app-text-secondary)", fontSize: 13, lineHeight: 1.4 }}>
+            {summary.description}
+          </Typography>
 
-        <Typography sx={{ color: "var(--app-text-secondary)", fontSize: 13, lineHeight: 1.4, pr: hasOutput ? 4 : 0 }}>
-          {summary.description}
-        </Typography>
+          {summary.fields.length > 0 ? (
+            <List layout={{ gap: 0.55 }} state={{ isEmpty: summary.fields.length === 0 }}>
+              <listTemplate.content>
+                <>{commandFields}</>
+              </listTemplate.content>
+            </List>
+          ) : null}
 
-        {summary.fields.length > 0 ? (
-          <List layout={{ gap: 0.55 }} state={{ isEmpty: summary.fields.length === 0 }}>
-            <listTemplate.content>
-              <>{commandFields}</>
-            </listTemplate.content>
-          </List>
-        ) : null}
-
-        {commandMessage}
-      </Box>
+          {commandMessage}
+        </cardTemplate.content>
+      </Card>
 
       <CommandOutputDialog log={log} modalId={outputModalId} title={summary.title} />
     </>

@@ -51,7 +51,14 @@ export function Modal({
             borderColor: "var(--app-border)",
             borderRadius: 1.5,
             boxShadow: "var(--app-shadow-modal)",
-            overflow: "hidden"
+            boxSizing: "border-box",
+            maxHeight: "calc(100dvh - 32px)",
+            maxWidth: "calc(100vw - 32px)",
+            overflow: "hidden",
+            width: {
+              xs: "calc(100vw - 32px)",
+              sm: undefined
+            }
           }
         },
         transition: { timeout: modalMotion.transitionTimeout }
@@ -63,6 +70,7 @@ export function Modal({
           bgcolor: "var(--app-bg-paper)",
           borderBottom: "1px solid var(--app-border)",
           color: "var(--app-text-primary)",
+          minWidth: 0,
           display: "flex",
           gap: 2,
           justifyContent: "space-between",
@@ -70,7 +78,7 @@ export function Modal({
           py: 2.25
         }}
       >
-        <span>{definition.title}</span>
+        <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{definition.title}</span>
         <IconActionButton
           icon="close"
           label="Close modal"
@@ -83,6 +91,9 @@ export function Modal({
         sx={{
           borderColor: "var(--app-border)",
           color: "var(--app-text-primary)",
+          maxWidth: "100%",
+          minWidth: 0,
+          overflowX: "hidden",
           ...definition.contentSx
         }}
       >

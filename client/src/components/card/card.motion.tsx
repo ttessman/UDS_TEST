@@ -1,6 +1,11 @@
 import type { ReactNode } from "react";
+import { createTemplate, useSlot, type Slot, type SlotChildren } from "@beqa/react-slots";
 import { Box } from "@mui/material";
 import { motion, useReducedMotion, type Variants } from "motion/react";
+
+export type CardFlipChildren = SlotChildren<Slot<"back"> | Slot<"footer"> | Slot<"front">>;
+
+export const cardFlipTemplate = createTemplate<CardFlipChildren>();
 
 export const cardMotionTimings = {
   hover: { duration: 0.14, ease: [0.2, 0, 0, 1] },
@@ -27,12 +32,44 @@ export function CardFlipRoot({ children, minHeight }: { children: ReactNode; min
     <Box
       sx={{
         height: "100%",
+        maxWidth: "100%",
         minHeight: minHeight ?? 230,
+        minWidth: 0,
         perspective: "1200px"
       }}
     >
       {children}
     </Box>
+  );
+}
+
+export function CardFlip({
+  children,
+  flipped,
+  minHeight
+}: {
+  children: CardFlipChildren;
+  flipped: boolean;
+  minHeight?: number;
+}) {
+  const { slot } = useSlot(children);
+
+  return (
+    <>
+      <CardFlipRoot minHeight={minHeight}>
+        <CardFlipStage flipped={flipped}>
+          <CardFlipFace visible={!flipped}>
+            <slot.front />
+          </CardFlipFace>
+
+          <CardFlipFace visible={flipped} flipped>
+            <slot.back />
+          </CardFlipFace>
+        </CardFlipStage>
+      </CardFlipRoot>
+
+      <slot.footer />
+    </>
   );
 }
 
@@ -47,7 +84,9 @@ export function CardFlipStage({ children, flipped }: { children: ReactNode; flip
       whileHover={reduceMotion ? undefined : "hover"}
       sx={{
         height: "100%",
+        maxWidth: "100%",
         minHeight: "inherit",
+        minWidth: 0,
         position: "relative",
         transformStyle: "preserve-3d"
       }}
@@ -74,6 +113,8 @@ export function CardFlipFace({
         backfaceVisibility: "hidden",
         height: "100%",
         inset: 0,
+        maxWidth: "100%",
+        minWidth: 0,
         pointerEvents: visible ? "auto" : "none",
         position: flipped ? "absolute" : "relative",
         transform: flipped ? "rotateY(180deg)" : "none"

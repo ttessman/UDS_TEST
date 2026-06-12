@@ -4,19 +4,21 @@ Run `make` or `make help` to print the command list.
 
 ## Fresh macOS Checkout
 
-Use this order when the repo exists but local tooling, dependencies, and the UDS demo cluster may not be ready yet:
+Use this order when the repo exists but local tooling, dependencies, and the UDS demo cluster may not be ready yet. Use the official path first when Docker supports the UDS local demo.
 
 ```bash
 make setup
 make deploy-uds
 make run dev
+make deploy-catalog-poc
 ```
 
 | Command | Purpose |
 | --- | --- |
 | `make setup` | Sets up local tools, installs npm dependencies, and creates `server/.env`. |
-| `make deploy-uds` | Runs the official UDS Core local demo deploy and verifies the cluster. Docker Desktop must already be installed and running. |
+| `make deploy-uds` | Starts the local POC registry, then runs the official UDS Core local demo deploy and verifies the cluster. Docker Desktop must already be installed and running. |
 | `make run dev` | Verifies setup completed, then starts the Express API and Vite frontend. |
+| `make deploy-catalog-poc` | Builds, publishes, configures, deploys, and verifies the minimal sample app package. |
 
 Expanded setup path:
 
@@ -38,7 +40,7 @@ http://localhost:5173
 
 To test a specific Core demo bundle, run `UDS_CORE_BUNDLE_REF=k3d-core-demo:<version> make deploy-uds`.
 
-Retry and workaround commands:
+Full macOS workaround path:
 
 If the official deploy fails with the known macOS k3d/seccomp issue, use this full alternate flow:
 
@@ -46,13 +48,15 @@ If the official deploy fails with the known macOS k3d/seccomp issue, use this fu
 make setup
 make deploy-uds-macos
 make run dev
+make deploy-catalog-poc
 ```
 
 | Command | Purpose |
 | --- | --- |
-| `make deploy-uds-macos` | Experimental macOS workaround for the known k3d/seccomp failure. |
-| `make down` | Stops local dev servers, deletes the local `uds` k3d cluster, and removes the local POC registry for a clean retry. |
+| `make deploy-uds-macos` | Starts the local POC registry, then runs the experimental macOS workaround for the known k3d/seccomp failure. |
+| `make down` | Stops local dev servers, removes repo-deployed apps, deletes the local `uds` k3d cluster, and removes the local POC registry for a clean retry. |
 | `make down-dev` | Stops local dev servers only. |
+| `make down-deploy` | Removes repo-deployed sample apps from the current UDS cluster only. |
 | `make down-uds` | Deletes the local `uds` k3d cluster, project-owned k3d leftovers, and the local POC registry only. |
 
 ## App-Only Run
@@ -102,10 +106,11 @@ make deploy-core
 - `make fix-uds-ports` removes project-owned k3d leftovers, then re-checks host ports `80` and `443`; if another owner remains, it prints exact `docker stop ...`, safe `kill ...`, or Docker Desktop stale-forwarding guidance.
 - `make fix-uds-gateway-routing` patches the macOS workaround k3d server load balancer so host `80/443` route to the UDS tenant/admin gateway NodePorts. `make deploy-uds-macos` runs this after Core deploys.
 - `make stop-uds-workaround` stops a stale `deploy-uds-macos` workaround process without deleting the cluster.
-- `make deploy-uds` deploys and verifies the official local demo bundle.
-- `make deploy-uds-macos` deletes/recreates the local `uds` k3d cluster with kubelet seccomp disabled, adds one k3d agent by default, maps local HTTP/HTTPS ports, disables default k3s Traefik and ServiceLB, waits for CoreDNS, patches Core gateway `LoadBalancer` service status while deploying, prints phase/heartbeat progress output, then deploys selected non-cluster packages from `k3d-core-slim-dev:latest`.
-- `make down` runs both `down-dev` and `down-uds`; `down-uds` also removes the repo-owned local OCI registry.
+- `make deploy-uds` starts the repo-owned local OCI registry, then deploys and verifies the official local demo bundle.
+- `make deploy-uds-macos` starts the repo-owned local OCI registry, deletes/recreates the local `uds` k3d cluster with kubelet seccomp disabled, adds one k3d agent by default, maps local HTTP/HTTPS ports, disables default k3s Traefik and ServiceLB, waits for CoreDNS, patches Core gateway `LoadBalancer` service status while deploying, prints phase/heartbeat progress output, then deploys selected non-cluster packages from `k3d-core-slim-dev:latest`.
+- `make down` runs `down-dev`, `down-deploy`, and `down-uds`; `down-uds` also removes the repo-owned local OCI registry.
 - `make down-dev` stops local dev servers on ports `3001` and `5173`.
+- `make down-deploy` removes repo-deployed sample app namespaces from the current UDS cluster. It defaults to `catalog-poc`; override with `DOWN_DEPLOY_NAMESPACES="catalog-poc other-app" make down-deploy`.
 - `make down-uds` deletes the local `uds` k3d cluster, related k3d containers, `k3d-uds` network, `k3d-uds-images` volume, and `uds-poc-registry` container.
 - `make deploy-core` is the lower-level bundle deploy target and defaults to `k3d-core-demo:latest`.
 - `make setup` runs local tool setup, `install`, and `env`.
@@ -116,11 +121,7 @@ make deploy-core
 After UDS Core is running, use this app-package loop:
 
 ```bash
-make registry-up
-make publish-catalog-poc
-make configure-catalog-poc
 make deploy-catalog-poc
-make verify-catalog-poc
 ```
 
 - `make registry-up` starts a local OCI registry on `localhost:5001`.
@@ -128,8 +129,8 @@ make verify-catalog-poc
 - `make package-catalog-poc` builds the static app image, pushes it to the local registry, and creates the Zarf package archive.
 - `make publish-catalog-poc` publishes the Zarf package to `oci://localhost:5001/uds-poc/catalog-poc:0.1.0`.
 - `make configure-catalog-poc` points `server/.env` at that OCI ref and enables local install execution.
-- `make deploy-catalog-poc` deploys the OCI package into the current UDS cluster.
-- `make verify-catalog-poc` waits for rollout and prints the UDS Package CR endpoint.
+- `make deploy-catalog-poc` runs the publish/configure prerequisites, deploys the OCI package into the current UDS cluster, then verifies rollout and prints the UDS Package CR endpoint.
+- `make verify-catalog-poc` reruns that verification without rebuilding or redeploying.
 
 `make deploy-uds` checks that the active Docker runtime reports seccomp support before deploying, because the k3d demo needs it for pods such as CoreDNS.
 

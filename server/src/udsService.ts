@@ -123,7 +123,22 @@ export async function getUdsStatus(): Promise<UdsStatus> {
     coreEvidence,
     coreNamespaces,
     prerequisites,
+    registry: getRegistryStatus(),
     checks
+  };
+}
+
+function getRegistryStatus(): UdsStatus["registry"] {
+  const catalogUrl = process.env.UDS_REGISTRY_CATALOG_URL?.trim() || null;
+  const catalogPath = process.env.UDS_REGISTRY_CATALOG_PATH?.trim() || null;
+
+  return {
+    authConfigured: Boolean(process.env.UDS_REGISTRY_USERNAME || process.env.UDS_REGISTRY_PASSWORD),
+    catalogPath,
+    catalogUrl,
+    packageRefCount: getPackageRefs().length,
+    plainHttp: process.env.UDS_REGISTRY_PLAIN_HTTP !== "false",
+    source: catalogUrl ? "catalog-url" : catalogPath ? "catalog-path" : "package-refs"
   };
 }
 
@@ -647,7 +662,7 @@ export async function getInstalledPackages(): Promise<{
   try {
     const parsed = JSON.parse(command.stdout) as {
       items?: Array<{
-        metadata?: { name?: string; namespace?: string; generation?: number };
+        metadata?: { creationTimestamp?: string; name?: string; namespace?: string; generation?: number };
         spec?: Record<string, unknown>;
         status?: Record<string, unknown>;
       }>;
@@ -665,6 +680,7 @@ export async function getInstalledPackages(): Promise<{
         namespace: item.metadata?.namespace ?? "default",
         version: stringOrNull(item.spec?.version) ?? stringOrNull(item.status?.version),
         generation: item.metadata?.generation ?? null,
+        lastUpdated: item.metadata?.creationTimestamp ?? null,
         phase: stringOrNull(item.status?.phase),
         status: stringOrNull(item.status?.state) ?? stringOrNull(item.status?.status),
         architecture: stringOrNull(item.spec?.architecture) ?? stringOrNull(item.status?.architecture),

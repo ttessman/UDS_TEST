@@ -12,9 +12,9 @@ export function IconWithStatus({ icon, status }: { icon: ReactNode; status: Reac
       {status ? (
         <Box
           sx={{
-            bottom: -5,
+            bottom: -11,
             position: "absolute",
-            right: -5
+            right: -7
           }}
         >
           {status}

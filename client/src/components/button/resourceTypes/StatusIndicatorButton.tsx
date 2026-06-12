@@ -40,10 +40,10 @@ export function StatusIndicatorButton({
             cursor: clickable ? "pointer" : "default",
             display: "inline-flex",
             flex: "0 0 auto",
-            height: 14,
+            height: 17,
             m: 0,
             p: 0,
-            width: 14
+            width: 17
           }}
         />
       </Tooltip>

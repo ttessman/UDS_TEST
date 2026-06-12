@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Box, InputAdornment, TextField } from "@mui/material";
 import type { TextFieldProps } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import { motion, useReducedMotion } from "motion/react";
 import { AppIcon } from "../../icon/AppIcon.js";
 import { IconActionButton } from "../../button/resourceTypes/IconActionButton.js";
@@ -28,7 +30,9 @@ export function SearchField({
   const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const reduceMotion = useReducedMotion();
-  const isExpanded = expanded || value.length > 0;
+  const theme = useTheme();
+  const forceExpanded = useMediaQuery(theme.breakpoints.down(640));
+  const isExpanded = forceExpanded || expanded || value.length > 0;
   const rootSx = Array.isArray(sx) ? sx : sx ? [sx] : [];
 
   useEffect(() => {
@@ -83,7 +87,8 @@ export function SearchField({
         ...rootSx,
         {
           flex: isExpanded ? undefined : `0 0 ${searchFieldCollapsedWidth}px`,
-          maxWidth: isExpanded ? undefined : searchFieldCollapsedWidth
+          maxWidth: isExpanded ? undefined : searchFieldCollapsedWidth,
+          width: isExpanded ? undefined : searchFieldCollapsedWidth
         }
       ]}
       transition={reduceMotion ? { duration: 0 } : searchFieldMotion.transition}
@@ -93,6 +98,11 @@ export function SearchField({
         inputRef={inputRef}
         onChange={(event) => onChange(event.target.value)}
         onClick={() => setExpanded(true)}
+        onBlur={() => {
+          if (!forceExpanded && value.length === 0) {
+            setExpanded(false);
+          }
+        }}
         onFocus={() => setExpanded(true)}
         placeholder={isExpanded ? placeholder : ""}
         size="small"

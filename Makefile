@@ -2,12 +2,14 @@ SHELL := /bin/bash
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install env dev run run-dev server client build typecheck start check-prereqs check-run-ready setup setup-macos deploy-uds deploy-uds-macos fix-uds-ports fix-uds-gateway-routing stop-uds-workaround down down-dev down-uds setup-uds setup-dev setup-local-demo verify-uds uds-debug inspect-packages installed-packages registry-up registry-down package-catalog-poc publish-catalog-poc configure-catalog-poc deploy-catalog-poc verify-catalog-poc deploy-core git-status
+.PHONY: help install env dev run run-dev server client build typecheck start check-prereqs check-run-ready setup setup-macos deploy-uds deploy-uds-macos fix-uds-ports fix-uds-gateway-routing stop-uds-workaround down down-dev down-deploy down-uds setup-uds setup-dev setup-local-demo verify-uds uds-debug inspect-packages installed-packages registry-up registry-down package-catalog-poc publish-catalog-poc configure-catalog-poc deploy-catalog-poc verify-catalog-poc deploy-core git-status
 
 help:
 	@printf "UDS Core local POC commands\n\n"
-	@printf "Hard start from fresh macOS:\n"
-	@printf "  make setup && make deploy-uds && make run dev\n\n"
+	@printf "Official path from fresh checkout:\n"
+	@printf "  make setup && make deploy-uds && make run dev && make deploy-catalog-poc\n"
+	@printf "macOS workaround path:\n"
+	@printf "  make setup && make deploy-uds-macos && make run dev && make deploy-catalog-poc\n\n"
 	@printf "Setup:\n"
 	@printf "  make setup               Set up local tools, npm dependencies, and env file\n"
 	@printf "  make deploy-uds          Deploy and verify the official UDS Core local demo\n"
@@ -15,8 +17,9 @@ help:
 	@printf "  make fix-uds-ports       Clean project k3d leftovers and re-check ports 80/443\n"
 	@printf "  make fix-uds-gateway-routing Patch k3d host 80/443 to UDS gateway NodePorts\n"
 	@printf "  make stop-uds-workaround Stop a stale macOS workaround deploy/watcher process\n"
-	@printf "  make down                Stop dev servers, delete local UDS/k3d cluster, and remove local registry\n"
+	@printf "  make down                Stop dev servers, remove app deploys, delete local UDS/k3d cluster, and remove local registry\n"
 	@printf "  make down-dev            Stop local dev servers only\n"
+	@printf "  make down-deploy         Remove repo-deployed sample apps only\n"
 	@printf "  make down-uds            Delete local UDS/k3d cluster and local registry only\n"
 	@printf "  make install             Install npm workspace dependencies\n"
 	@printf "  make env                 Create server/.env from example if missing\n"
@@ -44,7 +47,7 @@ help:
 	@printf "  make package-catalog-poc Build the minimal catalog-poc image and Zarf package\n"
 	@printf "  make publish-catalog-poc Publish catalog-poc to the local OCI registry\n"
 	@printf "  make configure-catalog-poc Point the backend at the catalog-poc OCI ref\n"
-	@printf "  make deploy-catalog-poc  Deploy catalog-poc from the local OCI registry\n"
+	@printf "  make deploy-catalog-poc  Build, publish, configure, deploy, and verify catalog-poc\n"
 	@printf "  make verify-catalog-poc  Verify catalog-poc rollout and UDS Package endpoint\n"
 	@printf "  make deploy-core         Deploy official k3d-core-demo UDS Core bundle\n\n"
 
@@ -101,12 +104,12 @@ setup:
 	$(MAKE) env
 	@echo "Local setup complete. Next: make deploy-uds"
 
-deploy-uds:
+deploy-uds: registry-up
 	@echo "UDS deploy: official UDS Core local demo"
 	$(MAKE) deploy-core
-	@echo "UDS deploy complete. Run: make run dev"
+	@echo "UDS deploy complete. Next: make run dev && make deploy-catalog-poc"
 
-deploy-uds-macos:
+deploy-uds-macos: registry-up
 	./scripts/deploy-uds-macos-workaround.sh
 
 fix-uds-ports:
@@ -118,10 +121,16 @@ fix-uds-gateway-routing:
 stop-uds-workaround:
 	./scripts/stop-uds-workaround.sh
 
-down: down-dev down-uds
+down:
+	$(MAKE) down-dev
+	$(MAKE) down-deploy
+	$(MAKE) down-uds
 
 down-dev:
 	./scripts/down-dev.sh
+
+down-deploy:
+	./scripts/down-deploy.sh
 
 down-uds:
 	./scripts/down-uds.sh
@@ -159,8 +168,9 @@ publish-catalog-poc: package-catalog-poc
 configure-catalog-poc:
 	./scripts/configure-catalog-poc-env.sh
 
-deploy-catalog-poc:
+deploy-catalog-poc: publish-catalog-poc configure-catalog-poc
 	./scripts/deploy-catalog-poc.sh
+	./scripts/verify-catalog-poc.sh
 
 verify-catalog-poc:
 	./scripts/verify-catalog-poc.sh

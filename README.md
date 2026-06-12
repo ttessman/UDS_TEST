@@ -16,19 +16,21 @@ macOS seccomp workaround details: [docs/MACOS_UDS_WORKAROUND.md](docs/MACOS_UDS_
 
 ## Start From a Fresh Checkout
 
-This path assumes the repo exists, but local tooling, dependencies, and the UDS demo cluster may not be ready yet. See 'deploy-uds-macos' if problems on mac / docker-desktop.
+This path assumes the repo exists, but local tooling, dependencies, and the UDS demo cluster may not be ready yet. Use the official path first when Docker supports the UDS local demo.
 
 ```bash
 make setup
 make deploy-uds
 make run dev
+make deploy-catalog-poc
 ```
 
 | Command | Purpose |
 | --- | --- |
 | `make setup` | Sets up local tools, installs npm dependencies, and creates `server/.env`. |
-| `make deploy-uds` | Runs the official UDS Core local demo deploy and verifies the cluster. Docker Desktop must already be installed and running. |
+| `make deploy-uds` | Starts the local POC registry, then runs the official UDS Core local demo deploy and verifies the cluster. Docker Desktop must already be installed and running. |
 | `make run dev` | Verifies setup completed, then starts the Express API and Vite frontend. |
+| `make deploy-catalog-poc` | Builds, publishes, configures, deploys, and verifies the minimal sample app package. |
 
 Expanded setup path:
 
@@ -44,7 +46,7 @@ make verify-uds
 
 To test a specific Core demo bundle, run `UDS_CORE_BUNDLE_REF=k3d-core-demo:<version> make deploy-uds`.
 
-Retry and workaround commands:
+Full macOS workaround path:
 
 If the official deploy fails with the known macOS k3d/seccomp issue, use this full alternate flow:
 
@@ -52,13 +54,15 @@ If the official deploy fails with the known macOS k3d/seccomp issue, use this fu
 make setup
 make deploy-uds-macos
 make run dev
+make deploy-catalog-poc
 ```
 
 | Command | Purpose |
 | --- | --- |
-| `make deploy-uds-macos` | Experimental macOS workaround for the known k3d/seccomp failure. |
-| `make down` | Stops local dev servers, deletes the local `uds` k3d cluster, and removes the local POC registry for a clean retry. |
+| `make deploy-uds-macos` | Starts the local POC registry, then runs the experimental macOS workaround for the known k3d/seccomp failure. |
+| `make down` | Stops local dev servers, removes repo-deployed apps, deletes the local `uds` k3d cluster, and removes the local POC registry for a clean retry. |
 | `make down-dev` | Stops local dev servers only. |
+| `make down-deploy` | Removes repo-deployed sample apps from the current UDS cluster only. |
 | `make down-uds` | Deletes the local `uds` k3d cluster, project-owned k3d leftovers, and the local POC registry only. |
 
 Open:
@@ -159,7 +163,13 @@ To clean up before retrying either deploy path:
 make down
 ```
 
-This stops local dev servers on ports `3001` and `5173`, then removes the local `uds` k3d cluster, related k3d containers, the `k3d-uds` Docker network, the `k3d-uds-images` volume, and the repo-owned `uds-poc-registry` container. It does not prune unrelated Docker containers or images. Use `make down-dev`, `make down-uds`, or `make registry-down` when you only want one side of that cleanup.
+This stops local dev servers on ports `3001` and `5173`, removes repo-deployed sample apps such as `catalog-poc`, then removes the local `uds` k3d cluster, related k3d containers, the `k3d-uds` Docker network, the `k3d-uds-images` volume, and the repo-owned `uds-poc-registry` container. It does not prune unrelated Docker containers or images. Use `make down-dev`, `make down-deploy`, `make down-uds`, or `make registry-down` when you only want one layer of that cleanup.
+
+`make down-deploy` defaults to the app namespaces owned by this POC. To remove a specific set without deleting the cluster, pass:
+
+```bash
+DOWN_DEPLOY_NAMESPACES="catalog-poc" make down-deploy
+```
 
 If `make deploy-uds` fails with `Bind for 0.0.0.0:80 failed: port is already allocated`, run:
 
@@ -239,20 +249,16 @@ http://localhost:3001
 After UDS Core is running through either `make deploy-uds` or `make deploy-uds-macos`, publish and deploy the minimal sample app package with:
 
 ```bash
-make registry-up
-make publish-catalog-poc
-make configure-catalog-poc
 make deploy-catalog-poc
-make verify-catalog-poc
 ```
 
-This starts a local OCI registry on `localhost:5001`, builds the static `catalog-poc` app image, creates a Zarf package from `examples/catalog-poc`, publishes it to:
+This uses the local OCI registry on `localhost:5001` started by the UDS deploy path, builds the static `catalog-poc` app image, creates a Zarf package from `examples/catalog-poc`, publishes it to:
 
 ```text
 oci://localhost:5001/uds-poc/catalog-poc:0.1.0
 ```
 
-Then it configures `server/.env` so `GET /api/uds/packages` reads real Zarf package metadata from that OCI ref. The deployed app creates a real `uds.dev/v1alpha1` Package CR with `spec.network.expose`, and UDS reports the launch endpoint through `status.endpoints[]`.
+Then it configures `server/.env` so `GET /api/uds/packages` reads real Zarf package metadata from that OCI ref, deploys the same ref into the current UDS cluster, and verifies the rollout. The deployed app creates a real `uds.dev/v1alpha1` Package CR with `spec.network.expose`, and UDS reports the launch endpoint through `status.endpoints[]`.
 
 ## Scripts
 

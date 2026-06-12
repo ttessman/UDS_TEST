@@ -20,6 +20,15 @@ export type ToolStatus = {
   error: string | null;
 };
 
+export type RegistryStatus = {
+  authConfigured: boolean;
+  catalogPath: string | null;
+  catalogUrl: string | null;
+  packageRefCount: number;
+  plainHttp: boolean;
+  source: "catalog-url" | "catalog-path" | "package-refs";
+};
+
 export type UdsStatus = {
   udsInstalled: boolean;
   udsVersion: string | null;
@@ -30,6 +39,7 @@ export type UdsStatus = {
   coreEvidence: string[];
   coreNamespaces: string[];
   prerequisites: PrerequisiteStatus;
+  registry: RegistryStatus;
   checks: CommandState[];
 };
 
@@ -121,6 +131,8 @@ export type InstalledPackage = {
   /** Source: Kubernetes Package CR `spec.version` or `status.version` when present. */
   version: string | null;
   generation: number | null;
+  /** Source: Kubernetes Package CR `metadata.creationTimestamp` when present. */
+  lastUpdated: string | null;
   /** Source: Kubernetes Package CR `status.phase` when present. */
   phase: string | null;
   /** Source: Kubernetes Package CR `status.state` or `status.status` when present. */

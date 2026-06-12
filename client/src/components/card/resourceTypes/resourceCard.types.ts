@@ -1,9 +1,15 @@
 import type { ReactNode } from "react";
 import type { DefinitionField } from "../../list/resourceTypes/DefinitionList.js";
+import type { MetaItemPresentation } from "../../list/items/MetaItem.js";
+import type { ContextMenuAction } from "../../menu/resourceTypes/ContextMenu.js";
 
 export type ResourceRenderArgs<T extends object, C> = {
   item: T;
   context: C;
+};
+
+export type ResourceMetaRenderArgs<T extends object, C> = ResourceRenderArgs<T, C> & {
+  presentation?: MetaItemPresentation;
 };
 
 export type ResourceCodeBlock<T extends object, C = undefined> = {
@@ -27,9 +33,12 @@ export type ResourceCardDefinition<T extends object, C = undefined> = {
   fields?: Array<DefinitionField<T>>;
   icon?: (args: ResourceRenderArgs<T, C>) => ReactNode;
   label: (args: ResourceRenderArgs<T, C>) => string;
-  meta?: (args: ResourceRenderArgs<T, C>) => ReactNode;
+  menuActions?: (args: ResourceRenderArgs<T, C>) => ContextMenuAction[];
+  menuStatus?: (args: ResourceRenderArgs<T, C>) => ReactNode;
+  meta?: (args: ResourceMetaRenderArgs<T, C>) => ReactNode;
   minHeight?: number;
   onSelect?: (args: ResourceRenderArgs<T, C>) => void;
+  primaryAction?: (args: ResourceRenderArgs<T, C>) => ReactNode;
   shape?: {
     title: string;
     value: (args: ResourceRenderArgs<T, C>) => unknown;

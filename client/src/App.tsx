@@ -29,6 +29,7 @@ export function App() {
   const [logs, setLogs] = useState<CommandState[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [installedPackageQuery, setInstalledPackageQuery] = useState("");
   const [packageQuery, setPackageQuery] = useState("");
 
   async function refresh() {
@@ -57,10 +58,15 @@ export function App() {
     void refresh();
   }, []);
 
-  const installedNames = useMemo(
-    () => new Set(installedPackages.map((item) => item.name.toLowerCase())),
-    [installedPackages]
-  );
+  const installedPackagesByName = useMemo(() => {
+    const byName = new Map<string, InstalledPackage>();
+
+    installedPackages.forEach((pkg) => {
+      byName.set(pkg.name.toLowerCase(), pkg);
+    });
+
+    return byName;
+  }, [installedPackages]);
   const packagesByName = useMemo(() => {
     const byName = new Map<string, RegistryPackage>();
 
@@ -96,6 +102,29 @@ export function App() {
     );
   }, [packageQuery, packages]);
 
+  const filteredInstalledPackages = useMemo(() => {
+    const query = installedPackageQuery.trim().toLowerCase();
+    if (!query) {
+      return installedPackages;
+    }
+
+    return installedPackages.filter((pkg) =>
+      [
+        pkg.name,
+        pkg.namespace,
+        pkg.phase,
+        pkg.status,
+        pkg.version,
+        pkg.architecture,
+        pkg.lastUpdated,
+        pkg.launchUrl,
+        ...pkg.endpoints
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query))
+    );
+  }, [installedPackageQuery, installedPackages]);
+
   const registryPackagesContent = useMemo(
     () =>
       ({
@@ -126,9 +155,14 @@ export function App() {
         refreshLabel: (count) => `${count} installed packages`,
         refreshTooltip: ({ busy: isRefreshing, count }) =>
           `${count} installed packages. ${isRefreshing ? "Refreshing package data" : "Refresh package data"}`,
-        subtitle: () => "Packages reported by Kubernetes Package custom resources in the active cluster."
+        searchLabel: "Search installed packages",
+        searchPlaceholder: "Search installed",
+        subtitle: (items) =>
+          installedPackages.length === items.length
+            ? "Packages reported by Kubernetes Package custom resources in the active cluster."
+            : `${installedPackages.length} total installed packages, ${items.length} matching the current search.`
       }) satisfies ResourceSectionContentConfig<InstalledPackage, InstalledPackageResourceContext>,
-    []
+    [installedPackages.length]
   );
 
   async function installPackage(packageId: string) {
@@ -173,8 +207,15 @@ export function App() {
               context={{
                 getItemContext: (pkg) => ({
                   disabled: busy,
-                  installed: installedNames.has(pkg.packageName.toLowerCase()),
-                  onInstall: (id: string) => void installPackage(id)
+                  installed:
+                    installedPackagesByName.has(pkg.packageName.toLowerCase()) ||
+                    installedPackagesByName.has(pkg.displayTitle.toLowerCase()),
+                  installedPackage:
+                    installedPackagesByName.get(pkg.packageName.toLowerCase()) ??
+                    installedPackagesByName.get(pkg.displayTitle.toLowerCase()) ??
+                    null,
+                  onInstall: (id: string) => void installPackage(id),
+                  onOpen: openInstalledApp
                 }),
                 refresh: {
                   disabled: busy,
@@ -189,7 +230,7 @@ export function App() {
               }}
             />
             <ResourceSection<InstalledPackage, InstalledPackageResourceContext>
-              data={installedPackages}
+              data={filteredInstalledPackages}
               content={installedPackagesContent}
               context={{
                 getItemContext: (pkg) => ({
@@ -200,7 +241,12 @@ export function App() {
                   disabled: busy,
                   onClick: () => void refresh()
                 },
-                status: busy && installedPackages.length === 0 ? "loading" : "ready"
+                search: {
+                  enabled: true,
+                  onChange: setInstalledPackageQuery,
+                  value: installedPackageQuery
+                },
+                status: busy && filteredInstalledPackages.length === 0 ? "loading" : "ready"
               }}
             />
           </Stack>

@@ -37,15 +37,15 @@ export function relativeAge(value: string | null | undefined): string | null {
   const elapsedMs = Date.now() - timestamp;
   const elapsedDays = Math.max(0, Math.floor(elapsedMs / 86_400_000));
 
-  if (elapsedDays >= 365) {
-    const years = Math.floor(elapsedDays / 365);
-    return `${years} yr`;
+  if (elapsedDays >= 1) {
+    return new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" }).format(date);
   }
 
-  if (elapsedDays >= 1) {
-    return `${elapsedDays} d`;
+  const elapsedMinutes = Math.max(0, Math.floor(elapsedMs / 60_000));
+  if (elapsedMinutes < 60) {
+    return elapsedMinutes <= 1 ? "just now" : `${elapsedMinutes} min`;
   }
 
   const elapsedHours = Math.max(0, Math.floor(elapsedMs / 3_600_000));
-  return elapsedHours >= 1 ? `${elapsedHours} hr` : "today";
+  return `${elapsedHours} hr`;
 }

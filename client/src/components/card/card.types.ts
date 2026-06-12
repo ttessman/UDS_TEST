@@ -1,16 +1,22 @@
-import type { ReactNode } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import type { Slot, SlotChildren } from "@beqa/react-slots";
+import type { SystemStyleObject, Theme } from "@mui/system";
 
 export type CardDefinition = {
   aspectRatio?: string;
   minHeight?: number;
 };
 
-export type CardChildren = SlotChildren<Slot<"content"> | Slot<"actions"> | Slot<"command">>;
+export type CardContentDefinition = {
+  spacing?: "default" | "resource";
+  sx?: SystemStyleObject<Theme>;
+};
+
+export type CardChildren = SlotChildren<Slot<"actions"> | Slot<"content"> | Slot<"footer"> | Slot<"header">>;
 
 export type CardProps = {
   children: CardChildren;
+  content?: CardContentDefinition;
   definition?: CardDefinition;
   onClick?: (event: MouseEvent<HTMLElement>) => void;
   onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;

@@ -201,7 +201,7 @@ For layout templates, bias toward reducing props to behavior/state and moving vi
 
 Do not add more top-level renderer props when the concern fits one of those buckets. Do not put layout styles into `content`.
 
-Base renderers should be slot shells, not data-mapping containers. A base component such as `List`, `Section`, `Card`, `Modal`, or `Accordion` owns shared layout, spacing, state handling, and styling. Specialized resource components render the actual children and place that resolved content into named slots.
+Base renderers should be slot shells, not data-mapping containers. A base component such as `List`, `Section`, `Card`, `Modal`, or `Accordion` owns shared layout, spacing, state handling, and styling. Files under `resourceTypes/` are resource adapters: they translate resource data/config/context into the base primitive's slots. They should not become a second reusable shell around the base primitive.
 
 Prefer this shape:
 
@@ -249,6 +249,18 @@ Avoid page-level prop plumbing such as passing site navigation color-mode handle
 
 After introducing slots or templates, do a cleanup pass. Remove pass-through wrappers that only render children inside the slot target; put that markup directly in the slot call site when it makes the content easier to scan. Keep the template as the stable shell and keep the slot content visible.
 
+Prefer slot composition over wrapper components when the wrapper mostly forwards layout regions. A resource adapter should make visible product structure easy to scan by composing the base primitive directly:
+
+```tsx
+<Card>
+  <cardTemplate.header>...</cardTemplate.header>
+  <cardTemplate.content>...</cardTemplate.content>
+  <cardTemplate.footer>...</cardTemplate.footer>
+</Card>
+```
+
+Avoid extracting `ThingHeader`, `ThingBody`, `ThingFront`, `ThingBack`, or `ThingContent` when those components only hide the same stable slots behind prop plumbing. Use wrapper components only when they own real reusable behavior or repeated rendering logic.
+
 Renderer files should generally contain the component, closely related local types, and small render-only helpers. Shared value shaping such as normalization, empty-value detection, parsing, grouping, sorting, and label formatting belongs in nearby `*.utils.ts` or feature helper files. Do not hide reusable data logic as private functions inside component files.
 
 Reusable primitives should live in their own base family, not under the first component that uses them. For example, an `Accordion` belongs under `components/accordion`, while `DefinitionItem`, `MetaItem`, and `ListItem` belong under `components/list/items` because they are list item primitives.
@@ -272,6 +284,27 @@ Prefer:
 ```
 
 Avoid feature-specific components when they mostly duplicate rendering structure.
+
+---
+
+## Resource Adapter Rule
+
+Files under `resourceTypes/` are resource adapters, not new base shells.
+
+A resource adapter should:
+
+- translate resource data/config/context into the base primitive's slots
+- keep product intent visible at the adapter level
+- compose the base primitive directly
+- own resource-specific labels, state mapping, metadata selection, actions, and dialogs
+
+A resource adapter should not:
+
+- create another reusable shell around the base primitive
+- hide stable slot regions behind prop-heavy wrapper components
+- duplicate base primitive layout responsibilities
+
+If a pattern is reusable across multiple resource adapters, move it down into the base primitive family (`Card`, `List`, `Section`, `Accordion`, etc.) or a nearby generic hook/helper. If an abstraction hides visible content while adding prop plumbing, inline it into the base primitive's slots.
 
 ---
 
@@ -463,7 +496,7 @@ Examples:
 CommandLogList -> Accordion List
 MetadataFields -> Definition List
 Field -> Key/Value Row
-MetricGrid -> List rendering MetricCard
+MetricGrid -> List rendering metric items/cards through a shared list/card primitive
 ShapeInspector -> Accordion Details Renderer
 ```
 
@@ -485,7 +518,6 @@ components/list/
 components/card/
   Card.tsx
   resourceTypes/
-    MetricCard.tsx
     ResourceCard.tsx
 
 components/section/
@@ -509,7 +541,6 @@ List -> AccordionList
 List -> DefinitionList
 
 Card -> ResourceCard
-Card -> MetricCard
 
 Section -> ResourceSection
 ```

@@ -23,7 +23,7 @@ export function Section({ children }: { children: SectionChildren }) {
           mb: 1.25
         }}
       >
-        <Stack sx={{ flex: "1 1 520px", gap: 0.5, minWidth: 0 }}>
+        <Stack sx={{ flex: { xs: "0 1 auto", lg: "1 1 520px" }, gap: 0.5, minWidth: 0 }}>
           {hasHeader ? (
             <slot.header />
           ) : hasTitle ? (
@@ -42,7 +42,7 @@ export function Section({ children }: { children: SectionChildren }) {
             direction="row"
             sx={{
               alignItems: "center",
-              flex: "0 1 320px",
+              flex: { xs: "0 1 auto", lg: "0 1 320px" },
               flexWrap: "wrap",
               gap: 1,
               justifyContent: { xs: "flex-start", lg: "flex-end" },

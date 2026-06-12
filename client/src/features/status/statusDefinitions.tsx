@@ -68,6 +68,31 @@ export const udsStatusIndicators = {
       )
     },
     {
+      key: "registry",
+      label: "Registry",
+      state: ({ item }) => (item?.registry.packageRefCount || item?.registry.catalogPath || item?.registry.catalogUrl ? "success" : "warning"),
+      value: ({ item }) => registrySourceLabel(item?.registry.source),
+      tooltip: ({ item }) => {
+        if (!item?.registry) {
+          return "Registry source has not been checked yet.";
+        }
+
+        return `Package source: ${registrySourceLabel(item.registry.source)}`;
+      },
+      details: ({ item }) => (
+        <StatusDetail
+          lines={[
+            ["Source", registrySourceLabel(item?.registry.source)],
+            ["Catalog URL", item?.registry.catalogUrl ?? "Not configured"],
+            ["Catalog path", item?.registry.catalogPath ?? "Not configured"],
+            ["Package refs", String(item?.registry.packageRefCount ?? 0)],
+            ["Plain HTTP", yesNo(item?.registry.plainHttp)],
+            ["Auth configured", yesNo(item?.registry.authConfigured)]
+          ]}
+        />
+      )
+    },
+    {
       key: "evidence",
       label: "Core signals",
       state: ({ item }) => (item?.coreEvidence.length ? "success" : "warning"),
@@ -111,6 +136,18 @@ function toolTooltip(name: string, installed: boolean | null | undefined, versio
   }
 
   return version ? `${name} discovered: ${version}` : `${name} discovered.`;
+}
+
+function registrySourceLabel(source: UdsStatus["registry"]["source"] | null | undefined) {
+  if (source === "catalog-url") {
+    return "catalog URL";
+  }
+
+  if (source === "catalog-path") {
+    return "catalog file";
+  }
+
+  return "package refs";
 }
 
 function StatusDetail({ lines }: { lines: Array<[string, string]> }) {

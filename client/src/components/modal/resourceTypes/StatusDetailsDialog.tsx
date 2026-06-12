@@ -30,17 +30,20 @@ export function StatusDetailsDialog<T, C>({
                 border: "1px solid",
                 borderColor: colors.border,
                 borderRadius: 1,
+                minWidth: 0,
                 p: 1.25
               }}
             >
-              <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
+              <Stack direction="row" sx={{ alignItems: "center", gap: 1, minWidth: 0 }}>
                 <Box sx={{ color: colors.main, display: "flex" }}>{statusIcon(state, "small")}</Box>
-                <Typography sx={{ fontSize: 14, fontWeight: 800 }}>{status.label}</Typography>
-                <Typography sx={{ color: colors.text, fontSize: 13, fontWeight: 700, ml: "auto" }}>
+                <Typography sx={{ fontSize: 14, fontWeight: 800, minWidth: 0, overflowWrap: "anywhere" }}>{status.label}</Typography>
+                <Typography sx={{ color: colors.text, fontSize: 13, fontWeight: 700, ml: "auto", overflowWrap: "anywhere" }}>
                   {status.value(args)}
                 </Typography>
               </Stack>
-              <Box sx={{ color: "var(--app-text-secondary)", fontSize: 13, mt: 1 }}>{status.details?.(args) ?? status.tooltip(args)}</Box>
+              <Box sx={{ color: "var(--app-text-secondary)", fontSize: 13, mt: 1, overflowWrap: "anywhere" }}>
+                {status.details?.(args) ?? status.tooltip(args)}
+              </Box>
             </Box>
           );
         })}

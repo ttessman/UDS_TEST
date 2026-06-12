@@ -1,6 +1,6 @@
 import { Box, Chip, Typography } from "@mui/material";
 import { describeShape } from "../../../lib/shape.js";
-import { Accordion, accordionTemplate } from "../../accordion/Accordion.js";
+import { Accordion, accordionTemplate } from "../Accordion.js";
 
 export function ShapeAccordion({ title, value }: { title: string; value: unknown }) {
   const shape = describeShape(value);

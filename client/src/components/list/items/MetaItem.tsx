@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
-import { Chip, Stack, Tooltip, Typography } from "@mui/material";
+import { Box, Chip, Stack, Tooltip, Typography } from "@mui/material";
 import { AppIcon, type AppIconName } from "../../icon/AppIcon.js";
 import { normalizeRenderValues, renderValuesAsText } from "../list.utils.js";
+
+export type MetaItemPresentation = "inline" | "iconOnly" | "menu";
 
 export type MetaItemDefinition<T, C = undefined> = {
   icon?: AppIconName;
@@ -21,13 +23,15 @@ export function MetaItem<T extends object, C>({
   density,
   emptyValue,
   field,
-  item
+  item,
+  presentation = "inline"
 }: {
   context: C;
   density: "compact" | "comfortable";
   emptyValue?: ReactNode;
   field: ResolvedMetaItem<T, C>;
   item: T;
+  presentation?: MetaItemPresentation;
 }) {
   const values = normalizeRenderValues(field.resolvedValue, emptyValue);
   const compact = density === "compact";
@@ -50,6 +54,49 @@ export function MetaItem<T extends object, C>({
     );
 
   const tooltip = field.tooltip?.({ context, item, value: renderValuesAsText(values) });
+
+  if (presentation === "iconOnly") {
+    if (!field.icon) {
+      return null;
+    }
+    const compactValue = renderValuesAsText(values);
+
+    return (
+      <Tooltip title={tooltip ?? compactValue ?? ""}>
+        <Stack
+          aria-label={String(tooltip ?? field.label ?? field.key)}
+          direction="row"
+          sx={{ alignItems: "center", color: "var(--app-text-secondary)", flex: "0 0 auto", gap: 0.5, minWidth: 0 }}
+        >
+          <AppIcon fontSize="small" name={field.icon} />
+          <Typography sx={{ color: "var(--app-text-secondary)", fontSize: compact ? 12 : 14, fontWeight: 800, lineHeight: 1 }}>
+            {compactValue}
+          </Typography>
+        </Stack>
+      </Tooltip>
+    );
+  }
+
+  if (presentation === "menu") {
+    return (
+      <Tooltip title={tooltip ?? ""}>
+        <Box component="li" sx={{ listStyle: "none", px: 1.5, py: 0.22 }}>
+          <Stack direction="row" sx={{ alignItems: "baseline", gap: 0.6, minWidth: 0 }}>
+            <Typography sx={{ color: "var(--app-text-primary)", flex: "0 0 auto", fontSize: 13, fontWeight: 800, lineHeight: 1.12 }}>
+              {field.label ?? String(field.key)}
+            </Typography>
+            {field.type === "chip" ? (
+              content
+            ) : (
+              <Typography sx={{ color: "var(--app-text-secondary)", fontSize: 13, fontWeight: 700, lineHeight: 1.12, minWidth: 0, overflowWrap: "anywhere" }}>
+                {values}
+              </Typography>
+            )}
+          </Stack>
+        </Box>
+      </Tooltip>
+    );
+  }
 
   return (
     <Tooltip title={tooltip ?? ""}>

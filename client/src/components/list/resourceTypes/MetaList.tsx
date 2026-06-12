@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode } from "react";
-import { MetaItem, type MetaItemDefinition, type ResolvedMetaItem } from "../items/MetaItem.js";
+import { Stack } from "@mui/material";
+import { MetaItem, type MetaItemDefinition, type MetaItemPresentation, type ResolvedMetaItem } from "../items/MetaItem.js";
 import { List, listTemplate } from "../List.js";
 import { isEmptyRenderValue } from "../list.utils.js";
 
@@ -15,11 +16,13 @@ export type MetaListDefinition<T, C = undefined> = {
 export function MetaList<T extends object, C = undefined>({
   context,
   definition,
-  item
+  item,
+  presentation = "inline"
 }: {
   context: C;
   definition: MetaListDefinition<T, C>;
   item: T;
+  presentation?: MetaItemPresentation;
 }) {
   const fields = definition.fields
     .map((field) => ({ ...field, resolvedValue: field.value({ context, item }) }))
@@ -33,11 +36,24 @@ export function MetaList<T extends object, C = undefined>({
           emptyValue={definition.emptyValue}
           field={field}
           item={item}
+          presentation={presentation}
           context={context}
         />
       )),
-    [context, definition.density, definition.emptyValue, fields, item]
+    [context, definition.density, definition.emptyValue, fields, item, presentation]
   );
+
+  if (presentation === "iconOnly") {
+    return (
+      <Stack direction="row" sx={{ alignItems: "center", flexWrap: "wrap", gap: 1.25, minWidth: 0 }}>
+        {metaItems}
+      </Stack>
+    );
+  }
+
+  if (presentation === "menu") {
+    return <>{metaItems}</>;
+  }
 
   return (
     <List

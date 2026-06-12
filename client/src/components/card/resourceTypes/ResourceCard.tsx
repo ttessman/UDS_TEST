@@ -273,7 +273,7 @@ export function ResourceCard<T extends object, C = undefined>({
             width: "100%"
           }}
         >
-          <Box sx={{ "& .MuiAvatar-root": { height: 72, width: 72, fontSize: 36 } }}>
+          <Box sx={{ "& .MuiAvatar-root": { height: 88, width: 88, fontSize: 44 } }}>
             <ResourceIcon icon={displayIcon} status={null} />
           </Box>
           {meta || actions ? (

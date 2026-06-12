@@ -198,7 +198,7 @@ export const installedPackageResource = {
   ),
   summary: ({ context, item }) => context.registryPackage?.tagline ?? context.registryPackage?.description ?? `Reported by Package CR in namespace ${item.namespace}.`,
   meta: ({ context, item, presentation }) => <MetaList item={item} context={context} definition={installedPackageMeta} presentation={presentation} />,
-  variant: ({ item }) => (getLiveLaunchUrl(item) ? ResourceCardVariant.MediaFocus : ResourceCardVariant.Default),
+  variant: ({ item }) => (getLiveLaunchUrl(item) ? ResourceCardVariant.AppLauncher : ResourceCardVariant.Default),
   menuActions: ({ context, item }) => {
     const launchUrl = getLiveLaunchUrl(item);
 

@@ -43,7 +43,7 @@ export function MetaList<T extends object, C = undefined>({
     [context, definition.density, definition.emptyValue, fields, item, presentation]
   );
 
-  if (presentation === "iconOnly") {
+  if (presentation === "compactIconOnly" || presentation === "iconOnly" || presentation === "iconWithText") {
     return (
       <Stack direction="row" sx={{ alignItems: "center", flexWrap: "wrap", gap: 1.25, minWidth: 0 }}>
         {metaItems}

@@ -32,6 +32,7 @@ export type ResolvedCodeBlock = {
 
 export enum ResourceCardVariant {
   Default = "default",
+  AppLauncher = "appLauncher",
   MediaFocus = "mediaFocus"
 }
 
@@ -39,6 +40,11 @@ export enum ResourceCardMediaBackground {
   Auto = "auto",
   Dark = "dark",
   Light = "light"
+}
+
+export enum ResourceCardMetaDisplay {
+  IconOnly = "iconOnly",
+  IconWithText = "iconWithText"
 }
 
 export type ResourceCardDefinition<T extends object, C = undefined> = {
@@ -54,6 +60,7 @@ export type ResourceCardDefinition<T extends object, C = undefined> = {
   menuStatus?: (args: ResourceRenderArgs<T, C>) => ReactNode;
   meta?: (args: ResourceMetaRenderArgs<T, C>) => ReactNode;
   mediaBackground?: ResourceCardMediaBackground | ((args: ResourceRenderArgs<T, C>) => ResourceCardMediaBackground);
+  mediaMetaDisplay?: ResourceCardMetaDisplay | ((args: ResourceRenderArgs<T, C>) => ResourceCardMetaDisplay);
   minHeight?: number;
   onSelect?: (args: ResourceRenderArgs<T, C>) => void;
   primaryAction?: (args: ResourceRenderArgs<T, C>) => ReactNode;

@@ -3,7 +3,7 @@ import { Box, Chip, Stack, Tooltip, Typography } from "@mui/material";
 import { AppIcon, type AppIconName } from "../../icon/AppIcon.js";
 import { normalizeRenderValues, renderValuesAsText } from "../list.utils.js";
 
-export type MetaItemPresentation = "inline" | "iconOnly" | "menu";
+export type MetaItemPresentation = "compactIconOnly" | "iconOnly" | "iconWithText" | "inline" | "menu";
 
 export type MetaItemDefinition<T, C = undefined> = {
   icon?: AppIconName;
@@ -55,14 +55,34 @@ export function MetaItem<T extends object, C>({
 
   const tooltip = field.tooltip?.({ context, item, value: renderValuesAsText(values) });
 
-  if (presentation === "iconOnly") {
+  if (presentation === "compactIconOnly") {
+    if (!field.icon) {
+      return null;
+    }
+    const compactValue = renderValuesAsText(values);
+    const compactTooltip = tooltip ?? (field.label ? `${field.label}: ${compactValue}` : compactValue) ?? "";
+
+    return (
+      <Tooltip title={compactTooltip}>
+        <Stack
+          aria-label={String(compactTooltip ?? field.label ?? field.key)}
+          direction="row"
+          sx={{ alignItems: "center", color: "var(--app-text-secondary)", flex: "0 0 auto", minWidth: 0 }}
+        >
+          <AppIcon fontSize="small" name={field.icon} />
+        </Stack>
+      </Tooltip>
+    );
+  }
+
+  if (presentation === "iconOnly" || presentation === "iconWithText") {
     if (!field.icon) {
       return null;
     }
     const compactValue = renderValuesAsText(values);
 
     return (
-      <Tooltip title={tooltip ?? compactValue ?? ""}>
+      <Tooltip title={tooltip ?? (field.label ? `${field.label}: ${compactValue}` : compactValue) ?? ""}>
         <Stack
           aria-label={String(tooltip ?? field.label ?? field.key)}
           direction="row"

@@ -7,6 +7,7 @@ export const cardTemplate = createTemplate<CardChildren>();
 export function Card({ children, content, definition, onClick, onKeyDown }: CardProps) {
   const { hasSlot, slot } = useSlot(children);
   const hasActions = hasSlot.actions || hasSlot.footer;
+  const hasContent = hasSlot.content;
   const hasHeader = hasSlot.header;
   const hasMedia = hasSlot.media;
   const headerOverMedia = hasHeader && hasMedia;
@@ -59,26 +60,28 @@ export function Card({ children, content, definition, onClick, onKeyDown }: Card
         />
       ) : null}
       {hasMedia ? (
-        <CardMedia component="div" sx={{ flex: "0 0 auto", minWidth: 0 }}>
+        <CardMedia component="div" sx={{ display: "flex", flex: hasContent ? "0 0 auto" : 1, minHeight: 0, minWidth: 0 }}>
           <slot.media />
         </CardMedia>
       ) : null}
-      <CardContent
-        sx={{
-          display: "flex",
-          flex: 1,
-          flexDirection: "column",
-          gap: resourceSpacing ? 1.75 : 0,
-          overflow: "hidden",
-          px: "var(--card-padding-x)",
-          pt: "var(--card-padding-y)",
-          pb: hasActions ? 0 : "var(--card-padding-y)",
-          "&:last-child": { pb: hasActions ? 0 : "var(--card-padding-y)" },
-          ...content?.sx
-        }}
-      >
-        <slot.content />
-      </CardContent>
+      {hasContent ? (
+        <CardContent
+          sx={{
+            display: "flex",
+            flex: 1,
+            flexDirection: "column",
+            gap: resourceSpacing ? 1.75 : 0,
+            overflow: "hidden",
+            px: "var(--card-padding-x)",
+            pt: "var(--card-padding-y)",
+            pb: hasActions ? 0 : "var(--card-padding-y)",
+            "&:last-child": { pb: hasActions ? 0 : "var(--card-padding-y)" },
+            ...content?.sx
+          }}
+        >
+          <slot.content />
+        </CardContent>
+      ) : null}
       {hasActions ? (
         <CardActions
           sx={{

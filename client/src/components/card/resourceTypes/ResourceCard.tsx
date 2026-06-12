@@ -13,6 +13,7 @@ import { useModalSync } from "../../../store/modal.store.js";
 import { resolveCodeBlock } from "./resourceCard.utils.js";
 import {
   ResourceCardMediaBackground,
+  ResourceCardMetaDisplay,
   ResourceCardVariant,
   type ResolvedCodeBlock,
   type ResourceCardDefinition,
@@ -20,7 +21,7 @@ import {
   type ResourceRenderArgs
 } from "./resourceCard.types.js";
 
-export { ResourceCardMediaBackground, ResourceCardVariant };
+export { ResourceCardMediaBackground, ResourceCardMetaDisplay, ResourceCardVariant };
 export type { ResourceCardDefinition, ResourceCodeBlock, ResourceRenderArgs };
 
 export function ResourceCard<T extends object, C = undefined>({
@@ -28,12 +29,14 @@ export function ResourceCard<T extends object, C = undefined>({
   definition,
   item,
   mediaBackground,
+  mediaMetaDisplay,
   variant
 }: {
   context: C;
   definition: ResourceCardDefinition<T, C>;
   item: T;
   mediaBackground?: ResourceCardMediaBackground;
+  mediaMetaDisplay?: ResourceCardMetaDisplay;
   variant?: ResourceCardVariant;
 }) {
   const [flipped, setFlipped] = useState(false);
@@ -46,7 +49,6 @@ export function ResourceCard<T extends object, C = undefined>({
   const icon = definition.icon?.(args);
   const menuMeta = definition.meta?.({ ...args, presentation: "menu" });
   const menuStatus = definition.menuStatus?.(args);
-  const meta = definition.meta?.({ ...args, presentation: "iconOnly" });
   const onSelect = definition.onSelect ? () => definition.onSelect?.(args) : undefined;
   const primaryAction = definition.primaryAction?.(args);
   const shapeValue = definition.shape?.value(args);
@@ -56,13 +58,23 @@ export function ResourceCard<T extends object, C = undefined>({
   const displayIcon = icon ?? <GeneratedResourceIcon title={title} />;
   const cardVariant = variant ?? resolveResourceCardOption(definition.variant, args, ResourceCardVariant.Default);
   const cardMediaBackground = mediaBackground ?? resolveResourceCardOption(definition.mediaBackground, args, ResourceCardMediaBackground.Auto);
+  const cardMediaMetaDisplay =
+    mediaMetaDisplay ?? resolveResourceCardOption(definition.mediaMetaDisplay, args, ResourceCardMetaDisplay.IconOnly);
+  const mediaSurfaceVariant = cardVariant === ResourceCardVariant.MediaFocus || cardVariant === ResourceCardVariant.AppLauncher;
+  const meta = definition.meta?.({
+    ...args,
+    presentation:
+      cardVariant === ResourceCardVariant.AppLauncher && cardMediaMetaDisplay === ResourceCardMetaDisplay.IconOnly
+        ? "compactIconOnly"
+        : "iconWithText"
+  });
   const status = definition.status?.({
     ...args,
-    presentation: cardVariant === ResourceCardVariant.MediaFocus ? "media" : statusPlacement
+    presentation: mediaSurfaceVariant ? "media" : statusPlacement
   });
-  const backIcon = cardVariant === ResourceCardVariant.MediaFocus ? displayIcon : icon;
+  const backIcon = mediaSurfaceVariant ? displayIcon : icon;
   const backIconStatus =
-    cardVariant === ResourceCardVariant.MediaFocus
+    mediaSurfaceVariant
       ? definition.status?.({ ...args, presentation: "icon" })
       : statusPlacement === "icon"
         ? status
@@ -240,7 +252,62 @@ export function ResourceCard<T extends object, C = undefined>({
       <cardTemplate.actions>{frontCardActions}</cardTemplate.actions>
     </Card>
   );
-  const frontCard = cardVariant === ResourceCardVariant.MediaFocus ? MediaFrontCard : DefaultFrontCard;
+  const AppLauncherFrontCard = (
+    <Card {...frontCardProps} content={{ spacing: "resource" as const, sx: { p: 0 } }}>
+      <cardTemplate.header>
+        <Stack direction="row" sx={{ alignItems: "center", justifyContent: "flex-end", minWidth: 0 }}>
+          {headerActions(false)}
+        </Stack>
+      </cardTemplate.header>
+
+      <cardTemplate.media>
+        <Box
+          sx={{
+            ...getMediaBackgroundSx(cardMediaBackground),
+            alignItems: "center",
+            display: "flex",
+            flex: 1,
+            justifyContent: "center",
+            minHeight: definition.minHeight ?? 245,
+            position: "relative",
+            width: "100%"
+          }}
+        >
+          <Box sx={{ "& .MuiAvatar-root": { height: 72, width: 72, fontSize: 36 } }}>
+            <ResourceIcon icon={displayIcon} status={null} />
+          </Box>
+          {meta || actions ? (
+            <Stack
+              direction="row"
+              sx={{
+                alignItems: "center",
+                bottom: "var(--card-padding-y)",
+                flexWrap: "wrap",
+                gap: 1.25,
+                left: "var(--card-padding-x)",
+                position: "absolute"
+              }}
+            >
+              {meta}
+              {actions}
+            </Stack>
+          ) : null}
+          {status ? (
+            <Box sx={{ bottom: "var(--card-padding-y)", position: "absolute", right: "var(--card-padding-x)" }}>
+              {status}
+            </Box>
+          ) : null}
+          {menu.contextMenu}
+        </Box>
+      </cardTemplate.media>
+    </Card>
+  );
+  const frontCard =
+    cardVariant === ResourceCardVariant.AppLauncher
+      ? AppLauncherFrontCard
+      : cardVariant === ResourceCardVariant.MediaFocus
+        ? MediaFrontCard
+        : DefaultFrontCard;
   
   const backCard = (
     <Card {...cardProps}>
@@ -263,6 +330,12 @@ export function ResourceCard<T extends object, C = undefined>({
             {definition.title(args)}
           </Typography>
         </Stack>
+
+        {summary ? (
+          <Typography sx={{ color: "text.secondary", fontSize: 13, lineHeight: 1.35, overflowWrap: "anywhere" }}>
+            {summary}
+          </Typography>
+        ) : null}
 
         <Stack sx={{ flex: 1, gap: 1.5, minHeight: 0, overflow: "auto", pr: 0.5 }}>
           {definition.fields ? (

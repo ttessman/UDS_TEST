@@ -12,6 +12,12 @@ export type ResourceMetaRenderArgs<T extends object, C> = ResourceRenderArgs<T, 
   presentation?: MetaItemPresentation;
 };
 
+export type ResourceStatusPresentation = "header" | "icon" | "media";
+
+export type ResourceStatusRenderArgs<T extends object, C> = ResourceRenderArgs<T, C> & {
+  presentation?: ResourceStatusPresentation;
+};
+
 export type ResourceCodeBlock<T extends object, C = undefined> = {
   content: (args: ResourceRenderArgs<T, C>) => string | null | undefined;
   language?: string;
@@ -23,6 +29,17 @@ export type ResolvedCodeBlock = {
   language?: string;
   title: string;
 };
+
+export enum ResourceCardVariant {
+  Default = "default",
+  MediaFocus = "mediaFocus"
+}
+
+export enum ResourceCardMediaBackground {
+  Auto = "auto",
+  Dark = "dark",
+  Light = "light"
+}
 
 export type ResourceCardDefinition<T extends object, C = undefined> = {
   actions?: (args: ResourceRenderArgs<T, C>) => ReactNode;
@@ -36,6 +53,7 @@ export type ResourceCardDefinition<T extends object, C = undefined> = {
   menuActions?: (args: ResourceRenderArgs<T, C>) => ContextMenuAction[];
   menuStatus?: (args: ResourceRenderArgs<T, C>) => ReactNode;
   meta?: (args: ResourceMetaRenderArgs<T, C>) => ReactNode;
+  mediaBackground?: ResourceCardMediaBackground | ((args: ResourceRenderArgs<T, C>) => ResourceCardMediaBackground);
   minHeight?: number;
   onSelect?: (args: ResourceRenderArgs<T, C>) => void;
   primaryAction?: (args: ResourceRenderArgs<T, C>) => ReactNode;
@@ -43,8 +61,9 @@ export type ResourceCardDefinition<T extends object, C = undefined> = {
     title: string;
     value: (args: ResourceRenderArgs<T, C>) => unknown;
   };
-  status?: (args: ResourceRenderArgs<T, C>) => ReactNode;
+  status?: (args: ResourceStatusRenderArgs<T, C>) => ReactNode;
   statusPlacement?: "header" | "icon";
   summary?: (args: ResourceRenderArgs<T, C>) => ReactNode;
   title: (args: ResourceRenderArgs<T, C>) => ReactNode;
+  variant?: ResourceCardVariant | ((args: ResourceRenderArgs<T, C>) => ResourceCardVariant);
 };

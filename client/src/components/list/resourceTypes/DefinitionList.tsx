@@ -43,6 +43,7 @@ export function DefinitionList<T extends object>({
     <List
       layout={{ gap: definition.density === "compact" ? 0.75 : 1 }}
       state={{ isEmpty: fields.length === 0 }}
+      sx={{ gridAutoRows: "auto", width: "100%" }}
     >
       <listTemplate.content>
         <>{definitionRows}</>

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Box } from "@mui/material";
 
-export function IconWithStatus({ icon, status }: { icon: ReactNode; status: ReactNode }) {
+export function ResourceIcon({ icon, status }: { icon: ReactNode; status: ReactNode }) {
   if (!icon) {
     return null;
   }

@@ -2,12 +2,11 @@ import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
 import { Avatar, Chip, Stack, Typography } from "@mui/material";
 import { formatBytes, relativeAge, yesNo } from "../../lib/format.js";
 import { IconActionButton } from "../../components/button/resourceTypes/IconActionButton.js";
-import type { ResourceCardDefinition } from "../../components/card/resourceTypes/ResourceCard.js";
+import { ResourceCardVariant, type ResourceCardDefinition } from "../../components/card/resourceTypes/ResourceCard.js";
 import type { DefinitionField } from "../../components/list/resourceTypes/DefinitionList.js";
 import { MetaList, type MetaListDefinition } from "../../components/list/resourceTypes/MetaList.js";
 import { StatusIndicatorButton } from "../../components/button/resourceTypes/StatusIndicatorButton.js";
 import type { StatusIndicatorTone } from "../../components/status/status.types.js";
-import { StateChip } from "../../components/status/StateChip.js";
 
 export type RegistryPackageResourceContext = {
   disabled: boolean;
@@ -114,9 +113,17 @@ export const registryPackageResource = {
   label: ({ item }) => packageKindLabel(item.kind),
   title: ({ item }) => item.displayTitle || item.packageName,
   icon: ({ item }) => <PackageIcon icon={item.icon} title={item.displayTitle || item.packageName} />,
-  status: ({ context }) => (context.installed ? <StateChip label="installed" state="success" variant="outline" /> : null),
+  status: ({ context }) =>
+    context.installed ? <StatusIndicatorButton label="installed" state="success" tooltip="Installed" view="chip" /> : null,
   menuStatus: ({ context, item }) =>
-    context.installed ? <StateChip label={`${item.displayTitle || item.packageName} Installed`} state="success" variant="plain" /> : null,
+    context.installed ? (
+      <StatusIndicatorButton
+        label={`${item.displayTitle || item.packageName} Installed`}
+        state="success"
+        tooltip={`${item.displayTitle || item.packageName} Installed`}
+        view="text"
+      />
+    ) : null,
   summary: ({ item }) => item.tagline ?? item.description ?? "No registry description discovered.",
   meta: ({ context, item, presentation }) => <MetaList item={item} context={context} definition={registryPackageMeta} presentation={presentation} />,
   fields: registryPackageFields,
@@ -179,17 +186,19 @@ export const installedPackageResource = {
   icon: ({ context, item }) => (
     <PackageIcon icon={context.registryPackage?.icon ?? null} title={context.registryPackage?.displayTitle || item.name} />
   ),
-  status: ({ item }) => <PackageStatusDot status={item.phase ?? item.status} />,
+  status: ({ item, presentation }) => <PackageStatus status={item.phase ?? item.status} view={presentation === "media" ? "chip" : "dot"} />,
   statusPlacement: "icon",
   menuStatus: ({ item }) => (
-    <StateChip
+    <StatusIndicatorButton
       label={`${item.name} ${item.phase === "Ready" || item.status === "Ready" ? "Deployed" : item.phase ?? item.status ?? "Reported"}`}
       state={item.phase === "Ready" || item.status === "Ready" ? "success" : "neutral"}
-      variant="plain"
+      tooltip={`${item.name} ${item.phase === "Ready" || item.status === "Ready" ? "Deployed" : item.phase ?? item.status ?? "Reported"}`}
+      view="text"
     />
   ),
   summary: ({ context, item }) => context.registryPackage?.tagline ?? context.registryPackage?.description ?? `Reported by Package CR in namespace ${item.namespace}.`,
   meta: ({ context, item, presentation }) => <MetaList item={item} context={context} definition={installedPackageMeta} presentation={presentation} />,
+  variant: ({ item }) => (getLiveLaunchUrl(item) ? ResourceCardVariant.MediaFocus : ResourceCardVariant.Default),
   menuActions: ({ context, item }) => {
     const launchUrl = getLiveLaunchUrl(item);
 
@@ -281,17 +290,17 @@ function KnownConfigChips({ pkg }: { pkg: RegistryPackage }) {
   );
 }
 
-function PackageStatusDot({ status }: { status: string | null }) {
+function PackageStatus({ status, view }: { status: string | null; view: "chip" | "dot" }) {
   const ready = status === "Ready";
   const state: StatusIndicatorTone = ready ? "success" : status ? "warning" : "neutral";
 
   return (
     <StatusIndicatorButton
-      iconOnly
       label={status ?? "Reported"}
+      showIcon={view !== "chip"}
       state={state}
       tooltip={status ?? "Reported"}
-      view="dot"
+      view={view}
     />
   );
 }

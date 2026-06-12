@@ -109,6 +109,7 @@ export function CardFlipFace({
   return (
     <Box
       aria-hidden={!visible}
+      inert={visible ? undefined : true}
       sx={{
         backfaceVisibility: "hidden",
         height: "100%",

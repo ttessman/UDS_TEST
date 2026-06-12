@@ -1,24 +1,28 @@
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { Box, Chip, Stack, Tooltip, Typography } from "@mui/material";
 import { getStatusColors, statusIcon } from "../../status/status.utils.js";
 import type { StatusIndicatorTone } from "../../status/status.types.js";
+
+export type StatusIndicatorView = "chip" | "dot" | "text";
 
 export function StatusIndicatorButton({
   iconOnly = false,
   label,
   onClick,
+  showIcon = true,
   state,
   tooltip,
   value,
-  view = "icon"
+  view = "chip"
 }: {
   iconOnly?: boolean;
   label: string;
   onClick?: () => void;
+  showIcon?: boolean;
   state: StatusIndicatorTone;
   tooltip: ReactNode;
   value?: ReactNode;
-  view?: "icon" | "dot";
+  view?: StatusIndicatorView;
 }) {
   const colors = getStatusColors(state);
   const clickable = Boolean(onClick);
@@ -26,25 +30,43 @@ export function StatusIndicatorButton({
   if (view === "dot") {
     return (
       <Tooltip title={tooltip}>
-        <Box
+        <ConditionalWrapper
+          useWrapper={clickable}
+          wrapper={({ children }) => (
+            <Box aria-label={label} component="button" onClick={onClick} type="button" sx={dotButtonSx}>
+              {children}
+            </Box>
+          )}
+        >
+          <Box aria-label={clickable ? undefined : label} component="span" sx={dotSx(colors.main, clickable)} />
+        </ConditionalWrapper>
+      </Tooltip>
+    );
+  }
+
+  if (view === "text") {
+    return (
+      <Tooltip title={tooltip}>
+        <Chip
           aria-label={label}
-          component={clickable ? "button" : "span"}
+          clickable={clickable}
+          label={label}
           onClick={onClick}
-          type={clickable ? "button" : undefined}
+          size="small"
           sx={{
-            appearance: "none",
-            bgcolor: colors.main,
-            border: "2px solid",
-            borderColor: "background.paper",
-            borderRadius: "999px",
-            cursor: clickable ? "pointer" : "default",
-            display: "inline-flex",
-            flex: "0 0 auto",
-            height: 17,
-            m: 0,
-            p: 0,
-            width: 17
+            alignSelf: "flex-start",
+            bgcolor: "transparent",
+            border: 0,
+            color: colors.main,
+            fontWeight: 800,
+            justifyContent: "flex-start",
+            px: 0,
+            textTransform: "capitalize",
+            "& .MuiChip-label": {
+              px: 0
+            }
           }}
+          variant="filled"
         />
       </Tooltip>
     );
@@ -56,17 +78,19 @@ export function StatusIndicatorButton({
         aria-label={label}
         clickable={clickable}
         icon={
-          <Box
-            aria-hidden="true"
-            component="span"
-            sx={{
-              color: `${colors.main} !important`,
-              display: "flex",
-              ml: iconOnly ? "0 !important" : "2px !important"
-            }}
-          >
-            {statusIcon(state, "inherit")}
-          </Box>
+          showIcon ? (
+            <Box
+              aria-hidden="true"
+              component="span"
+              sx={{
+                color: `${colors.main} !important`,
+                display: "flex",
+                ml: iconOnly ? "0 !important" : "2px !important"
+              }}
+            >
+              {statusIcon(state, "inherit")}
+            </Box>
+          ) : undefined
         }
         label={
           iconOnly ? (
@@ -96,10 +120,50 @@ export function StatusIndicatorButton({
           px: 0,
           width: iconOnly ? 26 : "auto",
           "& .MuiChip-icon": { fontSize: 16, mr: iconOnly ? 0 : 0.35 },
-          "& .MuiChip-label": { minWidth: 0, px: iconOnly ? 0 : 0.65 }
+          "& .MuiChip-label": { minWidth: 0, px: iconOnly ? 0 : 0.75 }
         }}
         variant="outlined"
       />
     </Tooltip>
   );
+}
+
+const dotButtonSx = {
+  alignItems: "center",
+  appearance: "none",
+  bgcolor: "transparent",
+  border: 0,
+  cursor: "pointer",
+  display: "inline-flex",
+  m: 0,
+  p: 0
+};
+
+function ConditionalWrapper({
+  children,
+  useWrapper,
+  wrapper: Wrapper
+}: {
+  children: ReactNode;
+  useWrapper: boolean;
+  wrapper: ComponentType<{ children: ReactNode }>;
+}) {
+  return useWrapper ? <Wrapper>{children}</Wrapper> : <>{children}</>;
+}
+
+function dotSx(color: string, clickable: boolean) {
+  return {
+    appearance: "none",
+    bgcolor: color,
+    border: "2px solid",
+    borderColor: "background.paper",
+    borderRadius: "999px",
+    cursor: clickable ? "pointer" : "default",
+    display: "inline-flex",
+    flex: "0 0 auto",
+    height: 17,
+    m: 0,
+    p: 0,
+    width: 17
+  };
 }

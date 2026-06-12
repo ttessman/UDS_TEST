@@ -12,7 +12,7 @@ export type CardContentDefinition = {
   sx?: SystemStyleObject<Theme>;
 };
 
-export type CardChildren = SlotChildren<Slot<"actions"> | Slot<"content"> | Slot<"footer"> | Slot<"header">>;
+export type CardChildren = SlotChildren<Slot<"actions"> | Slot<"content"> | Slot<"footer"> | Slot<"header"> | Slot<"media">>;
 
 export type CardProps = {
   children: CardChildren;

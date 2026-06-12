@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Container, Stack } from "@mui/material";
+import { Alert, Container, Stack, Typography } from "@mui/material";
 import type { CommandState, InstalledPackage, RegistryPackage, UdsStatus } from "@uds-poc/shared";
 import {
   getInstalledPackages,
@@ -11,15 +11,17 @@ import { StatusIndicatorList } from "./components/list/resourceTypes/StatusIndic
 import { BackendCommandOutputModal } from "./components/modal/resourceTypes/BackendCommandOutputModal.js";
 import type { ResourceSectionContentConfig } from "./components/section/resourceTypes/ResourceSection.js";
 import { ResourceSection } from "./components/section/resourceTypes/ResourceSection.js";
+import { RefreshCountButton } from "./components/button/resourceTypes/RefreshCountButton.js";
+import { SearchField } from "./components/form/resourceTypes/SearchField.js";
+import { Section, sectionTemplate } from "./components/section/Section.js";
 import { SiteShell, siteContentSx, siteTemplate } from "./components/site/SiteShell.js";
 import { SiteFooter } from "./components/site/SiteFooter.js";
 import { SiteHeader } from "./components/site/SiteHeader.js";
 import {
   installedPackageResource,
   type InstalledPackageResourceContext,
-  registryPackageResource,
-  type RegistryPackageResourceContext
 } from "./features/packages/packageResourceDefinitions.js";
+import { RegistryPackageTable } from "./features/packages/RegistryPackageTable.js";
 import { udsStatusIndicators } from "./features/status/statusDefinitions.js";
 
 export function App() {
@@ -125,26 +127,6 @@ export function App() {
     );
   }, [installedPackageQuery, installedPackages]);
 
-  const registryPackagesContent = useMemo(
-    () =>
-      ({
-        title: "Airgap Store",
-        resource: registryPackageResource,
-        emptyMessage: "No registry packages were found.",
-        loadingMessage: "Loading registry packages...",
-        refreshLabel: (count) => `${count} Airgap Store packages`,
-        refreshTooltip: ({ busy: isRefreshing, count }) =>
-          `${count} packages. ${isRefreshing ? "Refreshing package data" : "Refresh package data"}`,
-        searchLabel: "Search Airgap Store packages",
-        searchPlaceholder: "Search store",
-        subtitle: (items) =>
-          packages.length === items.length
-            ? "Catalog entries discovered from registry/OCI metadata. These are install candidates, not proof they are running."
-            : `${packages.length} total registry packages, ${items.length} matching the current search.`
-      }) satisfies ResourceSectionContentConfig<RegistryPackage, RegistryPackageResourceContext>,
-    [packages.length]
-  );
-
   const installedPackagesContent = useMemo(
     () =>
       ({
@@ -201,34 +183,58 @@ export function App() {
 
             <StatusIndicatorList item={status} definition={udsStatusIndicators} context={undefined} />
 
-            <ResourceSection<RegistryPackage, RegistryPackageResourceContext>
-              data={filteredPackages}
-              content={registryPackagesContent}
-              context={{
-                getItemContext: (pkg) => ({
-                  disabled: busy,
-                  installed:
-                    installedPackagesByName.has(pkg.packageName.toLowerCase()) ||
-                    installedPackagesByName.has(pkg.displayTitle.toLowerCase()),
-                  installedPackage:
-                    installedPackagesByName.get(pkg.packageName.toLowerCase()) ??
-                    installedPackagesByName.get(pkg.displayTitle.toLowerCase()) ??
-                    null,
-                  onInstall: (id: string) => void installPackage(id),
-                  onOpen: openInstalledApp
-                }),
-                refresh: {
-                  disabled: busy,
-                  onClick: () => void refresh()
-                },
-                search: {
-                  enabled: true,
-                  onChange: setPackageQuery,
-                  value: packageQuery
-                },
-                status: busy && filteredPackages.length === 0 ? "loading" : "ready"
-              }}
-            />
+            <Section>
+              <sectionTemplate.header>
+                <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
+                  <Typography component="h2" sx={{ fontSize: 28, fontWeight: 800 }}>
+                    Airgap Store
+                  </Typography>
+                  <RefreshCountButton
+                    count={filteredPackages.length}
+                    disabled={busy}
+                    label={`${filteredPackages.length} Airgap Store packages`}
+                    onClick={() => void refresh()}
+                    tooltip={`${filteredPackages.length} packages. ${busy ? "Refreshing package data" : "Refresh package data"}`}
+                  />
+                </Stack>
+              </sectionTemplate.header>
+              <sectionTemplate.actions>
+                <SearchField
+                  iconPosition="end"
+                  label="Search Airgap Store packages"
+                  onChange={setPackageQuery}
+                  placeholder="Search store"
+                  sx={{
+                    flex: { xs: "1 1 100%", lg: "0 1 280px" },
+                    maxWidth: { xs: "100%", lg: 280 },
+                    minWidth: 0
+                  }}
+                  value={packageQuery}
+                />
+              </sectionTemplate.actions>
+              <sectionTemplate.subtitle>
+                {packages.length === filteredPackages.length
+                  ? "Catalog entries discovered from registry/OCI metadata. These are install candidates, not proof they are running."
+                  : `${packages.length} total registry packages, ${filteredPackages.length} matching the current search.`}
+              </sectionTemplate.subtitle>
+              <sectionTemplate.content>
+                <RegistryPackageTable
+                  data={filteredPackages}
+                  context={{
+                    disabled: busy,
+                    getInstalledPackage: (pkg) =>
+                      installedPackagesByName.get(pkg.packageName.toLowerCase()) ??
+                      installedPackagesByName.get(pkg.displayTitle.toLowerCase()) ??
+                      null,
+                    isInstalled: (pkg) =>
+                      installedPackagesByName.has(pkg.packageName.toLowerCase()) ||
+                      installedPackagesByName.has(pkg.displayTitle.toLowerCase()),
+                    onInstall: (id) => void installPackage(id),
+                    onOpen: openInstalledApp
+                  }}
+                />
+              </sectionTemplate.content>
+            </Section>
             <ResourceSection<InstalledPackage, InstalledPackageResourceContext>
               data={filteredInstalledPackages}
               content={installedPackagesContent}

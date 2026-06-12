@@ -223,5 +223,8 @@ fi
 
 echo "UDS package deploy finished after $(elapsed_seconds "$deploy_started_at")s."
 
-phase "Phase 7/7: verify UDS cluster and installed packages"
+phase "Phase 7/8: patch local UDS gateway routing"
+./scripts/fix-uds-gateway-routing.sh
+
+phase "Phase 8/8: verify UDS cluster and installed packages"
 ./scripts/verify-uds.sh

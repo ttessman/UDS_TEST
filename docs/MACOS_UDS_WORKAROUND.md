@@ -50,6 +50,7 @@ The script:
 - Deploys selected non-cluster packages from `k3d-core-slim-dev:latest`.
 - Skips `uds-k3d-dev` so the bundle does not delete/recreate the cluster without the seccomp flag.
 - Patches UDS Core gateway `LoadBalancer` service status to `127.0.0.1` while deploy waits are running.
+- Patches the k3d server load balancer so host `80` and `443` route to UDS tenant/admin gateway NodePorts.
 - Prints phase banners and a deploy heartbeat while the long-running UDS deploy phase is active.
 - Verifies the cluster and installed Package CRs when deploy completes.
 
@@ -79,6 +80,20 @@ status.loadBalancer.ingress[0].ip = 127.0.0.1
 
 That keeps deploy waits moving in the local POC cluster.
 
+## Why Gateway Routing Is Patched
+
+Disabling ServiceLB prevents local `svclb-*` host-port conflicts, but it also means the UDS gateway `LoadBalancer` services do not own host `80` or `443`.
+
+k3d still exposes host `80` and `443` through its `serverlb` container. By default, that container forwards to node `80` and `443`, while the UDS gateway services are actually reachable on allocated NodePorts. The workaround patches the k3d `serverlb` nginx config after Core deploys:
+
+- HTTP `*.uds.dev` -> tenant gateway HTTP NodePort.
+- HTTPS `*.uds.dev` -> tenant gateway HTTPS NodePort using SNI preread.
+- HTTP `*.admin.uds.dev` -> admin gateway HTTP NodePort.
+- HTTPS `*.admin.uds.dev` -> admin gateway HTTPS NodePort using SNI preread.
+- Kubernetes API `6443` remains forwarded to the k3d server node.
+
+This is cluster-level routing. It should not need to run again for each app package pushed to the local registry; new apps add UDS/Istio routes behind the already-wired tenant gateway.
+
 ## Do Not Replace This With NodePort
 
 Do not patch the gateway services to `NodePort`.
@@ -99,7 +114,6 @@ It does not fully replace `uds-k3d-dev` because it does not:
 
 - Preload the full UDS k3d airgap image set.
 - Reproduce every cluster bootstrap action from the `uds-k3d-dev` package.
-- Prove browser ingress through every UDS Core gateway.
 - Establish a production registry publish/deploy promotion workflow.
 - Establish a package signature verification workflow.
 

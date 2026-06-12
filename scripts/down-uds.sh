@@ -20,6 +20,14 @@ if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
 
   docker network rm "k3d-${cluster_name}" >/dev/null 2>&1 || true
   docker volume rm "k3d-${cluster_name}-images" >/dev/null 2>&1 || true
+
+  registry_name="${REGISTRY_NAME:-uds-poc-registry}"
+  if docker ps -a --format '{{.Names}}' | grep -qx "$registry_name"; then
+    docker rm -f "$registry_name" >/dev/null
+    echo "Removed registry $registry_name"
+  else
+    echo "Registry $registry_name is not present"
+  fi
 else
   echo "Docker is not reachable; skipping Docker cleanup."
 fi

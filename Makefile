@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install env dev run run-dev server client build typecheck start check-prereqs check-run-ready setup setup-macos deploy-uds deploy-uds-macos fix-uds-ports stop-uds-workaround down down-dev down-uds setup-uds setup-dev setup-local-demo verify-uds uds-debug inspect-packages installed-packages registry-up registry-down package-catalog-poc publish-catalog-poc configure-catalog-poc deploy-catalog-poc verify-catalog-poc deploy-core git-status
+.PHONY: help install env dev run run-dev server client build typecheck start check-prereqs check-run-ready setup setup-macos deploy-uds deploy-uds-macos fix-uds-ports fix-uds-gateway-routing stop-uds-workaround down down-dev down-uds setup-uds setup-dev setup-local-demo verify-uds uds-debug inspect-packages installed-packages registry-up registry-down package-catalog-poc publish-catalog-poc configure-catalog-poc deploy-catalog-poc verify-catalog-poc deploy-core git-status
 
 help:
 	@printf "UDS Core local POC commands\n\n"
@@ -13,10 +13,11 @@ help:
 	@printf "  make deploy-uds          Deploy and verify the official UDS Core local demo\n"
 	@printf "  make deploy-uds-macos    Experimental macOS seccomp workaround deploy\n"
 	@printf "  make fix-uds-ports       Clean project k3d leftovers and re-check ports 80/443\n"
+	@printf "  make fix-uds-gateway-routing Patch k3d host 80/443 to UDS gateway NodePorts\n"
 	@printf "  make stop-uds-workaround Stop a stale macOS workaround deploy/watcher process\n"
-	@printf "  make down                Stop dev servers and delete local UDS/k3d cluster\n"
+	@printf "  make down                Stop dev servers, delete local UDS/k3d cluster, and remove local registry\n"
 	@printf "  make down-dev            Stop local dev servers only\n"
-	@printf "  make down-uds            Delete local UDS/k3d cluster only\n"
+	@printf "  make down-uds            Delete local UDS/k3d cluster and local registry only\n"
 	@printf "  make install             Install npm workspace dependencies\n"
 	@printf "  make env                 Create server/.env from example if missing\n"
 	@printf "  make setup-macos         Check/install local CLI prerequisites only\n"
@@ -110,6 +111,9 @@ deploy-uds-macos:
 
 fix-uds-ports:
 	./scripts/fix-uds-ports.sh
+
+fix-uds-gateway-routing:
+	./scripts/fix-uds-gateway-routing.sh
 
 stop-uds-workaround:
 	./scripts/stop-uds-workaround.sh

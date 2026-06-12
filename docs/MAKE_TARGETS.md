@@ -51,9 +51,9 @@ make run dev
 | Command | Purpose |
 | --- | --- |
 | `make deploy-uds-macos` | Experimental macOS workaround for the known k3d/seccomp failure. |
-| `make down` | Stops local dev servers and deletes the local `uds` k3d cluster for a clean retry. |
+| `make down` | Stops local dev servers, deletes the local `uds` k3d cluster, and removes the local POC registry for a clean retry. |
 | `make down-dev` | Stops local dev servers only. |
-| `make down-uds` | Deletes the local `uds` k3d cluster and project-owned k3d leftovers only. |
+| `make down-uds` | Deletes the local `uds` k3d cluster, project-owned k3d leftovers, and the local POC registry only. |
 
 ## App-Only Run
 
@@ -91,6 +91,7 @@ make inspect-packages
 make installed-packages
 make uds-debug
 make fix-uds-ports
+make fix-uds-gateway-routing
 make stop-uds-workaround
 make deploy-core
 ```
@@ -99,12 +100,13 @@ make deploy-core
 - `make installed-packages` runs `uds zarf tools kubectl get package -A -o json`.
 - `make uds-debug` prints a concise operational snapshot for diagnosing local UDS deploy waits.
 - `make fix-uds-ports` removes project-owned k3d leftovers, then re-checks host ports `80` and `443`; if another owner remains, it prints exact `docker stop ...`, safe `kill ...`, or Docker Desktop stale-forwarding guidance.
+- `make fix-uds-gateway-routing` patches the macOS workaround k3d server load balancer so host `80/443` route to the UDS tenant/admin gateway NodePorts. `make deploy-uds-macos` runs this after Core deploys.
 - `make stop-uds-workaround` stops a stale `deploy-uds-macos` workaround process without deleting the cluster.
 - `make deploy-uds` deploys and verifies the official local demo bundle.
 - `make deploy-uds-macos` deletes/recreates the local `uds` k3d cluster with kubelet seccomp disabled, adds one k3d agent by default, maps local HTTP/HTTPS ports, disables default k3s Traefik and ServiceLB, waits for CoreDNS, patches Core gateway `LoadBalancer` service status while deploying, prints phase/heartbeat progress output, then deploys selected non-cluster packages from `k3d-core-slim-dev:latest`.
-- `make down` runs both `down-dev` and `down-uds`.
+- `make down` runs both `down-dev` and `down-uds`; `down-uds` also removes the repo-owned local OCI registry.
 - `make down-dev` stops local dev servers on ports `3001` and `5173`.
-- `make down-uds` deletes the local `uds` k3d cluster, related k3d containers, `k3d-uds` network, and `k3d-uds-images` volume.
+- `make down-uds` deletes the local `uds` k3d cluster, related k3d containers, `k3d-uds` network, `k3d-uds-images` volume, and `uds-poc-registry` container.
 - `make deploy-core` is the lower-level bundle deploy target and defaults to `k3d-core-demo:latest`.
 - `make setup` runs local tool setup, `install`, and `env`.
 - `make setup-local-demo` is an alias for `make deploy-uds`.

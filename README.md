@@ -57,9 +57,9 @@ make run dev
 | Command | Purpose |
 | --- | --- |
 | `make deploy-uds-macos` | Experimental macOS workaround for the known k3d/seccomp failure. |
-| `make down` | Stops local dev servers and deletes the local `uds` k3d cluster for a clean retry. |
+| `make down` | Stops local dev servers, deletes the local `uds` k3d cluster, and removes the local POC registry for a clean retry. |
 | `make down-dev` | Stops local dev servers only. |
-| `make down-uds` | Deletes the local `uds` k3d cluster and project-owned k3d leftovers only. |
+| `make down-uds` | Deletes the local `uds` k3d cluster, project-owned k3d leftovers, and the local POC registry only. |
 
 Open:
 
@@ -138,9 +138,9 @@ If the official deploy keeps failing with that seccomp error on macOS, use the w
 make deploy-uds-macos
 ```
 
-This deletes/recreates the local `uds` k3d cluster with the kubelet seccomp flag from the upstream issue, adds one k3d agent node by default, maps local HTTP/HTTPS ports, disables the default k3s Traefik addon, disables k3s ServiceLB, waits for CoreDNS, then deploys selected non-cluster packages from `k3d-core-slim-dev:latest`. It prints phase banners and a once-per-minute heartbeat during the long UDS deploy phase. It skips the bundle's `uds-k3d-dev` package so the workaround cluster is not deleted and recreated without the macOS flag. ServiceLB is disabled because Core creates more than one gateway LoadBalancer; in this local workaround, ServiceLB creates `svclb-*` DaemonSets that compete for host ports `80` and `443` and can keep tenant gateway load balancer pods pending. While deploying, the script patches UDS Core gateway `LoadBalancer` service status to `127.0.0.1` so Helm does not wait forever for an external IP from the disabled ServiceLB controller. It does not change gateway services to `NodePort`, because UDS Core policy rejects NodePort services. Because this is a local experimental workaround, it defaults to `--skip-signature-validation` for the selected package deploy.
+This deletes/recreates the local `uds` k3d cluster with the kubelet seccomp flag from the upstream issue, adds one k3d agent node by default, maps local HTTP/HTTPS ports, disables the default k3s Traefik addon, disables k3s ServiceLB, waits for CoreDNS, then deploys selected non-cluster packages from `k3d-core-slim-dev:latest`. It prints phase banners and a once-per-minute heartbeat during the long UDS deploy phase. It skips the bundle's `uds-k3d-dev` package so the workaround cluster is not deleted and recreated without the macOS flag. ServiceLB is disabled because Core creates more than one gateway LoadBalancer; in this local workaround, ServiceLB creates `svclb-*` DaemonSets that compete for host ports `80` and `443` and can keep tenant gateway load balancer pods pending. While deploying, the script patches UDS Core gateway `LoadBalancer` service status to `127.0.0.1` so Helm does not wait forever for an external IP from the disabled ServiceLB controller. After Core deploys, it patches k3d host `80/443` routing to the tenant/admin gateway NodePorts so tenant app URLs such as `https://catalog-poc.uds.dev/` work after the cluster-level workaround is applied. It does not change gateway services to `NodePort`, because UDS Core policy rejects NodePort services. Because this is a local experimental workaround, it defaults to `--skip-signature-validation` for the selected package deploy.
 
-This workaround does not fully replace `uds-k3d-dev`. It does not preload the UDS k3d airgap image set, reproduce every cluster bootstrap action from that package, or prove local browser ingress through both Core gateways. It is scoped to getting a compatible local k3d cluster running on macOS so the POC can deploy Core packages and read installed Package CRs.
+This workaround does not fully replace `uds-k3d-dev`. It does not preload the UDS k3d airgap image set or reproduce every cluster bootstrap action from that package. It is scoped to getting a compatible local k3d cluster running on macOS so the POC can deploy Core packages, read installed Package CRs, and route local tenant/admin gateway traffic through the k3d server load balancer.
 
 Signature verification is not the blocker for the local POC goal. The immediate success condition is a working UDS cluster plus installed Package CRs, so the app can show the deployed package count and package status. A local OCI registry is required for the next app-package testing loop: package locally, push to local registry, read it as a registry package source, deploy it into the cluster, then verify the installed Package CR count/status. Proper auth, promotion, catalog indexing, and signature verification should be added before treating registry publish/deploy as a production workflow.
 
@@ -159,7 +159,7 @@ To clean up before retrying either deploy path:
 make down
 ```
 
-This stops local dev servers on ports `3001` and `5173`, then removes the local `uds` k3d cluster, related k3d containers, the `k3d-uds` Docker network, and the `k3d-uds-images` volume. It does not prune unrelated Docker containers or images. Use `make down-dev` or `make down-uds` when you only want one side of that cleanup.
+This stops local dev servers on ports `3001` and `5173`, then removes the local `uds` k3d cluster, related k3d containers, the `k3d-uds` Docker network, the `k3d-uds-images` volume, and the repo-owned `uds-poc-registry` container. It does not prune unrelated Docker containers or images. Use `make down-dev`, `make down-uds`, or `make registry-down` when you only want one side of that cleanup.
 
 If `make deploy-uds` fails with `Bind for 0.0.0.0:80 failed: port is already allocated`, run:
 

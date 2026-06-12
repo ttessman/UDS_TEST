@@ -669,7 +669,7 @@ export async function getInstalledPackages(): Promise<{
         status: stringOrNull(item.status?.state) ?? stringOrNull(item.status?.status),
         architecture: stringOrNull(item.spec?.architecture) ?? stringOrNull(item.status?.architecture),
         endpoints,
-        launchUrl: launchUrlFromPackage(item) ?? launchUrlFromEndpoint(endpoints[0]),
+        launchUrl: launchUrlFromEndpoint(endpoints[0]) ?? launchUrlFromPackage(item),
         sourcePackageData: item,
         sources: ["kubernetes-package-crd"]
       };

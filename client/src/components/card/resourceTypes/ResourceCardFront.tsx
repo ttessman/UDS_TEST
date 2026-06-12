@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { KeyboardEvent, MouseEvent } from "react";
 import { CardContent, Stack, Typography } from "@mui/material";
 import { IconActionButton } from "../../button/resourceTypes/IconActionButton.js";
 import { Card, cardTemplate } from "../Card.js";
@@ -13,6 +14,7 @@ export function ResourceCardFront<T extends object, C>({
   hasCode,
   icon,
   meta,
+  onSelect,
   onShowCode,
   onShowDetails,
   status,
@@ -26,14 +28,37 @@ export function ResourceCardFront<T extends object, C>({
   hasCode: boolean;
   icon: ReactNode;
   meta: ReactNode;
+  onSelect?: () => void;
   onShowCode: () => void;
   onShowDetails: (event: React.MouseEvent<HTMLButtonElement>) => void;
   status: ReactNode;
   statusPlacement: "header" | "icon";
   summary: ReactNode;
 }) {
+  const handleCardClick = (event: MouseEvent<HTMLElement>) => {
+    if (!onSelect || isInteractiveTarget(event.target)) {
+      return;
+    }
+
+    onSelect();
+  };
+  const handleCardKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (!onSelect || isInteractiveTarget(event.target)) {
+      return;
+    }
+
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect();
+    }
+  };
+
   return (
-    <Card definition={{ aspectRatio: definition.aspectRatio, minHeight: definition.minHeight }}>
+    <Card
+      definition={{ aspectRatio: definition.aspectRatio, minHeight: definition.minHeight }}
+      onClick={onSelect ? handleCardClick : undefined}
+      onKeyDown={onSelect ? handleCardKeyDown : undefined}
+    >
       <cardTemplate.content>
         <CardContent sx={{ display: "flex", flex: 1, flexDirection: "column", gap: 1.75, p: 3 }}>
           <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", gap: 1.5 }}>
@@ -43,8 +68,8 @@ export function ResourceCardFront<T extends object, C>({
             {statusPlacement === "header" ? status : null}
           </Stack>
 
-          <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", gap: 2 }}>
-            <Stack direction="row" sx={{ alignItems: "center", gap: 2, minWidth: 0 }}>
+          <Stack direction="row" sx={{ alignItems: "center", flexWrap: "wrap", gap: 1.5, justifyContent: "space-between" }}>
+            <Stack direction="row" sx={{ alignItems: "center", flex: "1 1 210px", gap: 2, minWidth: 0 }}>
               <IconWithStatus icon={icon} status={statusPlacement === "icon" ? status : null} />
               <Typography
                 component="h3"
@@ -54,7 +79,7 @@ export function ResourceCardFront<T extends object, C>({
               </Typography>
             </Stack>
 
-            <Stack direction="row" sx={{ alignItems: "center", flex: "0 0 auto", gap: 0.5 }}>
+            <Stack direction="row" sx={{ alignItems: "center", flex: "0 0 auto", gap: 0.5, ml: "auto" }}>
               {hasCode ? <IconActionButton icon="code" label="Show code and output" onClick={onShowCode} /> : null}
               {hasBackContent ? <IconActionButton aria-pressed={false} icon="info" label="Show package details" onClick={onShowDetails} /> : null}
             </Stack>
@@ -74,4 +99,8 @@ export function ResourceCardFront<T extends object, C>({
       <cardTemplate.actions>{actions}</cardTemplate.actions>
     </Card>
   );
+}
+
+function isInteractiveTarget(target: EventTarget): boolean {
+  return target instanceof Element && Boolean(target.closest("a,button,input,select,textarea,[role='button']"));
 }

@@ -109,6 +109,26 @@ make deploy-core
 - `make setup` runs local tool setup, `install`, and `env`.
 - `make setup-local-demo` is an alias for `make deploy-uds`.
 
+## Local catalog-poc Registry Loop
+
+After UDS Core is running, use this app-package loop:
+
+```bash
+make registry-up
+make publish-catalog-poc
+make configure-catalog-poc
+make deploy-catalog-poc
+make verify-catalog-poc
+```
+
+- `make registry-up` starts a local OCI registry on `localhost:5001`.
+- `make registry-down` removes the local registry container.
+- `make package-catalog-poc` builds the static app image, pushes it to the local registry, and creates the Zarf package archive.
+- `make publish-catalog-poc` publishes the Zarf package to `oci://localhost:5001/uds-poc/catalog-poc:0.1.0`.
+- `make configure-catalog-poc` points `server/.env` at that OCI ref and enables local install execution.
+- `make deploy-catalog-poc` deploys the OCI package into the current UDS cluster.
+- `make verify-catalog-poc` waits for rollout and prints the UDS Package CR endpoint.
+
 `make deploy-uds` checks that the active Docker runtime reports seccomp support before deploying, because the k3d demo needs it for pods such as CoreDNS.
 
 Known upstream issue for the same failure signature: [Deployment issues on Mac M4 for `deploy k3d-core-demo:latest`](https://github.com/defenseunicorns/uds-core/issues/2237).
@@ -127,6 +147,8 @@ UDS_REGISTRY_CATALOG_URL=
 UDS_REGISTRY_CATALOG_PATH=
 UDS_CORE_BUNDLE_REF=k3d-core-demo:latest
 UDS_POC_ENABLE_INSTALL=false
+UDS_APP_URL_SCHEME=https
+UDS_REGISTRY_PLAIN_HTTP=true
 UDS_REGISTRY_USERNAME=
 UDS_REGISTRY_PASSWORD=
 ```

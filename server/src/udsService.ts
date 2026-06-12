@@ -1,5 +1,7 @@
 import { parse as parseYaml } from "yaml";
+import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { readFile } from "node:fs/promises";
+import { createServer } from "node:net";
 import type {
   CommandState,
   InstalledPackage,
@@ -16,6 +18,8 @@ const DEFAULT_PACKAGE_REFS = [
   "oci://ghcr.io/defenseunicorns/packages/uds/core:latest",
   "oci://ghcr.io/defenseunicorns/packages/uds/podinfo:latest"
 ];
+
+const portForwards = new Map<string, Promise<PortForwardTarget>>();
 
 export function getPackageRefs(): string[] {
   return (process.env.UDS_REGISTRY_PACKAGE_REFS ?? DEFAULT_PACKAGE_REFS.join(","))
@@ -322,7 +326,7 @@ async function inspectPackageDefinition(ociReference: string): Promise<{
 }> {
   const command = await runCommand(
     "zarf",
-    ["package", "inspect", "definition", ociReference, "--log-format", "json"],
+    ["package", "inspect", "definition", ociReference, "--log-format", "json", ...localOciFlags(ociReference)],
     {
       timeoutMs: 60_000,
       env: registryEnv()
@@ -369,7 +373,7 @@ function registryEnv(): NodeJS.ProcessEnv {
 }
 
 function extractYamlFromCliOutput(stdout: string): string | null {
-  const lines = stdout.split(/\r?\n/);
+  const lines = stripAnsi(stdout).split(/\r?\n/);
   const start = lines.findIndex((line) => /^kind:\s*ZarfPackageConfig\s*$/.test(line.trim()));
   if (start >= 0) {
     return lines.slice(start).join("\n");
@@ -386,7 +390,11 @@ function extractYamlFromCliOutput(stdout: string): string | null {
     .filter((line): line is { msg?: string } => Boolean(line?.msg));
 
   const message = jsonLines.map((line) => line.msg).find((msg) => msg?.includes("kind: ZarfPackageConfig"));
-  return message ?? null;
+  return message ? stripAnsi(message) : null;
+}
+
+function stripAnsi(value: string): string {
+  return value.replace(/\u001b\[[0-9;]*m/g, "");
 }
 
 type ZarfPackageDefinition = {
@@ -488,7 +496,7 @@ function packageFromRegistryCatalogRepo(repo: RegistryCatalogRepoWithOrg): Regis
     installAction: tag
       ? {
           method: "zarf-package-deploy",
-          commandPreview: `zarf package deploy ${ociReference} --confirm`
+          commandPreview: zarfDeployPreview(ociReference)
         }
       : null,
     rawMetadata: repo,
@@ -540,7 +548,7 @@ function packageFromZarfDefinition(ociReference: string, definition: ZarfPackage
     installable: true,
     installAction: {
       method: "zarf-package-deploy",
-      commandPreview: `zarf package deploy ${ociReference} --confirm`
+      commandPreview: zarfDeployPreview(ociReference)
     },
     rawMetadata: definition,
     sources: ["registry-seed", "zarf-package-definition", "backend-derived"],
@@ -582,7 +590,7 @@ function packageFromRefOnly(ociReference: string, errors: string[] = []): Regist
       errors.length === 0
         ? {
             method: "zarf-package-deploy",
-            commandPreview: `zarf package deploy ${ociReference} --confirm`
+            commandPreview: zarfDeployPreview(ociReference)
           }
         : null,
     rawMetadata: null,
@@ -593,13 +601,17 @@ function packageFromRefOnly(ociReference: string, errors: string[] = []): Regist
 
 function parseOciReference(ociReference: string): { registry: string | null; name: string; tag: string | null } {
   const withoutScheme = ociReference.replace(/^oci:\/\//, "");
-  const [path, tag] = withoutScheme.split(":");
+  const slashIndex = withoutScheme.lastIndexOf("/");
+  const tagIndex = withoutScheme.lastIndexOf(":");
+  const hasTag = tagIndex > slashIndex;
+  const path = hasTag ? withoutScheme.slice(0, tagIndex) : withoutScheme;
+  const tag = hasTag ? withoutScheme.slice(tagIndex + 1) : null;
   const parts = path.split("/");
   const registry = parts.length > 1 ? parts[0] : null;
   return {
     registry,
     name: parts.at(-1) ?? ociReference,
-    tag: tag ?? null
+    tag
   };
 }
 
@@ -644,18 +656,24 @@ export async function getInstalledPackages(): Promise<{
     // Source: `uds zarf tools kubectl get package -A -o json` returns Zarf Package CRs.
     // Kubernetes metadata supplies identity/namespace/generation; Package `spec` and `status`
     // are preserved as raw source data because fields can vary by Zarf version.
-    const installedPackages = (parsed.items ?? []).map<InstalledPackage>((item) => ({
-      id: `${item.metadata?.namespace ?? "default"}/${item.metadata?.name ?? "unknown"}`,
-      name: item.metadata?.name ?? "unknown",
-      namespace: item.metadata?.namespace ?? "default",
-      version: stringOrNull(item.spec?.version) ?? stringOrNull(item.status?.version),
-      generation: item.metadata?.generation ?? null,
-      phase: stringOrNull(item.status?.phase),
-      status: stringOrNull(item.status?.state) ?? stringOrNull(item.status?.status),
-      architecture: stringOrNull(item.spec?.architecture) ?? stringOrNull(item.status?.architecture),
-      sourcePackageData: item,
-      sources: ["kubernetes-package-crd"]
-    }));
+    const installedPackages = (parsed.items ?? []).map<InstalledPackage>((item) => {
+      const endpoints = stringArray(item.status?.endpoints);
+
+      return {
+        id: `${item.metadata?.namespace ?? "default"}/${item.metadata?.name ?? "unknown"}`,
+        name: item.metadata?.name ?? "unknown",
+        namespace: item.metadata?.namespace ?? "default",
+        version: stringOrNull(item.spec?.version) ?? stringOrNull(item.status?.version),
+        generation: item.metadata?.generation ?? null,
+        phase: stringOrNull(item.status?.phase),
+        status: stringOrNull(item.status?.state) ?? stringOrNull(item.status?.status),
+        architecture: stringOrNull(item.spec?.architecture) ?? stringOrNull(item.status?.architecture),
+        endpoints,
+        launchUrl: launchUrlFromPackage(item) ?? launchUrlFromEndpoint(endpoints[0]),
+        sourcePackageData: item,
+        sources: ["kubernetes-package-crd"]
+      };
+    });
 
     return { installedPackages, logs: [command] };
   } catch (error) {
@@ -679,6 +697,182 @@ function stringOrNull(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
+function stringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => typeof item === "string" && item.length > 0);
+}
+
+function launchUrlFromEndpoint(endpoint: string | undefined): string | null {
+  if (!endpoint) {
+    return null;
+  }
+
+  if (/^https?:\/\//.test(endpoint)) {
+    return endpoint;
+  }
+
+  return `${process.env.UDS_APP_URL_SCHEME ?? "https"}://${endpoint}`;
+}
+
+function launchUrlFromPackage(item: {
+  metadata?: { name?: string; namespace?: string };
+  spec?: Record<string, unknown>;
+}): string | null {
+  const namespace = item.metadata?.namespace;
+  const name = item.metadata?.name;
+  const expose = firstExposeEntry(item.spec);
+
+  if (!namespace || !name || !expose) {
+    return null;
+  }
+
+  return `/api/uds/apps/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}/proxy/`;
+}
+
+type UdsPackageExposeEntry = {
+  port: number;
+  service: string;
+};
+
+function firstExposeEntry(spec: Record<string, unknown> | undefined): UdsPackageExposeEntry | null {
+  const network = spec?.network;
+  if (!isRecord(network)) {
+    return null;
+  }
+
+  const expose = network.expose;
+  if (!Array.isArray(expose)) {
+    return null;
+  }
+
+  const entry = expose.find((item): item is UdsPackageExposeEntry =>
+    isRecord(item) && typeof item.service === "string" && typeof item.port === "number"
+  );
+  if (!entry) {
+    return null;
+  }
+
+  return {
+    port: entry.port,
+    service: entry.service
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+export async function getInstalledPackageProxyTarget(namespace: string, name: string): Promise<PortForwardTarget> {
+  const packageCr = await getInstalledPackageCr(namespace, name);
+  const expose = firstExposeEntry(packageCr.spec);
+
+  if (!expose) {
+    throw new Error(`Package ${namespace}/${name} does not expose a service`);
+  }
+
+  const key = `${namespace}/${expose.service}/${expose.port}`;
+  const existing = portForwards.get(key);
+  if (existing) {
+    return existing;
+  }
+
+  const created = startPortForward(namespace, expose.service, expose.port);
+  portForwards.set(key, created);
+
+  try {
+    return await created;
+  } catch (error) {
+    portForwards.delete(key);
+    throw error;
+  }
+}
+
+type InstalledPackageCr = {
+  spec?: Record<string, unknown>;
+};
+
+async function getInstalledPackageCr(namespace: string, name: string): Promise<InstalledPackageCr> {
+  const command = await runCommand("kubectl", ["-n", namespace, "get", "package", name, "-o", "json"], { timeoutMs: 30_000 });
+
+  if (!command.ok) {
+    throw new Error(command.stderr || command.stdout || `Could not read Package ${namespace}/${name}`);
+  }
+
+  return JSON.parse(command.stdout) as InstalledPackageCr;
+}
+
+type PortForwardTarget = {
+  localPort: number;
+  process: ChildProcessWithoutNullStreams;
+};
+
+async function startPortForward(namespace: string, service: string, remotePort: number): Promise<PortForwardTarget> {
+  const localPort = await getAvailablePort();
+  const child = spawn("kubectl", ["-n", namespace, "port-forward", `svc/${service}`, `${localPort}:${remotePort}`], {
+    env: process.env
+  });
+  const target: PortForwardTarget = { localPort, process: child };
+
+  child.once("exit", () => {
+    for (const [key, value] of portForwards.entries()) {
+      void value.then((current) => {
+        if (current.process === child) {
+          portForwards.delete(key);
+        }
+      });
+    }
+  });
+
+  return new Promise((resolve, reject) => {
+    let output = "";
+    const timeout = setTimeout(() => {
+      child.kill();
+      reject(new Error(`Timed out starting port-forward for ${namespace}/${service}:${remotePort}`));
+    }, 10_000);
+
+    const onData = (data: Buffer) => {
+      output += data.toString();
+      if (output.includes("Forwarding from")) {
+        clearTimeout(timeout);
+        resolve(target);
+      }
+    };
+
+    child.stdout.on("data", onData);
+    child.stderr.on("data", onData);
+    child.once("error", (error) => {
+      clearTimeout(timeout);
+      reject(error);
+    });
+    child.once("exit", (code) => {
+      if (!output.includes("Forwarding from")) {
+        clearTimeout(timeout);
+        reject(new Error(`Port-forward for ${namespace}/${service}:${remotePort} exited with code ${code}: ${output}`));
+      }
+    });
+  });
+}
+
+async function getAvailablePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      server.close(() => {
+        if (typeof address === "object" && address?.port) {
+          resolve(address.port);
+        } else {
+          reject(new Error("Could not allocate local proxy port"));
+        }
+      });
+    });
+    server.once("error", reject);
+  });
+}
+
 export async function installPackage(id: string): Promise<{ command: string; result: CommandState | null; error: string | null }> {
   const ref = packageRefFromId(id);
   const catalogRefs = ref ? await getCatalogPackageRefs() : new Set<string>();
@@ -687,7 +881,7 @@ export async function installPackage(id: string): Promise<{ command: string; res
     return { command: "", result: null, error: "Unknown package id" };
   }
 
-  const args = ["package", "deploy", ref, "--confirm"];
+  const args = ["package", "deploy", ref, "--confirm", ...localOciFlags(ref)];
   const command = ["zarf", ...args].join(" ");
 
   if (process.env.UDS_POC_ENABLE_INSTALL !== "true") {
@@ -703,4 +897,16 @@ export async function installPackage(id: string): Promise<{ command: string; res
     result: await runCommand("zarf", args, { timeoutMs: 10 * 60_000, env: registryEnv() }),
     error: null
   };
+}
+
+function zarfDeployPreview(ociReference: string): string {
+  return ["zarf", "package", "deploy", ociReference, "--confirm", ...localOciFlags(ociReference)].join(" ");
+}
+
+function localOciFlags(ociReference: string): string[] {
+  if (process.env.UDS_REGISTRY_PLAIN_HTTP === "false") {
+    return [];
+  }
+
+  return /^oci:\/\/(localhost|127\.0\.0\.1):/.test(ociReference) ? ["--plain-http"] : [];
 }

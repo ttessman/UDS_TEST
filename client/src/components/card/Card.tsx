@@ -4,12 +4,17 @@ import type { CardChildren, CardProps } from "./card.types.js";
 
 export const cardTemplate = createTemplate<CardChildren>();
 
-export function Card({ children, definition }: CardProps) {
+export function Card({ children, definition, onClick, onKeyDown }: CardProps) {
   const { hasSlot, slot } = useSlot(children);
   const hasFooter = hasSlot.actions || hasSlot.command;
+  const interactive = Boolean(onClick);
 
   return (
     <MuiCard
+      onClick={onClick}
+      onKeyDown={onKeyDown}
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
       variant="outlined"
       sx={{
         bgcolor: "background.paper",
@@ -22,6 +27,7 @@ export function Card({ children, definition }: CardProps) {
         minWidth: 0,
         minHeight: definition?.minHeight ?? 220,
         overflow: "hidden",
+        cursor: interactive ? "pointer" : "default",
         "&:hover": {
           bgcolor: "var(--app-bg-paper-hover)",
           borderColor: "var(--app-border-strong)"

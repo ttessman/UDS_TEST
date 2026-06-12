@@ -29,6 +29,7 @@ export type ResourceCardDefinition<T extends object, C = undefined> = {
   label: (args: ResourceRenderArgs<T, C>) => string;
   meta?: (args: ResourceRenderArgs<T, C>) => ReactNode;
   minHeight?: number;
+  onSelect?: (args: ResourceRenderArgs<T, C>) => void;
   shape?: {
     title: string;
     value: (args: ResourceRenderArgs<T, C>) => unknown;

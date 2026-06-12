@@ -49,7 +49,8 @@ export function StatusIndicatorList<T, C = undefined>({
       <List
         layout={{
           gap: 1,
-          gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: "repeat(5, max-content)" }
+          gridTemplateColumns: { xs: "repeat(auto-fit, minmax(0, max-content))" },
+          justifyItems: "start"
         }}
         state={{ isEmpty: definition.items.length === 0 }}
       >

@@ -234,6 +234,26 @@ The Express server listens on:
 http://localhost:3001
 ```
 
+## Local catalog-poc Registry Loop
+
+After UDS Core is running through either `make deploy-uds` or `make deploy-uds-macos`, publish and deploy the minimal sample app package with:
+
+```bash
+make registry-up
+make publish-catalog-poc
+make configure-catalog-poc
+make deploy-catalog-poc
+make verify-catalog-poc
+```
+
+This starts a local OCI registry on `localhost:5001`, builds the static `catalog-poc` app image, creates a Zarf package from `examples/catalog-poc`, publishes it to:
+
+```text
+oci://localhost:5001/uds-poc/catalog-poc:0.1.0
+```
+
+Then it configures `server/.env` so `GET /api/uds/packages` reads real Zarf package metadata from that OCI ref. The deployed app creates a real `uds.dev/v1alpha1` Package CR with `spec.network.expose`, and UDS reports the launch endpoint through `status.endpoints[]`.
+
 ## Scripts
 
 ```bash
@@ -264,7 +284,7 @@ These are the current gaps that prevent the POC from being a complete launcher/i
 | Area | Current state | What blocks completion | Action needed |
 | --- | --- | --- | --- |
 | Registry catalog source | The backend can read catalog JSON from `UDS_REGISTRY_CATALOG_URL` or `UDS_REGISTRY_CATALOG_PATH`. | A stable public/authorized Defense Unicorns Registry catalog endpoint is not confirmed in this repo. | Confirm the registry API/index source, then replace the configurable placeholder with a real catalog client. |
-| Local registry workflow | The backend can inspect configured OCI refs and can read catalog JSON from a local file/URL. | The repo does not yet start a local OCI registry, package/push a sample app package, generate/read a local catalog, or prove deploy from that registry. | Add local registry up/down targets, push one sample package, generate/read a catalog export or inspect the OCI ref, deploy by OCI ref, and verify installed Package CR count/status. |
+| Local registry workflow | `catalog-poc` can be packaged, published to `localhost:5001`, configured as `UDS_REGISTRY_PACKAGE_REFS`, deployed, and verified from a ready Package CR endpoint. | This is a local OCI/Zarf-package loop, not a production UDS Registry catalog/index workflow. | Replace or extend the local ref inspection with the confirmed registry catalog/index source when available. |
 | Bundle support | The model supports registry catalog entries and Zarf package definitions. | UDS bundles have different inspect/deploy behavior than plain Zarf packages. | Add bundle inspection with `uds inspect <oci-ref> --list-variables` and deployment with `uds deploy <oci-ref> --confirm`. |
 | Registry authentication | `authRequired` is intentionally `null`. | The backend does not yet challenge/probe OCI auth or use an authenticated registry client. | Add server-side auth probing and keep credentials out of the frontend. |
 | UDS Core health | `coreRunning` checks for `uds-core` namespaces and ready Core Package CR evidence. | This proves the local POC has Core package evidence, but it still does not fully validate every official Core component/version. | Inspect official Core components, pod health, versions, and conditions for the installed release. |

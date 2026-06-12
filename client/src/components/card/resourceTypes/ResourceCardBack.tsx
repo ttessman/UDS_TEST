@@ -41,8 +41,8 @@ export function ResourceCardBack<T extends object, C>({
             {statusPlacement === "header" ? status : null}
           </Stack>
 
-          <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", gap: 2 }}>
-            <Stack direction="row" sx={{ alignItems: "center", gap: 2, minWidth: 0 }}>
+          <Stack direction="row" sx={{ alignItems: "center", flexWrap: "wrap", gap: 1.5, justifyContent: "space-between" }}>
+            <Stack direction="row" sx={{ alignItems: "center", flex: "1 1 210px", gap: 2, minWidth: 0 }}>
               <IconWithStatus icon={icon} status={statusPlacement === "icon" ? status : null} />
               <Typography
                 component="h3"
@@ -52,7 +52,7 @@ export function ResourceCardBack<T extends object, C>({
               </Typography>
             </Stack>
 
-            <Stack direction="row" sx={{ flex: "0 0 auto", gap: 0.5 }}>
+            <Stack direction="row" sx={{ flex: "0 0 auto", gap: 0.5, ml: "auto" }}>
               {hasCode ? <IconActionButton icon="code" label="Show code and output" onClick={onShowCode} /> : null}
               <IconActionButton aria-pressed icon="returnToSummary" label="Back to package summary" onClick={onBack} />
             </Stack>

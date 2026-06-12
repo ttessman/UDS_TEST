@@ -1,0 +1,22 @@
+apiVersion: uds.dev/v1alpha1
+kind: Package
+metadata:
+  name: catalog-poc
+  namespace: catalog-poc
+spec:
+  network:
+    expose:
+      - description: catalog-poc web app
+        gateway: tenant
+        host: catalog-poc
+        port: 8080
+        selector:
+          app.kubernetes.io/name: catalog-poc
+        service: catalog-poc
+        targetPort: 8080
+        uptime:
+          checks:
+            paths:
+              - /healthz
+    serviceMesh:
+      mode: ambient

@@ -6,6 +6,10 @@ import { AppIcon } from "../../icon/AppIcon.js";
 import { IconActionButton } from "../../button/resourceTypes/IconActionButton.js";
 import { searchFieldMotion } from "../form.motion.js";
 
+const searchFieldHeight = 40;
+const searchFieldCollapsedWidth = 40;
+const searchFieldExpandedWidth = 280;
+
 export function SearchField({
   iconPosition = "start",
   label,
@@ -39,7 +43,7 @@ export function SearchField({
         icon="close"
         label={`Clear ${placeholder}`}
         onClick={() => onChange("")}
-        sx={{ color: "text.secondary", height: 28, ml: iconPosition === "end" ? 0.5 : 0, mr: iconPosition === "start" ? 0.5 : 0, width: 28 }}
+        sx={{ color: "text.secondary", height: 32, width: 32 }}
       />
     ) : (
       <Box
@@ -54,8 +58,9 @@ export function SearchField({
           color: "text.secondary",
           cursor: "pointer",
           display: "inline-flex",
-          ml: iconPosition === "end" ? 1 : 0,
-          mr: iconPosition === "start" ? 1 : 0
+          height: searchFieldHeight,
+          justifyContent: "center",
+          width: searchFieldHeight
         }}
       >
         <AppIcon name="search" />
@@ -65,14 +70,20 @@ export function SearchField({
   return (
     <Box
       component={motion.div}
-      animate={{ width: isExpanded ? "100%" : 48 }}
+      animate={{ width: isExpanded ? "100%" : searchFieldCollapsedWidth }}
       initial={false}
       sx={[
-        { display: "flex", justifyContent: "flex-end", maxWidth: 280, minWidth: 48 },
+        {
+          display: "flex",
+          height: searchFieldHeight,
+          justifyContent: "flex-end",
+          maxWidth: searchFieldExpandedWidth,
+          minWidth: searchFieldCollapsedWidth
+        },
         ...rootSx,
         {
-          flex: isExpanded ? undefined : "0 0 48px",
-          maxWidth: isExpanded ? undefined : 48
+          flex: isExpanded ? undefined : `0 0 ${searchFieldCollapsedWidth}px`,
+          maxWidth: isExpanded ? undefined : searchFieldCollapsedWidth
         }
       ]}
       transition={reduceMotion ? { duration: 0 } : searchFieldMotion.transition}
@@ -91,7 +102,14 @@ export function SearchField({
             startAdornment: iconPosition === "start" ? <InputAdornment position="start">{adornment}</InputAdornment> : undefined,
             sx: {
               cursor: isExpanded ? "text" : "pointer",
+              height: searchFieldHeight,
               overflow: "hidden",
+              px: isExpanded ? undefined : 0,
+              "& .MuiInputAdornment-root": {
+                height: searchFieldHeight,
+                m: 0,
+                maxHeight: "none"
+              },
               "& input": {
                 cursor: isExpanded ? "text" : "pointer",
                 opacity: isExpanded ? 1 : 0,

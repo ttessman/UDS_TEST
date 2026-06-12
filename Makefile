@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install env dev run run-dev server client build typecheck start check-prereqs check-run-ready setup setup-macos deploy-uds deploy-uds-macos fix-uds-ports stop-uds-workaround down down-dev down-uds setup-uds setup-dev setup-local-demo verify-uds uds-debug inspect-packages installed-packages deploy-core git-status
+.PHONY: help install env dev run run-dev server client build typecheck start check-prereqs check-run-ready setup setup-macos deploy-uds deploy-uds-macos fix-uds-ports stop-uds-workaround down down-dev down-uds setup-uds setup-dev setup-local-demo verify-uds uds-debug inspect-packages installed-packages registry-up registry-down package-catalog-poc publish-catalog-poc configure-catalog-poc deploy-catalog-poc verify-catalog-poc deploy-core git-status
 
 help:
 	@printf "UDS Core local POC commands\n\n"
@@ -38,6 +38,13 @@ help:
 	@printf "UDS/Zarf helpers:\n"
 	@printf "  make inspect-packages    Inspect configured UDS_REGISTRY_PACKAGE_REFS\n"
 	@printf "  make installed-packages  Print installed Zarf Package CRs\n"
+	@printf "  make registry-up         Start local OCI registry on localhost:5001\n"
+	@printf "  make registry-down       Remove the local OCI registry container\n"
+	@printf "  make package-catalog-poc Build the minimal catalog-poc image and Zarf package\n"
+	@printf "  make publish-catalog-poc Publish catalog-poc to the local OCI registry\n"
+	@printf "  make configure-catalog-poc Point the backend at the catalog-poc OCI ref\n"
+	@printf "  make deploy-catalog-poc  Deploy catalog-poc from the local OCI registry\n"
+	@printf "  make verify-catalog-poc  Verify catalog-poc rollout and UDS Package endpoint\n"
 	@printf "  make deploy-core         Deploy official k3d-core-demo UDS Core bundle\n\n"
 
 install:
@@ -132,6 +139,27 @@ inspect-packages: env
 
 installed-packages:
 	uds zarf tools kubectl get package -A -o json
+
+registry-up:
+	./scripts/registry-up.sh
+
+registry-down:
+	./scripts/registry-down.sh
+
+package-catalog-poc: registry-up
+	./scripts/package-catalog-poc.sh
+
+publish-catalog-poc: package-catalog-poc
+	./scripts/publish-catalog-poc.sh
+
+configure-catalog-poc:
+	./scripts/configure-catalog-poc-env.sh
+
+deploy-catalog-poc:
+	./scripts/deploy-catalog-poc.sh
+
+verify-catalog-poc:
+	./scripts/verify-catalog-poc.sh
 
 deploy-core:
 	./scripts/deploy-uds-core.sh

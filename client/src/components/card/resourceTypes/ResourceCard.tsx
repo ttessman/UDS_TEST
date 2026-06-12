@@ -27,6 +27,7 @@ export function ResourceCard<T extends object, C = undefined>({
   const details = definition.details?.(args);
   const icon = definition.icon?.(args);
   const meta = definition.meta?.(args);
+  const onSelect = definition.onSelect ? () => definition.onSelect?.(args) : undefined;
   const shapeValue = definition.shape?.value(args);
   const status = definition.status?.(args);
   const statusPlacement = definition.statusPlacement ?? "header";
@@ -59,6 +60,7 @@ export function ResourceCard<T extends object, C = undefined>({
               hasCode={hasCode}
               icon={icon}
               meta={meta}
+              onSelect={onSelect}
               onShowCode={codeModal.openModal}
               onShowDetails={(event) => {
                 event.currentTarget.blur();

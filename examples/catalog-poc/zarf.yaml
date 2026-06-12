@@ -1,0 +1,18 @@
+kind: ZarfPackageConfig
+metadata:
+  name: catalog-poc
+  version: 0.1.0
+  description: Minimal UDS catalog proof-of-concept app exposed through UDS Core.
+
+components:
+  - name: catalog-poc
+    required: true
+    manifests:
+      - name: catalog-poc
+        namespace: catalog-poc
+        files:
+          - manifests/namespace.yaml
+          - manifests/workload.yaml
+          - manifests/uds-package.yaml
+    images:
+      - localhost:5001/catalog-poc:0.1.0

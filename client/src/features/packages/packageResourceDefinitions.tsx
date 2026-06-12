@@ -1,5 +1,5 @@
 import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
-import { Avatar, Box, Chip, Stack, Typography } from "@mui/material";
+import { Avatar, Chip, Stack, Typography } from "@mui/material";
 import { formatBytes, relativeAge, yesNo } from "../../lib/format.js";
 import { ActionButton } from "../../components/button/resourceTypes/ActionButton.js";
 import type { ResourceCardDefinition } from "../../components/card/resourceTypes/ResourceCard.js";
@@ -15,6 +15,7 @@ export type RegistryPackageResourceContext = {
 };
 
 export type InstalledPackageResourceContext = {
+  onOpen: (url: string) => void;
   registryPackage: RegistryPackage | null;
 };
 
@@ -38,7 +39,8 @@ const installedPackageFields = [
   { key: "architecture", label: "Architecture", value: (pkg) => valueChips([pkg.architecture]) },
   { key: "generation", label: "Generation", value: (pkg) => pkg.generation },
   { key: "phase", label: "Phase", value: (pkg) => pkg.phase },
-  { key: "status", label: "Status", value: (pkg) => pkg.status }
+  { key: "status", label: "Status", value: (pkg) => pkg.status },
+  { key: "endpoints", label: "Endpoints", value: (pkg) => valueChips(pkg.endpoints) }
 ] satisfies Array<DefinitionField<InstalledPackage>>;
 
 const registryPackageMeta = {
@@ -127,6 +129,15 @@ export const installedPackageResource = {
   statusPlacement: "icon",
   summary: ({ context, item }) => context.registryPackage?.tagline ?? context.registryPackage?.description ?? `Reported by Package CR in namespace ${item.namespace}.`,
   meta: ({ context, item }) => <MetaList item={item} context={context} definition={installedPackageMeta} />,
+  actions: ({ context, item }) =>
+    item.launchUrl ? (
+      <ActionButton icon="open" label="Open" onClick={() => context.onOpen(item.launchUrl as string)} variant="contained" />
+    ) : null,
+  onSelect: ({ context, item }) => {
+    if (item.launchUrl) {
+      context.onOpen(item.launchUrl);
+    }
+  },
   fields: installedPackageFields,
   codeBlocks: [
     {
@@ -192,22 +203,13 @@ function PackageStatusDot({ status }: { status: string | null }) {
   const state: StatusIndicatorTone = ready ? "success" : status ? "warning" : "neutral";
 
   return (
-    <Box
-      sx={{
-        bgcolor: "background.paper",
-        border: "2px solid",
-        borderColor: "background.paper",
-        borderRadius: "999px",
-        display: "flex"
-      }}
-    >
-      <StatusIndicatorButton
-        iconOnly
-        label={status ?? "Reported"}
-        state={state}
-        tooltip={status ?? "Reported"}
-      />
-    </Box>
+    <StatusIndicatorButton
+      iconOnly
+      label={status ?? "Reported"}
+      state={state}
+      tooltip={status ?? "Reported"}
+      view="dot"
+    />
   );
 }
 

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>catalog-poc</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #030712; color: #f8fafc; }
+    main { width: min(560px, calc(100vw - 32px)); }
+    h1 { font-size: clamp(36px, 8vw, 72px); line-height: 1; margin: 0 0 16px; }
+    p { color: #b6c2d2; font-size: 18px; line-height: 1.5; margin: 0; }
+    dl { border-top: 1px solid #334155; display: grid; gap: 12px; grid-template-columns: auto 1fr; margin-top: 28px; padding-top: 20px; }
+    dt { color: #94a3b8; font-weight: 700; }
+    dd { margin: 0; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>catalog-poc</h1>
+    <p>A minimal UDS-exposed app package served from a local Zarf package.</p>
+    <dl>
+      <dt>version</dt><dd>0.1.0</dd>
+      <dt>package</dt><dd>uds.dev/v1alpha1 Package with network.expose</dd>
+      <dt>host</dt><dd>catalog-poc.uds.dev</dd>
+    </dl>
+  </main>
+</body>
+</html>

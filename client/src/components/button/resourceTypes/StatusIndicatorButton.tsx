@@ -9,7 +9,8 @@ export function StatusIndicatorButton({
   onClick,
   state,
   tooltip,
-  value
+  value,
+  view = "icon"
 }: {
   iconOnly?: boolean;
   label: string;
@@ -17,9 +18,37 @@ export function StatusIndicatorButton({
   state: StatusIndicatorTone;
   tooltip: ReactNode;
   value?: ReactNode;
+  view?: "icon" | "dot";
 }) {
   const colors = getStatusColors(state);
   const clickable = Boolean(onClick);
+
+  if (view === "dot") {
+    return (
+      <Tooltip title={tooltip}>
+        <Box
+          aria-label={label}
+          component={clickable ? "button" : "span"}
+          onClick={onClick}
+          type={clickable ? "button" : undefined}
+          sx={{
+            appearance: "none",
+            bgcolor: colors.main,
+            border: "2px solid",
+            borderColor: "background.paper",
+            borderRadius: "999px",
+            cursor: clickable ? "pointer" : "default",
+            display: "inline-flex",
+            flex: "0 0 auto",
+            height: 14,
+            m: 0,
+            p: 0,
+            width: 14
+          }}
+        />
+      </Tooltip>
+    );
+  }
 
   return (
     <Tooltip title={tooltip}>
@@ -65,7 +94,7 @@ export function StatusIndicatorButton({
           justifyContent: iconOnly ? "center" : "flex-start",
           maxWidth: "100%",
           px: 0,
-          width: iconOnly ? 26 : { xs: "100%", md: "auto" },
+          width: iconOnly ? 26 : "auto",
           "& .MuiChip-icon": { fontSize: 16, mr: iconOnly ? 0 : 0.35 },
           "& .MuiChip-label": { minWidth: 0, px: iconOnly ? 0 : 0.65 }
         }}

@@ -151,6 +151,10 @@ export function App() {
     }
   }
 
+  function openInstalledApp(url: string) {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
   return (
     <SiteShell>
       <siteTemplate.header>
@@ -188,7 +192,10 @@ export function App() {
               data={installedPackages}
               content={installedPackagesContent}
               context={{
-                getItemContext: (pkg) => ({ registryPackage: packagesByName.get(pkg.name.toLowerCase()) ?? null }),
+                getItemContext: (pkg) => ({
+                  onOpen: openInstalledApp,
+                  registryPackage: packagesByName.get(pkg.name.toLowerCase()) ?? null
+                }),
                 refresh: {
                   disabled: busy,
                   onClick: () => void refresh()

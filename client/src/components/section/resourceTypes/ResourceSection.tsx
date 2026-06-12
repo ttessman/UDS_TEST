@@ -42,10 +42,8 @@ const defaultResourceSectionLayout = {
   alignItems: "stretch",
   gap: 2,
   gridTemplateColumns: {
-    xs: "1fr",
-    sm: "repeat(2, minmax(0, 1fr))",
-    lg: "repeat(3, minmax(0, 1fr))",
-    xl: "repeat(4, minmax(0, 1fr))"
+    xs: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
+    md: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))"
   },
   justifyContent: "stretch",
   justifyItems: "stretch"

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { KeyboardEvent, MouseEvent } from "react";
 import type { Slot, SlotChildren } from "@beqa/react-slots";
 
 export type CardDefinition = {
@@ -11,4 +12,6 @@ export type CardChildren = SlotChildren<Slot<"content"> | Slot<"actions"> | Slot
 export type CardProps = {
   children: CardChildren;
   definition?: CardDefinition;
+  onClick?: (event: MouseEvent<HTMLElement>) => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
 };

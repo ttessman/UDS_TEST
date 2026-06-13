@@ -6,11 +6,11 @@ export function SiteFooter() {
     <Box
       component="footer"
       sx={{
-        bgcolor: "var(--app-bg-shell)",
+        bgcolor: "var(--app-bg-footer)",
         borderTop: "1px solid",
         borderColor: "var(--app-border)",
         color: "var(--app-text-secondary)",
-        mt: 7,
+        mt: { xs: 6, md: 8 },
         py: 2.5
       }}
     >

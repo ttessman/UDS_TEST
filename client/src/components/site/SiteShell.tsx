@@ -16,9 +16,9 @@ export function SiteShell({ children }: { children: SiteShellChildren }) {
   const { slot } = useSlot(children);
 
   return (
-    <Box sx={{ bgcolor: "var(--app-bg-default)", minHeight: "100vh" }}>
+    <Box sx={{ bgcolor: "var(--app-bg-default)", display: "flex", flexDirection: "column", minHeight: "100dvh" }}>
       <slot.header />
-      <Box component="main">
+      <Box component="main" sx={{ flex: "1 0 auto", pb: { xs: 6, md: 8 } }}>
         <slot.content />
       </Box>
       <slot.footer />

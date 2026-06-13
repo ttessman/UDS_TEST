@@ -1,8 +1,8 @@
 import type { CommandState } from "@uds-poc/shared";
-import { CommandLogList as CommandLogRenderer, type CommandLogListDefinition } from "../../components/list/resourceTypes/CommandLogList.js";
-import type { ListState } from "../../components/list/list.types.js";
-import type { ListSectionDefinition } from "../../components/section/resourceTypes/ListSection.js";
-import { trimOutput } from "../../lib/format.js";
+import { CommandLogList as CommandLogRenderer, type CommandLogListDefinition } from "../../list/resourceTypes/CommandLogList.js";
+import type { ListState } from "../../list/list.types.js";
+import { trimOutput } from "../../../lib/format.js";
+import { Section, sectionTemplate } from "../Section.js";
 
 const commandLogListDefinition = {
   emptyMessage: "No backend command output has been captured yet.",
@@ -15,10 +15,19 @@ export function CommandLogList({ items, state }: { items: CommandState[]; state:
   return <CommandLogRenderer items={items} definition={commandLogListDefinition} state={state} />;
 }
 
-export const commandLogsSection = {
-  title: "Backend Command Output",
-  renderList: ({ items, state }) => <CommandLogList items={items} state={state} />
-} satisfies ListSectionDefinition<CommandState>;
+export function CommandLogSection({ items, state }: { items: CommandState[]; state: ListState }) {
+  return (
+    <Section>
+      <sectionTemplate.title>Backend Checks</sectionTemplate.title>
+      <sectionTemplate.subtitle>
+        Commands run by the local API to inspect UDS tooling, cluster reachability, registry metadata, and installed packages.
+      </sectionTemplate.subtitle>
+      <sectionTemplate.content>
+        <CommandLogList items={items} state={state} />
+      </sectionTemplate.content>
+    </Section>
+  );
+}
 
 type CommandSummary = {
   description: string;

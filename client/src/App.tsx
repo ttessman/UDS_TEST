@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Container, Stack, Typography } from "@mui/material";
+import { Alert, Container, Stack } from "@mui/material";
 import type { CommandState, InstalledPackage, RegistryPackage, UdsStatus } from "@uds-poc/shared";
 import {
   getInstalledPackages,
@@ -11,9 +11,6 @@ import { StatusIndicatorList } from "./components/list/resourceTypes/StatusIndic
 import { BackendCommandOutputModal } from "./components/modal/resourceTypes/BackendCommandOutputModal.js";
 import type { ResourceSectionContentConfig } from "./components/section/resourceTypes/ResourceSection.js";
 import { ResourceSection } from "./components/section/resourceTypes/ResourceSection.js";
-import { RefreshCountButton } from "./components/button/resourceTypes/RefreshCountButton.js";
-import { SearchField } from "./components/form/resourceTypes/SearchField.js";
-import { Section, sectionTemplate } from "./components/section/Section.js";
 import { SiteShell, siteContentSx, siteTemplate } from "./components/site/SiteShell.js";
 import { SiteFooter } from "./components/site/SiteFooter.js";
 import { SiteHeader } from "./components/site/SiteHeader.js";
@@ -21,7 +18,6 @@ import {
   installedPackageResource,
   type InstalledPackageResourceContext,
 } from "./features/packages/packageResourceDefinitions.js";
-import { RegistryPackageTable } from "./features/packages/RegistryPackageTable.js";
 import { udsStatusIndicators } from "./features/status/statusDefinitions.js";
 
 export function App() {
@@ -126,7 +122,6 @@ export function App() {
         .some((value) => String(value).toLowerCase().includes(query))
     );
   }, [installedPackageQuery, installedPackages]);
-
   const installedPackagesContent = useMemo(
     () =>
       ({
@@ -178,63 +173,9 @@ export function App() {
       </siteTemplate.header>
       <siteTemplate.content>
         <Container maxWidth={false} sx={{ ...siteContentSx, py: 3 }}>
-          <Stack sx={{ gap: 3.25 }}>
-            {error ? <Alert severity="error">{error}</Alert> : null}
-
+          <Stack sx={{ gap: 3.25 }}>  
             <StatusIndicatorList item={status} definition={udsStatusIndicators} context={undefined} />
-
-            <Section>
-              <sectionTemplate.header>
-                <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
-                  <Typography component="h2" sx={{ fontSize: 28, fontWeight: 800 }}>
-                    Airgap Store
-                  </Typography>
-                  <RefreshCountButton
-                    count={filteredPackages.length}
-                    disabled={busy}
-                    label={`${filteredPackages.length} Airgap Store packages`}
-                    onClick={() => void refresh()}
-                    tooltip={`${filteredPackages.length} packages. ${busy ? "Refreshing package data" : "Refresh package data"}`}
-                  />
-                </Stack>
-              </sectionTemplate.header>
-              <sectionTemplate.actions>
-                <SearchField
-                  iconPosition="end"
-                  label="Search Airgap Store packages"
-                  onChange={setPackageQuery}
-                  placeholder="Search store"
-                  sx={{
-                    flex: { xs: "1 1 100%", lg: "0 1 280px" },
-                    maxWidth: { xs: "100%", lg: 280 },
-                    minWidth: 0
-                  }}
-                  value={packageQuery}
-                />
-              </sectionTemplate.actions>
-              <sectionTemplate.subtitle>
-                {packages.length === filteredPackages.length
-                  ? "Catalog entries discovered from registry/OCI metadata. These are install candidates, not proof they are running."
-                  : `${packages.length} total registry packages, ${filteredPackages.length} matching the current search.`}
-              </sectionTemplate.subtitle>
-              <sectionTemplate.content>
-                <RegistryPackageTable
-                  data={filteredPackages}
-                  context={{
-                    disabled: busy,
-                    getInstalledPackage: (pkg) =>
-                      installedPackagesByName.get(pkg.packageName.toLowerCase()) ??
-                      installedPackagesByName.get(pkg.displayTitle.toLowerCase()) ??
-                      null,
-                    isInstalled: (pkg) =>
-                      installedPackagesByName.has(pkg.packageName.toLowerCase()) ||
-                      installedPackagesByName.has(pkg.displayTitle.toLowerCase()),
-                    onInstall: (id) => void installPackage(id),
-                    onOpen: openInstalledApp
-                  }}
-                />
-              </sectionTemplate.content>
-            </Section>
+            {error ? <Alert severity="error">{error}</Alert> : null}
             <ResourceSection<InstalledPackage, InstalledPackageResourceContext>
               data={filteredInstalledPackages}
               content={installedPackagesContent}
@@ -261,6 +202,17 @@ export function App() {
       <siteTemplate.footer>
         <SiteFooter />
         <BackendCommandOutputModal
+          catalogStore={{
+            busy,
+            filteredPackages,
+            installedPackagesByName,
+            onInstall: (id) => void installPackage(id),
+            onOpen: openInstalledApp,
+            onRefresh: () => void refresh(),
+            onSearchChange: setPackageQuery,
+            packages,
+            searchValue: packageQuery
+          }}
           logs={logs}
           logState={busy && logs.length === 0 ? "loading" : "ready"}
           status={status}

@@ -2,6 +2,7 @@
   --app-bg-default: #030712;
   --app-bg-paper: #111827;
   --app-bg-paper-hover: #132033;
+  --app-bg-footer: #0b1220;
   --app-bg-shell: #070d1a;
   --app-border: #334155;
   --app-border-strong: #64748b;
@@ -50,6 +51,7 @@ body[data-color-mode="light"] {
   --app-bg-default: #f8fafc;
   --app-bg-paper: #ffffff;
   --app-bg-paper-hover: #f1f5f9;
+  --app-bg-footer: #e8eef6;
   --app-bg-shell: #f1f5f9;
   --app-border: #cbd5e1;
   --app-border-strong: #64748b;

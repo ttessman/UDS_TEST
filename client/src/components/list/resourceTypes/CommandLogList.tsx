@@ -29,7 +29,7 @@ export function CommandLogList({
       layout={{
         alignItems: "stretch",
         gap: 1.25,
-        gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))" }
+        gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))", lg: "repeat(3, minmax(0, 1fr))" }
       }}
       state={{
         emptyMessage: definition.emptyMessage,
@@ -37,6 +37,7 @@ export function CommandLogList({
         loadingMessage: definition.loadingMessage,
         status: state
       }}
+      sx={{ mt: 1.5 }}
     >
       <listTemplate.content>
         <>{commandLogCards}</>

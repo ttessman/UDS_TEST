@@ -10,7 +10,6 @@ export function SiteFooter() {
         borderTop: "1px solid",
         borderColor: "var(--app-border)",
         color: "var(--app-text-secondary)",
-        mt: { xs: 6, md: 8 },
         py: 2.5
       }}
     >

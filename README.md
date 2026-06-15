@@ -46,10 +46,10 @@ make verify-uds
 
 To test a specific Core demo bundle, run `UDS_CORE_BUNDLE_REF=k3d-core-demo:<version> make deploy-uds`.
 
-Full macOS workaround path:
+
+## Full macOS workaround path:
 
 If the official deploy fails with the known macOS k3d/seccomp issue, use this full alternate flow:
-
 ```bash
 make setup
 make deploy-uds-macos

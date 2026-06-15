@@ -22,7 +22,7 @@ export function SearchAddonButton({
           sx={{
             border: "1px solid",
             borderColor: active ? "var(--app-border-strong)" : "var(--app-border)",
-            borderRadius: 1.5,
+            borderRadius: "var(--app-radius-control)",
             color: active ? "var(--app-text-primary)" : "var(--app-text-secondary)",
             height: 40,
             width: 40,

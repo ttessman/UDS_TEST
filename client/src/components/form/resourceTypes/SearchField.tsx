@@ -114,6 +114,7 @@ export function SearchField({
             endAdornment: iconPosition === "end" ? <InputAdornment position="end">{adornment}</InputAdornment> : undefined,
             startAdornment: iconPosition === "start" ? <InputAdornment position="start">{adornment}</InputAdornment> : undefined,
             sx: {
+              borderRadius: "var(--app-radius-control)",
               cursor: isExpanded ? "text" : "pointer",
               height: searchFieldHeight,
               overflow: "hidden",
@@ -122,6 +123,9 @@ export function SearchField({
                 height: searchFieldHeight,
                 m: 0,
                 maxHeight: "none"
+              },
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderRadius: "var(--app-radius-control)"
               },
               "& input": {
                 cursor: isExpanded ? "text" : "pointer",

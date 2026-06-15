@@ -33,7 +33,7 @@ export function CatalogStoreSection({
       <sectionTemplate.header>
         <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
           <Typography component="h2" sx={{ fontSize: 28, fontWeight: 800 }}>
-            UDS Registry
+            UDS Store
           </Typography>
           <RefreshCountButton
             count={filteredPackages.length}
@@ -47,7 +47,7 @@ export function CatalogStoreSection({
       <sectionTemplate.actions>
         <SearchField
           iconPosition="end"
-          label="Search UDS Registry packages"
+          label="Search UDS store packages"
           onChange={onSearchChange}
           placeholder="Search store"
           sx={{

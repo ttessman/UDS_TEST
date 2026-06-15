@@ -7,11 +7,15 @@ import { GenericTable, type Column } from "../../components/table/Table.js";
 import { formatBytes, relativeAge } from "../../lib/format.js";
 
 export type RegistryPackageTableContext = {
+  canManageApps: boolean;
+  canManageRegistry: boolean;
   disabled: boolean;
   getInstalledPackage: (pkg: RegistryPackage) => InstalledPackage | null;
   isInstalled: (pkg: RegistryPackage) => boolean;
   onInstall: (id: string) => void;
   onOpen: (url: string) => void;
+  onUndeploy: (pkg: InstalledPackage) => void;
+  onUnpublish: (id: string) => void;
 };
 
 export function RegistryPackageTable({
@@ -52,16 +56,24 @@ export function RegistryPackageTable({
     {
       id: "status",
       label: "State",
-      render: (pkg) => ({
-        node: context.isInstalled(pkg) ? (
-          <StatusIndicatorButton label="Installed" state="success" tooltip="Installed" view="chip" />
-        ) : (
-          <Typography color="text.secondary" sx={{ fontSize: 13, fontWeight: 700 }}>
-            Available
-          </Typography>
-        ),
-        text: context.isInstalled(pkg) ? "Installed" : "Available"
-      }),
+      render: (pkg) => {
+        const installedPackage = context.getInstalledPackage(pkg);
+        const stateLabel = installedPackageStateLabel(installedPackage);
+
+        return {
+          node: installedPackage ? (
+            <StatusIndicatorButton
+              label={stateLabel}
+              state={isInstalledPackageDeployed(installedPackage) ? "success" : "warning"}
+              tooltip={stateLabel}
+              view="chip"
+            />
+          ) : (
+            <StatusIndicatorButton label="Not Installed" state="neutral" tooltip="Not installed in the cluster" view="chip" />
+          ),
+          text: stateLabel
+        };
+      },
       sortValue: (pkg) => (context.isInstalled(pkg) ? 1 : 0)
     },
     {
@@ -127,6 +139,7 @@ function RegistryPackageActions({
 }) {
   const installedPackage = context.getInstalledPackage(pkg);
   const launchUrl = installedPackage ? getLiveLaunchUrl(installedPackage) : null;
+  const title = pkg.displayTitle || pkg.packageName;
   const actions: ContextMenuAction[] = [
     ...(launchUrl
       ? [
@@ -137,12 +150,30 @@ function RegistryPackageActions({
           }
         ]
       : []),
-    ...(pkg.installable && pkg.installAction && !context.isInstalled(pkg)
+    ...(context.canManageApps && pkg.installable && pkg.installAction && !installedPackage
       ? [
           {
             icon: "install" as const,
-            label: `Install ${pkg.displayTitle || pkg.packageName}`,
+            label: "Install App",
             onSelect: () => context.onInstall(pkg.id)
+          }
+        ]
+      : []),
+    ...(context.canManageApps && installedPackage && canUninstallInstalledPackage(installedPackage)
+      ? [
+          {
+            icon: "undeploy" as const,
+            label: "Uninstall App",
+            onSelect: () => context.onUndeploy(installedPackage)
+          }
+        ]
+      : []),
+    ...(context.canManageRegistry && canUnpublishPackage(pkg)
+      ? [
+          {
+            icon: "unpublish" as const,
+            label: "Unpublish",
+            onSelect: () => context.onUnpublish(pkg.id)
           }
         ]
       : [])
@@ -150,21 +181,19 @@ function RegistryPackageActions({
   const menu = useContextMenu({
     actions,
     actionsLabel: "Package actions",
-    state: context.isInstalled(pkg)
-      ? {
-          content: (
-            <Box component="li" sx={{ listStyle: "none", px: 1.5, pb: 0.15 }}>
-              <StatusIndicatorButton
-                label={`${pkg.displayTitle || pkg.packageName} Installed`}
-                state="success"
-                tooltip={`${pkg.displayTitle || pkg.packageName} Installed`}
-                view="text"
-              />
-            </Box>
-          ),
-          label: "Package state"
-        }
-      : undefined
+    state: {
+      content: (
+        <Box component="li" sx={{ listStyle: "none", px: 1.5, pb: 0.15 }}>
+          <StatusIndicatorButton
+            label={`${title} ${installedPackageStateLabel(installedPackage)}`}
+            state={installedPackage ? (isInstalledPackageDeployed(installedPackage) ? "success" : "warning") : "neutral"}
+            tooltip={`${title} ${installedPackageStateLabel(installedPackage)}`}
+            view="text"
+          />
+        </Box>
+      ),
+      label: "Package state"
+    }
   });
 
   if (!menu.hasMenu) {
@@ -200,4 +229,24 @@ function PackageIcon({ icon, title }: { icon: string | null; title: string }) {
 
 function getLiveLaunchUrl(item: InstalledPackage) {
   return item.launchUrl && (item.phase === "Ready" || item.status === "Ready") ? item.launchUrl : null;
+}
+
+function installedPackageStateLabel(item: InstalledPackage | null): string {
+  if (!item) {
+    return "Not Installed";
+  }
+
+  return isInstalledPackageDeployed(item) ? "Deployed" : "Installed";
+}
+
+function isInstalledPackageDeployed(item: InstalledPackage | null): boolean {
+  return item?.phase === "Ready" || item?.status === "Ready";
+}
+
+function canUnpublishPackage(pkg: RegistryPackage): boolean {
+  return /^oci:\/\/(localhost|127\.0\.0\.1):\d+\/uds-poc\/catalog-poc:/.test(pkg.ociReference);
+}
+
+function canUninstallInstalledPackage(pkg: InstalledPackage): boolean {
+  return pkg.name === "catalog-poc" || pkg.namespace === "catalog-poc";
 }

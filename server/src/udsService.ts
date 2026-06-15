@@ -20,6 +20,12 @@ const DEFAULT_PACKAGE_REFS = [
 ];
 
 const portForwards = new Map<string, Promise<PortForwardTarget>>();
+const REGISTRY_MANIFEST_ACCEPT = [
+  "application/vnd.oci.image.manifest.v1+json",
+  "application/vnd.oci.image.index.v1+json",
+  "application/vnd.docker.distribution.manifest.v2+json",
+  "application/vnd.docker.distribution.manifest.list.v2+json"
+].join(", ");
 
 export function getPackageRefs(): string[] {
   return (process.env.UDS_REGISTRY_PACKAGE_REFS ?? DEFAULT_PACKAGE_REFS.join(","))
@@ -94,6 +100,9 @@ export async function getUdsStatus(): Promise<UdsStatus> {
   const cluster = await runCommand("kubectl", ["cluster-info"], { timeoutMs: 10_000 });
   checks.push(cluster);
 
+  const clusterContext = await runCommand("kubectl", ["config", "current-context"], { timeoutMs: 10_000 });
+  checks.push(clusterContext);
+
   const namespaces = await runCommand("kubectl", ["get", "namespace", "-o", "json"], {
     timeoutMs: 10_000
   });
@@ -119,6 +128,7 @@ export async function getUdsStatus(): Promise<UdsStatus> {
     udsVersion: prerequisites.uds.version,
     zarfVersion: zarfVersion.ok ? firstLine(zarfVersion.stdout || zarfVersion.stderr) : null,
     clusterReachable: cluster.ok,
+    clusterName: clusterContext.ok ? firstLine(clusterContext.stdout || clusterContext.stderr) : null,
     coreRunning: cluster.ok ? coreEvidence.length > 0 : null,
     coreEvidence,
     coreNamespaces,
@@ -223,13 +233,14 @@ export async function getRegistryPackages(): Promise<PackagesResponse> {
   }
 
   const logs: CommandState[] = [];
-  const packages = await Promise.all(
+  const inspectedPackages = await Promise.all(
     getPackageRefs().map(async (ref) => {
       const inspected = await inspectPackageDefinition(ref);
       logs.push(inspected.command);
-      return inspected.package;
+      return isMissingMutableRegistryPackage(ref, inspected.command) ? null : inspected.package;
     })
   );
+  const packages = inspectedPackages.filter((pkg): pkg is RegistryPackage => Boolean(pkg));
 
   return { packages, logs };
 }
@@ -908,11 +919,274 @@ export async function installPackage(id: string): Promise<{ command: string; res
     };
   }
 
+  const result = await runCommand("zarf", args, { timeoutMs: 10 * 60_000, env: registryEnv() });
   return {
     command,
-    result: await runCommand("zarf", args, { timeoutMs: 10 * 60_000, env: registryEnv() }),
-    error: null
+    result,
+    error: result.ok ? null : commandError(result, "Install command failed.")
   };
+}
+
+export async function publishPackage({
+  packageName,
+  ref
+}: {
+  packageName?: string;
+  ref?: string;
+} = {}): Promise<{ command: string; packageRef: string | null; result: CommandState | null; error: string | null }> {
+  const packageRef = ref?.trim() || catalogPocRef();
+  const requestedName = packageName?.trim() || catalogPocName();
+
+  if (requestedName !== catalogPocName() || packageRef !== catalogPocRef()) {
+    return {
+      command: "",
+      packageRef,
+      result: null,
+      error: `Only ${catalogPocName()} publishing is supported by this local POC.`
+    };
+  }
+
+  if (!isMutableRegistryPackageRef(packageRef)) {
+    return {
+      command: "",
+      packageRef,
+      result: null,
+      error: `Only local ${catalogPocRepository()} registry packages can be published by this POC.`
+    };
+  }
+
+  const args = ["publish-catalog-poc"];
+  const command = ["make", ...args].join(" ");
+  const result = await runCommand("make", args, { timeoutMs: 10 * 60_000, env: registryEnv() });
+
+  return {
+    command,
+    packageRef,
+    result,
+    error: result.ok ? null : result.stderr || result.stdout || "Publish command failed."
+  };
+}
+
+export async function unpublishPackage(id: string): Promise<{ command: string; packageRef: string | null; result: CommandState | null; error: string | null }> {
+  const ref = packageRefFromId(id);
+
+  if (!ref || !getPackageRefs().includes(ref)) {
+    return { command: "", packageRef: ref, result: null, error: "Unknown package id" };
+  }
+
+  if (!isMutableRegistryPackageRef(ref)) {
+    return { command: "", packageRef: ref, result: null, error: "Core or remote registry packages cannot be unpublished by this local POC." };
+  }
+
+  const result = await deleteLocalRegistryManifest(ref);
+  return {
+    command: result.command,
+    packageRef: ref,
+    result,
+    error: result.ok ? null : result.stderr || result.stdout || "Registry unpublish failed."
+  };
+}
+
+export async function undeployPackage({
+  name,
+  namespace
+}: {
+  name: string;
+  namespace: string;
+}): Promise<{ command: string; result: CommandState | null; error: string | null }> {
+  if (!isMutableInstalledPackage({ name, namespace })) {
+    return {
+      command: "",
+      result: null,
+      error: "Core or system packages cannot be undeployed by this local POC."
+    };
+  }
+
+  const args = ["package", "remove", name, "--confirm"];
+  const command = ["zarf", ...args].join(" ");
+
+  if (process.env.UDS_POC_ENABLE_INSTALL !== "true") {
+    return {
+      command,
+      result: null,
+      error: "Undeploy execution is disabled. Set UDS_POC_ENABLE_INSTALL=true on the server to run this command."
+    };
+  }
+
+  const result = await runCommand("zarf", args, { timeoutMs: 10 * 60_000, env: registryEnv() });
+  return {
+    command,
+    result,
+    error: result.ok ? null : commandError(result, "Undeploy command failed.")
+  };
+}
+
+function commandError(result: CommandState, fallback: string): string {
+  return result.stderr.trim() || result.stdout.trim() || fallback;
+}
+
+function catalogPocRef(): string {
+  const version = process.env.CATALOG_POC_VERSION ?? "0.1.0";
+
+  return process.env.CATALOG_POC_OCI_REF ?? `oci://${catalogPocRegistry()}/${catalogPocRepository()}/${catalogPocName()}:${version}`;
+}
+
+function catalogPocName(): string {
+  return process.env.CATALOG_POC_NAME ?? "catalog-poc";
+}
+
+function catalogPocNamespace(): string {
+  return process.env.CATALOG_POC_NAMESPACE ?? catalogPocName();
+}
+
+function catalogPocRegistry(): string {
+  return process.env.CATALOG_POC_REGISTRY ?? "localhost:5001";
+}
+
+function catalogPocRepository(): string {
+  return process.env.CATALOG_POC_REPOSITORY ?? "uds-poc";
+}
+
+function isMutableRegistryPackageRef(ref: string): boolean {
+  return mutableRegistryRefPattern().test(ref);
+}
+
+type LocalRegistryRef = {
+  registry: string;
+  repository: string;
+  tag: string;
+};
+
+function parseMutableRegistryRef(ref: string): LocalRegistryRef | null {
+  const match = mutableRegistryRefPattern({ exact: true }).exec(ref);
+
+  if (!match?.groups) {
+    return null;
+  }
+
+  return {
+    registry: match.groups.registry,
+    repository: match.groups.repository,
+    tag: match.groups.tag
+  };
+}
+
+function mutableRegistryRefPattern({ exact = false }: { exact?: boolean } = {}): RegExp {
+  const repositoryPath = `${catalogPocRepository()}/${catalogPocName()}`;
+  const end = exact ? "(?<tag>[^/]+)$" : "";
+
+  return new RegExp(`^oci:\\/\\/(?<registry>(localhost|127\\.0\\.0\\.1):\\d+)\\/(?<repository>${escapeRegExp(repositoryPath)}):${end}`);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function isMissingMutableRegistryPackage(ref: string, command: CommandState): boolean {
+  if (!isMutableRegistryPackageRef(ref) || command.ok) {
+    return false;
+  }
+
+  const output = `${command.stdout}\n${command.stderr}`.toLowerCase();
+  return /not found|manifest unknown|name unknown|404/.test(output);
+}
+
+async function deleteLocalRegistryManifest(ref: string): Promise<CommandState> {
+  const parsed = parseMutableRegistryRef(ref);
+  const command = `registry manifest delete ${ref}`;
+
+  if (!parsed) {
+    return {
+      ok: false,
+      command,
+      stdout: "",
+      stderr: `Only local ${catalogPocRepository()}/${catalogPocName()} refs can be unpublished.`,
+      exitCode: null
+    };
+  }
+
+  try {
+    const manifestUrl = `http://${parsed.registry}/v2/${parsed.repository}/manifests/${encodeURIComponent(parsed.tag)}`;
+    const digest = await readRegistryManifestDigest(manifestUrl);
+
+    if (!digest) {
+      return {
+        ok: true,
+        command,
+        stdout: `Package ${ref} was already absent from the local registry.`,
+        stderr: "",
+        exitCode: 0
+      };
+    }
+
+    const deleteUrl = `http://${parsed.registry}/v2/${parsed.repository}/manifests/${encodeURIComponent(digest)}`;
+    const response = await fetch(deleteUrl, { method: "DELETE" });
+
+    if (!response.ok && response.status !== 404) {
+      return {
+        ok: false,
+        command,
+        stdout: "",
+        stderr: `${response.status} ${response.statusText}: ${await response.text()}`,
+        exitCode: null
+      };
+    }
+
+    return {
+      ok: true,
+      command,
+      stdout: `Deleted ${ref} from the local registry.`,
+      stderr: "",
+      exitCode: 0
+    };
+  } catch (error) {
+    return { ok: false, command, stdout: "", stderr: (error as Error).message, exitCode: null };
+  }
+}
+
+async function readRegistryManifestDigest(manifestUrl: string): Promise<string | null> {
+  const response = await fetch(manifestUrl, {
+    method: "HEAD",
+    headers: { accept: REGISTRY_MANIFEST_ACCEPT }
+  });
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`${response.status} ${response.statusText}: ${await response.text()}`);
+  }
+
+  const digest = response.headers.get("docker-content-digest");
+  if (digest) {
+    return digest;
+  }
+
+  const fallback = await fetch(manifestUrl, {
+    headers: { accept: REGISTRY_MANIFEST_ACCEPT }
+  });
+
+  if (fallback.status === 404) {
+    return null;
+  }
+
+  if (!fallback.ok) {
+    throw new Error(`${fallback.status} ${fallback.statusText}: ${await fallback.text()}`);
+  }
+
+  return fallback.headers.get("docker-content-digest");
+}
+
+function isMutableInstalledPackage({ name, namespace }: { name: string; namespace: string }): boolean {
+  const protectedNames = new Set(["authservice", "keycloak", "core", "uds-core"]);
+  const protectedNamespaces = new Set(["authservice", "keycloak", "kube-system", "zarf", "uds-core"]);
+
+  if (protectedNames.has(name) || protectedNamespaces.has(namespace)) {
+    return false;
+  }
+
+  return name === catalogPocName() && namespace === catalogPocNamespace();
 }
 
 function zarfDeployPreview(ociReference: string): string {

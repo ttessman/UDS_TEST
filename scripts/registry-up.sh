@@ -17,6 +17,7 @@ fi
 
 docker run -d \
   --name "${REGISTRY_NAME}" \
+  -e REGISTRY_STORAGE_DELETE_ENABLED=true \
   -p "${REGISTRY_PORT}:5000" \
   registry:2 >/dev/null
 

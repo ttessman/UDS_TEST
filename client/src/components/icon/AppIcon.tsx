@@ -5,6 +5,7 @@ import {
   CodeOutlined,
   ContentCopy,
   DarkMode,
+  DeleteOutlined,
   ErrorOutlineOutlined,
   ExpandMore,
   HelpOutlineOutlined,
@@ -15,10 +16,12 @@ import {
   MoreVert,
   OpenInNew,
   RefreshOutlined,
+  RemoveCircleOutlined,
   ReplyRounded,
   RocketLaunch,
   Search,
   Terminal,
+  UploadFileOutlined,
   WarningAmber
 } from "@mui/icons-material";
 import type { SvgIconProps } from "@mui/material";
@@ -40,6 +43,9 @@ const icons = {
   packageVersion: Inventory2Outlined,
   returnToSummary: ReplyRounded,
   refresh: RefreshOutlined,
+  undeploy: RemoveCircleOutlined,
+  unpublish: DeleteOutlined,
+  publish: UploadFileOutlined,
   terminal: Terminal,
   search: Search,
   statusError: ErrorOutlineOutlined,

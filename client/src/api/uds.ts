@@ -2,6 +2,9 @@ import type {
   InstallResponse,
   InstalledPackagesResponse,
   PackagesResponse,
+  PublishResponse,
+  UndeployResponse,
+  UnpublishResponse,
   UdsStatus
 } from "@uds-poc/shared";
 
@@ -38,4 +41,25 @@ export function requestPackageInstall(id: string): Promise<InstallResponse> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ confirm: true })
   });
+}
+
+export function requestPackagePublish(): Promise<PublishResponse> {
+  return getJson<PublishResponse>("/api/uds/packages/publish", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ packageName: "catalog-poc" })
+  });
+}
+
+export function requestPackageUnpublish(id: string): Promise<UnpublishResponse> {
+  return getJson<UnpublishResponse>(`/api/uds/packages/${encodeURIComponent(id)}/unpublish`, {
+    method: "POST"
+  });
+}
+
+export function requestPackageUndeploy(namespace: string, name: string): Promise<UndeployResponse> {
+  return getJson<UndeployResponse>(
+    `/api/uds/installed-packages/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}/undeploy`,
+    { method: "POST" }
+  );
 }

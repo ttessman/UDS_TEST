@@ -19,12 +19,17 @@ export const backendCommandOutputModalDefinition = {
 
 export type BackendCommandOutputCatalogStore = {
   busy: boolean;
+  canManageApps?: boolean;
+  canManageRegistry?: boolean;
   filteredPackages: RegistryPackage[];
   installedPackagesByName: Map<string, InstalledPackage>;
   onInstall: (id: string) => void;
   onOpen: (url: string) => void;
+  onPublish: () => void;
   onRefresh: () => void;
   onSearchChange: (value: string) => void;
+  onUndeploy: (pkg: InstalledPackage) => void;
+  onUnpublish: (id: string) => void;
   packages: RegistryPackage[];
   searchValue: string;
 };

@@ -34,6 +34,8 @@ export type UdsStatus = {
   udsVersion: string | null;
   zarfVersion: string | null;
   clusterReachable: boolean;
+  /** Source: active kubeconfig context from `kubectl config current-context`. */
+  clusterName: string | null;
   coreRunning: boolean | null;
   /** Source: backend-derived from UDS Core namespaces and Package CRs observed in the active cluster. */
   coreEvidence: string[];
@@ -172,6 +174,38 @@ export type InstallRequestBody = {
 export type InstallResponse = {
   accepted: boolean;
   packageId: string;
+  command: string;
+  result: CommandState | null;
+  error: string | null;
+};
+
+export type PublishRequestBody = {
+  packageName?: string;
+  ref?: string;
+};
+
+export type PublishResponse = {
+  accepted: boolean;
+  packageId: string | null;
+  packageRef: string | null;
+  command: string;
+  result: CommandState | null;
+  error: string | null;
+};
+
+export type UnpublishResponse = {
+  accepted: boolean;
+  packageId: string;
+  packageRef: string | null;
+  command: string;
+  result: CommandState | null;
+  error: string | null;
+};
+
+export type UndeployResponse = {
+  accepted: boolean;
+  namespace: string;
+  name: string;
   command: string;
   result: CommandState | null;
   error: string | null;

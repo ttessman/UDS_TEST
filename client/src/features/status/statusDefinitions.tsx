@@ -34,6 +34,7 @@ export const udsStatusIndicators = {
       details: ({ item }) => (
         <StatusDetail
           lines={[
+            ["Context", item?.clusterName ?? "Not discovered"],
             ["Reachable", yesNo(item?.clusterReachable)],
             ["kubectl", item?.prerequisites.kubectl.path ?? "Not discovered"],
             ["kubectl version", item?.prerequisites.kubectl.version ?? "Not discovered"]

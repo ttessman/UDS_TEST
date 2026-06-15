@@ -17,6 +17,8 @@ export type RegistryPackageResourceContext = {
 };
 
 export type InstalledPackageResourceContext = {
+  canManageApps?: boolean;
+  onUndeploy?: (pkg: InstalledPackage) => void;
   onOpen: (url: string) => void;
   registryPackage: RegistryPackage | null;
 };
@@ -202,15 +204,26 @@ export const installedPackageResource = {
   menuActions: ({ context, item }) => {
     const launchUrl = getLiveLaunchUrl(item);
 
-    return launchUrl
-      ? [
-          {
-            icon: "open",
-            label: "Open App",
-            onSelect: () => context.onOpen(launchUrl)
-          }
-        ]
-      : [];
+    return [
+      ...(launchUrl
+        ? [
+            {
+              icon: "open" as const,
+              label: "Open App",
+              onSelect: () => context.onOpen(launchUrl)
+            }
+          ]
+        : []),
+      ...(context.canManageApps !== false && context.onUndeploy && canUninstallInstalledPackage(item)
+        ? [
+            {
+              icon: "undeploy" as const,
+              label: "Uninstall App",
+              onSelect: () => context.onUndeploy?.(item)
+            }
+          ]
+        : [])
+    ];
   },
   onSelect: ({ context, item }) => {
     const launchUrl = getLiveLaunchUrl(item);
@@ -307,6 +320,10 @@ function PackageStatus({ status, view }: { status: string | null; view: "chip" |
 
 function getLiveLaunchUrl(item: InstalledPackage) {
   return item.launchUrl && (item.phase === "Ready" || item.status === "Ready") ? item.launchUrl : null;
+}
+
+function canUninstallInstalledPackage(pkg: InstalledPackage): boolean {
+  return pkg.name === "catalog-poc" || pkg.namespace === "catalog-poc";
 }
 
 function packageKindLabel(kind: string | null): string {

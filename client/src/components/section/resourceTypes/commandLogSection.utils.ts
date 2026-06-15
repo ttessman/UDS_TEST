@@ -35,6 +35,16 @@ export function summarizeCommand(log: CommandState): CommandSummary {
     };
   }
 
+  if (log.command === "kubectl config current-context") {
+    return {
+      description: "Reads the active kubeconfig context used by kubectl.",
+      fields: [["Context", trimOutput(log.stdout) || "Not reported"]],
+      message: log.ok ? null : firstErrorMessage(log),
+      tone: log.ok ? "success" : "error",
+      title: "Cluster context"
+    };
+  }
+
   if (log.command === "kubectl get namespace -o json") {
     const count = readJsonItemCount(log.stdout);
     return {

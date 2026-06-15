@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-namespaces="${DOWN_DEPLOY_NAMESPACES:-catalog-poc}"
+namespaces="${DOWN_DEPLOY_NAMESPACES:-${CATALOG_POC_NAMESPACE:-catalog-poc}}"
 timeout="${DOWN_DEPLOY_TIMEOUT:-120s}"
 
 if ! command -v kubectl >/dev/null 2>&1; then

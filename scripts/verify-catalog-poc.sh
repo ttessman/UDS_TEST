@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "Waiting for catalog-poc deployment"
-kubectl -n catalog-poc rollout status deployment/catalog-poc --timeout=180s
+source "$(dirname "$0")/catalog-poc-env.sh"
+
+echo "Waiting for ${CATALOG_POC_NAME} deployment"
+kubectl -n "${CATALOG_POC_NAMESPACE}" rollout status "deployment/${CATALOG_POC_NAME}" --timeout=180s
 
 echo
 echo "UDS Package"
-kubectl -n catalog-poc get package catalog-poc -o wide
+kubectl -n "${CATALOG_POC_NAMESPACE}" get package "${CATALOG_POC_NAME}" -o wide
 
 echo
 echo "Endpoint"
-kubectl -n catalog-poc get package catalog-poc -o jsonpath='{.status.endpoints[*]}'
+kubectl -n "${CATALOG_POC_NAMESPACE}" get package "${CATALOG_POC_NAME}" -o jsonpath='{.status.endpoints[*]}'
 echo

@@ -7,9 +7,22 @@ import type {
   InstallResponse,
   InstalledPackagesResponse,
   PackagesResponse,
+  PublishRequestBody,
+  PublishResponse,
+  UndeployResponse,
+  UnpublishResponse,
   UdsStatus
 } from "@uds-poc/shared";
-import { getInstalledPackageProxyTarget, getInstalledPackages, getRegistryPackages, getUdsStatus, installPackage } from "./udsService.js";
+import {
+  getInstalledPackageProxyTarget,
+  getInstalledPackages,
+  getRegistryPackages,
+  getUdsStatus,
+  installPackage,
+  publishPackage,
+  undeployPackage,
+  unpublishPackage
+} from "./udsService.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 3001);
@@ -92,6 +105,65 @@ app.post<{ id: string }, InstallResponse, InstallRequestBody>(
       res.json({
         accepted: Boolean(result.result?.ok),
         packageId: req.params.id,
+        command: result.command,
+        result: result.result,
+        error: result.error
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+app.post<Record<string, never>, PublishResponse, PublishRequestBody>(
+  "/api/uds/packages/publish",
+  async (req, res, next) => {
+    try {
+      const result = await publishPackage(req.body);
+      res.json({
+        accepted: Boolean(result.result?.ok),
+        packageId: result.packageRef ? Buffer.from(result.packageRef).toString("base64url") : null,
+        packageRef: result.packageRef,
+        command: result.command,
+        result: result.result,
+        error: result.error
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+app.post<{ id: string }, UnpublishResponse>(
+  "/api/uds/packages/:id/unpublish",
+  async (req, res, next) => {
+    try {
+      const result = await unpublishPackage(req.params.id);
+      res.json({
+        accepted: Boolean(result.result?.ok),
+        packageId: req.params.id,
+        packageRef: result.packageRef,
+        command: result.command,
+        result: result.result,
+        error: result.error
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+app.post<{ namespace: string; name: string }, UndeployResponse>(
+  "/api/uds/installed-packages/:namespace/:name/undeploy",
+  async (req, res, next) => {
+    try {
+      const namespace = decodeURIComponent(req.params.namespace);
+      const name = decodeURIComponent(req.params.name);
+      const result = await undeployPackage({ namespace, name });
+      res.json({
+        accepted: Boolean(result.result?.ok),
+        namespace,
+        name,
         command: result.command,
         result: result.result,
         error: result.error

@@ -171,6 +171,8 @@ This stops local dev servers on ports `3001` and `5173`, removes repo-deployed s
 DOWN_DEPLOY_NAMESPACES="catalog-poc" make down-deploy
 ```
 
+For the local sample app, `CATALOG_POC_NAMESPACE` defaults to `CATALOG_POC_NAME` and controls verification, cleanup, and backend mutable-package guardrails. The checked-in sample manifests still deploy `catalog-poc/catalog-poc`; change the manifests or package source too before using a different namespace end to end.
+
 If `make deploy-uds` fails with `Bind for 0.0.0.0:80 failed: port is already allocated`, run:
 
 ```bash
@@ -259,6 +261,8 @@ oci://localhost:5001/uds-poc/catalog-poc:0.1.0
 ```
 
 Then it configures `server/.env` so `GET /api/uds/packages` reads real Zarf package metadata from that OCI ref, deploys the same ref into the current UDS cluster, and verifies the rollout. The deployed app creates a real `uds.dev/v1alpha1` Package CR with `spec.network.expose`, and UDS reports the launch endpoint through `status.endpoints[]`.
+
+The sample app identity can be adjusted with `CATALOG_POC_NAME`, `CATALOG_POC_NAMESPACE`, `CATALOG_POC_REPOSITORY`, `CATALOG_POC_REGISTRY`, and `CATALOG_POC_VERSION`. Namespace overrides are guardrail/config inputs only until the package manifests are updated to match.
 
 ## Scripts
 

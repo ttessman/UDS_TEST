@@ -4,8 +4,7 @@ import type { CommandState, InstalledPackage, RegistryPackage, UdsStatus } from 
 import {
   getInstalledPackages,
   getRegistryPackages,
-  getUdsStatus,
-  requestPackageInstall
+  getUdsStatus
 } from "./api/uds.js";
 import { StatusIndicatorList } from "./components/list/resourceTypes/StatusIndicatorList.js";
 import { BackendCommandOutputModal } from "./components/modal/resourceTypes/BackendCommandOutputModal.js";
@@ -16,9 +15,13 @@ import { SiteFooter } from "./components/site/SiteFooter.js";
 import { SiteHeader } from "./components/site/SiteHeader.js";
 import {
   installedPackageResource,
-  type InstalledPackageResourceContext,
+  type InstalledPackageResourceContext
 } from "./features/packages/packageResourceDefinitions.js";
+import { usePackageActions } from "./features/packages/usePackageActions.js";
 import { udsStatusIndicators } from "./features/status/statusDefinitions.js";
+
+const canManageApps = true;
+const canManageRegistry = true;
 
 export function App() {
   const [status, setStatus] = useState<UdsStatus | null>(null);
@@ -142,25 +145,12 @@ export function App() {
     [installedPackages.length]
   );
 
-  async function installPackage(packageId: string) {
-    setBusy(true);
-    setError(null);
-
-    try {
-      const response = await requestPackageInstall(packageId);
-      setLogs((existing) => (response.result ? [response.result, ...existing] : existing));
-
-      if (response.error) {
-        setError(response.error);
-      }
-
-      await refresh();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Install request failed");
-    } finally {
-      setBusy(false);
-    }
-  }
+  const { installPackage, publishPackage, undeployPackage, unpublishPackage } = usePackageActions({
+    refresh,
+    setBusy,
+    setError,
+    setLogs
+  });
 
   function openInstalledApp(url: string) {
     window.open(url, "_blank", "noopener,noreferrer");
@@ -181,6 +171,8 @@ export function App() {
               content={installedPackagesContent}
               context={{
                 getItemContext: (pkg) => ({
+                  canManageApps,
+                  onUndeploy: undeployPackage,
                   onOpen: openInstalledApp,
                   registryPackage: packagesByName.get(pkg.name.toLowerCase()) ?? null
                 }),
@@ -204,12 +196,17 @@ export function App() {
         <BackendCommandOutputModal
           catalogStore={{
             busy,
+            canManageApps,
+            canManageRegistry,
             filteredPackages,
             installedPackagesByName,
             onInstall: (id) => void installPackage(id),
             onOpen: openInstalledApp,
+            onPublish: () => void publishPackage(),
             onRefresh: () => void refresh(),
             onSearchChange: setPackageQuery,
+            onUndeploy: (pkg) => void undeployPackage(pkg),
+            onUnpublish: (id) => void unpublishPackage(id),
             packages,
             searchValue: packageQuery
           }}

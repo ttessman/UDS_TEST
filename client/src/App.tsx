@@ -6,6 +6,7 @@ import {
   getRegistryPackages,
   getUdsStatus
 } from "./api/uds.js";
+import { useFilters } from "./components/filter/useFilters.js";
 import { StatusIndicatorList } from "./components/list/resourceTypes/StatusIndicatorList.js";
 import { BackendCommandOutputModal } from "./components/modal/resourceTypes/BackendCommandOutputModal.js";
 import type { ResourceSectionContentConfig } from "./components/section/resourceTypes/ResourceSection.js";
@@ -17,6 +18,7 @@ import {
   installedPackageResource,
   type InstalledPackageResourceContext
 } from "./features/packages/packageResourceDefinitions.js";
+import { getInstalledPackageFilterFields, getRegistryPackageFilterFields } from "./features/packages/packageFilters.js";
 import { usePackageActions } from "./features/packages/usePackageActions.js";
 import { udsStatusIndicators } from "./features/status/statusDefinitions.js";
 
@@ -125,6 +127,27 @@ export function App() {
         .some((value) => String(value).toLowerCase().includes(query))
     );
   }, [installedPackageQuery, installedPackages]);
+  const installedPackageFilterFields = useMemo(() => getInstalledPackageFilterFields(), []);
+  const installedPackageFilters = useFilters({
+    fields: installedPackageFilterFields,
+    items: filteredInstalledPackages,
+    modalTitle: "Filter installed packages"
+  });
+  const registryPackageFilterFields = useMemo(
+    () =>
+      getRegistryPackageFilterFields({
+        getInstalledPackage: (pkg) =>
+          installedPackagesByName.get(pkg.packageName.toLowerCase()) ??
+          installedPackagesByName.get(pkg.displayTitle.toLowerCase()) ??
+          null
+      }),
+    [installedPackagesByName]
+  );
+  const registryPackageFilters = useFilters({
+    fields: registryPackageFilterFields,
+    items: filteredPackages,
+    modalTitle: "Filter store packages"
+  });
   const installedPackagesContent = useMemo(
     () =>
       ({
@@ -167,9 +190,10 @@ export function App() {
             <StatusIndicatorList item={status} definition={udsStatusIndicators} context={undefined} />
             {error ? <Alert severity="error">{error}</Alert> : null}
             <ResourceSection<InstalledPackage, InstalledPackageResourceContext>
-              data={filteredInstalledPackages}
+              data={installedPackageFilters.filteredItems}
               content={installedPackagesContent}
               context={{
+                filters: installedPackageFilters.control,
                 getItemContext: (pkg) => ({
                   canManageApps,
                   onUninstall: (packageToUninstall) => void packageActions.uninstall(packageToUninstall),
@@ -185,7 +209,7 @@ export function App() {
                   onChange: setInstalledPackageQuery,
                   value: installedPackageQuery
                 },
-                status: busy && filteredInstalledPackages.length === 0 ? "loading" : "ready"
+                status: busy && installedPackageFilters.filteredItems.length === 0 ? "loading" : "ready"
               }}
             />
           </Stack>
@@ -198,7 +222,8 @@ export function App() {
             busy,
             canManageApps,
             canManageRegistry,
-            filteredPackages,
+            filteredPackages: registryPackageFilters.filteredItems,
+            filters: registryPackageFilters.control,
             installedPackagesByName,
             onInstall: (packageId) => void packageActions.install(packageId),
             onOpen: openInstalledApp,

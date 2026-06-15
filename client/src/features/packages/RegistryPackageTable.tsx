@@ -1,7 +1,7 @@
 import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
 import { Avatar, Box, Chip, Stack, Typography } from "@mui/material";
 import { IconActionButton } from "../../components/button/resourceTypes/IconActionButton.js";
-import { ResourceTypeChip } from "../../components/identity/ResourceTypeChip.js";
+import { ResourceTypeChip } from "../../components/chip/resourceTypes/ResourceTypeChip.js";
 import { StatusIndicatorButton } from "../../components/button/resourceTypes/StatusIndicatorButton.js";
 import { useContextMenu, type ContextMenuAction } from "../../components/menu/resourceTypes/ContextMenu.js";
 import { GenericTable, type Column } from "../../components/table/Table.js";

@@ -22,6 +22,7 @@ import {
   RocketLaunch,
   Search,
   Terminal,
+  TuneOutlined,
   UploadFileOutlined,
   WebAssetOutlined,
   WarningAmber
@@ -53,6 +54,7 @@ const icons = {
   unpublish: DeleteOutlined,
   publish: UploadFileOutlined,
   terminal: Terminal,
+  tune: TuneOutlined,
   search: Search,
   statusError: ErrorOutlineOutlined,
   statusInfo: InfoOutlined,

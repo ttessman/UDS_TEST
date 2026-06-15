@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { CommandState, InstalledPackage, RegistryPackage, UdsStatus } from "@uds-poc/shared";
 import { Stack } from "@mui/material";
 import { StatusIndicatorList } from "../../list/resourceTypes/StatusIndicatorList.js";
@@ -21,6 +22,7 @@ export type BackendCommandOutputCatalogStore = {
   busy: boolean;
   canManageApps?: boolean;
   canManageRegistry?: boolean;
+  filters?: ReactNode;
   filteredPackages: RegistryPackage[];
   installedPackagesByName: Map<string, InstalledPackage>;
   onInstall: (id: string) => void;

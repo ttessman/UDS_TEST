@@ -1,5 +1,5 @@
 import { Box, Chip, Tooltip } from "@mui/material";
-import { AppIcon, type AppIconName } from "../icon/AppIcon.js";
+import { AppIcon, type AppIconName } from "../../icon/AppIcon.js";
 
 export type ResourceType = "app" | "core" | "package" | "unknown";
 

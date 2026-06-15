@@ -3,7 +3,7 @@ import { Avatar, Chip, Stack, Typography } from "@mui/material";
 import { formatBytes, relativeAge, yesNo } from "../../lib/format.js";
 import { IconActionButton } from "../../components/button/resourceTypes/IconActionButton.js";
 import { ResourceCardVariant, type ResourceCardDefinition } from "../../components/card/resourceTypes/ResourceCard.js";
-import { ResourceTypeChip } from "../../components/identity/ResourceTypeChip.js";
+import { ResourceTypeChip } from "../../components/chip/resourceTypes/ResourceTypeChip.js";
 import type { DefinitionField } from "../../components/list/resourceTypes/DefinitionList.js";
 import { MetaList, type MetaListDefinition } from "../../components/list/resourceTypes/MetaList.js";
 import { StatusIndicatorButton } from "../../components/button/resourceTypes/StatusIndicatorButton.js";

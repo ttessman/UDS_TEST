@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
 import { Stack, Typography } from "@mui/material";
 import { RefreshCountButton } from "../../components/button/resourceTypes/RefreshCountButton.js";
@@ -9,6 +10,7 @@ export type CatalogStoreSectionProps = {
   busy: boolean;
   canManageApps?: boolean;
   canManageRegistry?: boolean;
+  filters?: ReactNode;
   filteredPackages: RegistryPackage[];
   installedPackagesByName: Map<string, InstalledPackage>;
   onInstall: (id: string) => void;
@@ -25,6 +27,7 @@ export function CatalogStoreSection({
   busy,
   canManageApps = true,
   canManageRegistry = false,
+  filters,
   filteredPackages,
   installedPackagesByName,
   onInstall,
@@ -54,13 +57,14 @@ export function CatalogStoreSection({
       </sectionTemplate.header>
       <sectionTemplate.actions>
         <SearchField
+          addon={filters}
           iconPosition="end"
           label="Search UDS store packages"
           onChange={onSearchChange}
           placeholder="Search store"
           sx={{
-            flex: { xs: "1 1 100%", lg: "0 1 280px" },
-            maxWidth: { xs: "100%", lg: 280 },
+            flex: { xs: "1 1 100%", lg: "0 1 328px" },
+            maxWidth: { xs: "100%", lg: 328 },
             minWidth: 0
           }}
           value={searchValue}

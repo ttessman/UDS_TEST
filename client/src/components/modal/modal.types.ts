@@ -8,6 +8,7 @@ export type ModalAction = {
   icon: AppIconName;
   label: string;
   onClick: () => void;
+  sx?: SxProps<Theme>;
   variant?: ActionButtonVariant;
 };
 

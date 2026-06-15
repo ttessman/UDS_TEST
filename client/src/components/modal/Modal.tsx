@@ -89,6 +89,7 @@ export function Modal({
       <DialogContent
         dividers={definition.dividers ?? true}
         sx={{
+          bgcolor: "var(--app-bg-modal-panel)",
           borderColor: "var(--app-border)",
           color: "var(--app-text-primary)",
           maxWidth: "100%",
@@ -100,8 +101,8 @@ export function Modal({
         {children}
       </DialogContent>
       {definition.actions?.length ? (
-        <DialogActions sx={{ bgcolor: "var(--app-bg-default)", borderTop: "1px solid var(--app-border)", px: 3, py: 1.5 }}>
-          <Stack direction="row" sx={{ gap: 1 }}>
+        <DialogActions sx={{ bgcolor: "var(--app-bg-modal-footer)", borderTop: "1px solid var(--app-border)", px: 3, py: 1.5 }}>
+          <Stack direction="row" sx={{ gap: 1, justifyContent: "flex-end", width: "100%" }}>
             {definition.actions.map((action) => (
               <ActionButton
                 disabled={action.disabled}
@@ -109,6 +110,7 @@ export function Modal({
                 key={action.label}
                 label={action.label}
                 onClick={action.onClick}
+                sx={action.sx}
                 variant={action.variant ?? "text"}
               />
             ))}

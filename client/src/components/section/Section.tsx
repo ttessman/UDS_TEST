@@ -42,7 +42,7 @@ export function Section({ children }: { children: SectionChildren }) {
             direction="row"
             sx={{
               alignItems: "center",
-              flex: { xs: "0 1 auto", lg: "0 1 320px" },
+              flex: { xs: "0 1 auto", lg: "0 1 380px" },
               flexWrap: "wrap",
               gap: 1,
               justifyContent: { xs: "flex-start", lg: "flex-end" },

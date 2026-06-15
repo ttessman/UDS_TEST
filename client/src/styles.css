@@ -3,6 +3,8 @@
   --app-bg-paper: #111827;
   --app-bg-paper-hover: #132033;
   --app-bg-footer: #0b1220;
+  --app-bg-modal-footer: #111827;
+  --app-bg-modal-panel: #0b1220;
   --app-bg-shell: #070d1a;
   --app-border: #334155;
   --app-border-strong: #64748b;
@@ -65,6 +67,8 @@ body[data-color-mode="light"] {
   --app-bg-paper: #ffffff;
   --app-bg-paper-hover: #f1f5f9;
   --app-bg-footer: #e8eef6;
+  --app-bg-modal-footer: #f1f5f9;
+  --app-bg-modal-panel: #f8fafc;
   --app-bg-shell: #f1f5f9;
   --app-border: #cbd5e1;
   --app-border-strong: #64748b;

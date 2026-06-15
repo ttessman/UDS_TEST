@@ -1,6 +1,6 @@
 import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
 import type { AppIconName } from "../../components/icon/AppIcon.js";
-import type { ResourceType } from "../../components/identity/ResourceTypeChip.js";
+import type { ResourceType } from "../../components/chip/resourceTypes/ResourceTypeChip.js";
 
 export const packageActionIds = ["publish", "unpublish", "install", "uninstall"] as const;
 

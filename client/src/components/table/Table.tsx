@@ -17,7 +17,7 @@ import type { SxProps, Theme } from "@mui/material/styles";
 import { AppIcon } from "../icon/AppIcon.js";
 import type { Column, ColumnRenderResult, FilterField, GenericTableProps, TableIndexes } from "./table.types.js";
 
-export type { Column, ColumnRenderResult, GenericTableProps, PaginationControl, TableIndexes, UseFiltersOptions } from "./table.types.js";
+export type { Column, ColumnRenderResult, FilterField, GenericTableProps, PaginationControl, TableIndexes, UseFiltersOptions } from "./table.types.js";
 
 export function GenericTable<T extends object>({
   columns,

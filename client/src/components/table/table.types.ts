@@ -1,6 +1,8 @@
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import type { TableProps } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material/styles";
+import type { FilterField } from "../filter/filter.types.js";
+export type { FilterField, FilterOption } from "../filter/filter.types.js";
 
 export class PaginationControl {
   enabled = false;
@@ -16,15 +18,10 @@ export class PaginationControl {
   }
 }
 
-export type FilterField<T> = {
-  apply: (item: T, value: unknown) => boolean;
-  children?: FilterField<T>[];
-  name: string;
-};
-
 export type UseFiltersOptions<T> = {
   context?: Record<string, unknown>;
   fields: FilterField<T>[];
+  items?: T[];
   portalAnchor?: React.RefObject<HTMLElement | null> | string | null;
   sx?: SxProps<Theme>;
 };

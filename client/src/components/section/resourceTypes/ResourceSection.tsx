@@ -32,6 +32,7 @@ export type ResourceSectionRefreshContext = {
 };
 
 export type ResourceSectionContext<T extends object, C = undefined> = {
+  filters?: ReactNode;
   getItemContext: (item: T) => C;
   refresh?: ResourceSectionRefreshContext;
   search?: ResourceSectionSearchState;
@@ -92,22 +93,23 @@ export function ResourceSection<T extends object, C = undefined>({
         </Stack>
       </sectionTemplate.header>
       <sectionTemplate.actions>
-        <>
-          {context.search?.enabled ? (
-            <SearchField
-              iconPosition="end"
-              label={content.searchLabel ?? `Search ${String(content.title)}`}
-              onChange={context.search.onChange}
-              placeholder={content.searchPlaceholder ?? "Search"}
-              sx={{
-                flex: { xs: "1 1 100%", lg: "0 1 280px" },
-                maxWidth: { xs: "100%", lg: 280 },
-                minWidth: 0
-              }}
-              value={context.search.value}
-            />
-          ) : null}
-        </>
+        {context.search?.enabled ? (
+          <SearchField
+            addon={context.filters}
+            iconPosition="end"
+            label={content.searchLabel ?? `Search ${String(content.title)}`}
+            onChange={context.search.onChange}
+            placeholder={content.searchPlaceholder ?? "Search"}
+            sx={{
+              flex: { xs: "1 1 100%", lg: "0 1 328px" },
+              maxWidth: { xs: "100%", lg: 328 },
+              minWidth: 0
+            }}
+            value={context.search.value}
+          />
+        ) : (
+          context.filters
+        )}
       </sectionTemplate.actions>
       <sectionTemplate.subtitle>
         <>

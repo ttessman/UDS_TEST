@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Box, InputAdornment, TextField } from "@mui/material";
 import type { TextFieldProps } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
@@ -13,6 +13,7 @@ const searchFieldCollapsedWidth = 40;
 const searchFieldExpandedWidth = 280;
 
 export function SearchField({
+  addon,
   iconPosition = "start",
   label,
   onChange,
@@ -21,6 +22,7 @@ export function SearchField({
   value,
   ...props
 }: Omit<TextFieldProps, "onChange" | "slotProps" | "value"> & {
+  addon?: ReactNode;
   iconPosition?: "start" | "end";
   label: string;
   onChange: (value: string) => void;
@@ -34,6 +36,7 @@ export function SearchField({
   const forceExpanded = useMediaQuery(theme.breakpoints.down(640));
   const isExpanded = forceExpanded || expanded || value.length > 0;
   const rootSx = Array.isArray(sx) ? sx : sx ? [sx] : [];
+  const fieldRootSx = addon ? [] : rootSx;
 
   useEffect(() => {
     if (isExpanded) {
@@ -71,7 +74,7 @@ export function SearchField({
       </Box>
     );
 
-  return (
+  const field = (
     <Box
       component={motion.div}
       animate={{ width: isExpanded ? "100%" : searchFieldCollapsedWidth }}
@@ -84,7 +87,7 @@ export function SearchField({
           maxWidth: searchFieldExpandedWidth,
           minWidth: searchFieldCollapsedWidth
         },
-        ...rootSx,
+        ...fieldRootSx,
         {
           flex: isExpanded ? undefined : `0 0 ${searchFieldCollapsedWidth}px`,
           maxWidth: isExpanded ? undefined : searchFieldCollapsedWidth,
@@ -133,6 +136,31 @@ export function SearchField({
         {...props}
         sx={{ width: "100%" }}
       />
+    </Box>
+  );
+
+  if (!addon) {
+    return field;
+  }
+
+  return (
+    <Box
+      sx={[
+        {
+          alignItems: "center",
+          display: "flex",
+          flexWrap: { xs: "wrap", sm: "nowrap" },
+          gap: 1,
+          justifyContent: "flex-end",
+          maxWidth: searchFieldExpandedWidth + searchFieldCollapsedWidth + 8,
+          minWidth: 0,
+          width: "100%"
+        },
+        ...rootSx
+      ]}
+    >
+      {addon}
+      {field}
     </Box>
   );
 }

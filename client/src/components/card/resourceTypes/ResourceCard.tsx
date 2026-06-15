@@ -55,6 +55,7 @@ export function ResourceCard<T extends object, C = undefined>({
   const statusPlacement = definition.statusPlacement ?? "header";
   const summary = definition.summary?.(args);
   const title = definition.title(args);
+  const typeIndicator = definition.type?.(args);
   const displayIcon = icon ?? <GeneratedResourceIcon title={title} />;
   const cardVariant = variant ?? resolveResourceCardOption(definition.variant, args, ResourceCardVariant.Default);
   const cardMediaBackground = mediaBackground ?? resolveResourceCardOption(definition.mediaBackground, args, ResourceCardMediaBackground.Auto);
@@ -112,7 +113,8 @@ export function ResourceCard<T extends object, C = undefined>({
   const menuStateContent = useResourceCardMenuState({
     menuMeta,
     menuStatus,
-    status: statusPlacement === "header" ? status : null
+    status,
+    typeIndicator
   });
   const menuContent = useResourceCardMenuContent(menuItems, menuStateContent);
   const menu = useContextMenu(menuContent);
@@ -179,13 +181,16 @@ export function ResourceCard<T extends object, C = undefined>({
           <Typography color="text.secondary" sx={{ fontSize: 10, fontWeight: 700, letterSpacing: 0, textTransform: "uppercase" }}>
             {definition.label(args)}
           </Typography>
-          {headerActions(true)}
+          <Stack direction="row" sx={{ alignItems: "center", flex: "0 0 auto", gap: 0.75, ml: "auto" }}>
+            {typeIndicator}
+            {headerActions(true)}
+          </Stack>
         </Stack>
       </cardTemplate.header>
 
       <cardTemplate.content>
         <Stack direction="row" sx={{ alignItems: "center", gap: 2, minWidth: 0 }}>
-          <ResourceIcon icon={displayIcon} status={statusPlacement === "icon" ? status : null} />
+          <ResourceIcon icon={displayIcon} status={status} />
           <Typography
             component="h3"
             sx={{ color: "text.primary", fontSize: 19, fontWeight: 800, lineHeight: 1.2, overflowWrap: "anywhere" }}
@@ -225,11 +230,11 @@ export function ResourceCard<T extends object, C = undefined>({
           }}
         >
           <Box sx={{ "& .MuiAvatar-root": { height: 64, width: 64, fontSize: 32 } }}>
-            <ResourceIcon icon={displayIcon} status={null} />
+            <ResourceIcon icon={displayIcon} status={status} />
           </Box>
-          {status ? (
+          {typeIndicator ? (
             <Box sx={{ bottom: "var(--card-padding-y)", position: "absolute", right: "var(--card-padding-x)" }}>
-              {status}
+              {typeIndicator}
             </Box>
           ) : null}
         </Box>
@@ -282,7 +287,7 @@ export function ResourceCard<T extends object, C = undefined>({
             }}
           >
             <Box sx={{ "& .MuiAvatar-root": { height: 88, width: 88, fontSize: 44 } }}>
-              <ResourceIcon icon={displayIcon} status={null} />
+              <ResourceIcon icon={displayIcon} status={status} />
             </Box>
             <Typography
               component="h3"
@@ -318,9 +323,9 @@ export function ResourceCard<T extends object, C = undefined>({
               {actions}
             </Stack>
           ) : null}
-          {status ? (
+          {typeIndicator ? (
             <Box sx={{ bottom: "var(--card-padding-y)", position: "absolute", right: "var(--card-padding-x)" }}>
-              {status}
+              {typeIndicator}
             </Box>
           ) : null}
           {menu.contextMenu}
@@ -451,25 +456,27 @@ function useResourceCardMenuContent(actions: ContextMenuAction[], stateContent: 
 function useResourceCardMenuState({
   menuMeta,
   menuStatus,
-  status
+  status,
+  typeIndicator
 }: {
   menuMeta: ReactNode;
   menuStatus: ReactNode;
   status: ReactNode;
+  typeIndicator: ReactNode;
 }) {
   return useMemo(
     () =>
-      menuStatus || status || menuMeta ? (
+      menuStatus || status || typeIndicator || menuMeta ? (
         <>
-          {menuStatus ?? status ? (
+          {menuStatus ?? status ?? typeIndicator ? (
             <Box component="li" sx={{ listStyle: "none", px: 1.5, pb: 0.15 }}>
-              {menuStatus ?? status}
+              {menuStatus ?? status ?? typeIndicator}
             </Box>
           ) : null}
           {menuMeta}
         </>
       ) : null,
-    [menuMeta, menuStatus, status]
+    [menuMeta, menuStatus, status, typeIndicator]
   );
 }
 

@@ -33,7 +33,7 @@ export function DefinitionList<T extends object>({
           key={String(field.key)}
           density={definition.density ?? "comfortable"}
           label={field.label}
-          value={field.resolvedValue ?? definition.emptyValue ?? "unknown"}
+          value={field.resolvedValue ?? definition.emptyValue ?? "Not reported"}
         />
       )),
     [definition.density, definition.emptyValue, fields]

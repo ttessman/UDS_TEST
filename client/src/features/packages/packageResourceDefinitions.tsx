@@ -3,10 +3,20 @@ import { Avatar, Chip, Stack, Typography } from "@mui/material";
 import { formatBytes, relativeAge, yesNo } from "../../lib/format.js";
 import { IconActionButton } from "../../components/button/resourceTypes/IconActionButton.js";
 import { ResourceCardVariant, type ResourceCardDefinition } from "../../components/card/resourceTypes/ResourceCard.js";
+import { ResourceTypeChip } from "../../components/identity/ResourceTypeChip.js";
 import type { DefinitionField } from "../../components/list/resourceTypes/DefinitionList.js";
 import { MetaList, type MetaListDefinition } from "../../components/list/resourceTypes/MetaList.js";
 import { StatusIndicatorButton } from "../../components/button/resourceTypes/StatusIndicatorButton.js";
 import type { StatusIndicatorTone } from "../../components/status/status.types.js";
+import {
+  canInstallPackage,
+  getInstalledPackageResourceType,
+  canUninstallPackage,
+  getInstalledPackageStateLabel,
+  getRegistryPackageResourceType,
+  isInstalledPackageDeployed,
+  packageActionDefinitions
+} from "./packageActions.js";
 
 export type RegistryPackageResourceContext = {
   disabled: boolean;
@@ -18,7 +28,7 @@ export type RegistryPackageResourceContext = {
 
 export type InstalledPackageResourceContext = {
   canManageApps?: boolean;
-  onUndeploy?: (pkg: InstalledPackage) => void;
+  onUninstall?: (pkg: InstalledPackage) => void;
   onOpen: (url: string) => void;
   registryPackage: RegistryPackage | null;
 };
@@ -116,16 +126,24 @@ export const registryPackageResource = {
   title: ({ item }) => item.displayTitle || item.packageName,
   icon: ({ item }) => <PackageIcon icon={item.icon} title={item.displayTitle || item.packageName} />,
   status: ({ context }) =>
-    context.installed ? <StatusIndicatorButton label="installed" state="success" tooltip="Installed" view="chip" /> : null,
-  menuStatus: ({ context, item }) =>
     context.installed ? (
       <StatusIndicatorButton
-        label={`${item.displayTitle || item.packageName} Installed`}
-        state="success"
-        tooltip={`${item.displayTitle || item.packageName} Installed`}
-        view="text"
+        label={getInstalledPackageStateLabel(context.installedPackage)}
+        state={isInstalledPackageDeployed(context.installedPackage) ? "success" : "warning"}
+        tooltip={getInstalledPackageStateLabel(context.installedPackage)}
+        view="dot"
       />
-    ) : null,
+    ) : (
+      <StatusIndicatorButton label="Published" state="info" tooltip="Published to the registry" view="dot" />
+    ),
+  type: ({ context, item }) => <ResourceTypeChip type={getRegistryPackageResourceType(item, context.installedPackage)} />,
+  menuStatus: ({ context, item }) =>
+    <StatusIndicatorButton
+      label={`${item.displayTitle || item.packageName} ${context.installed ? getInstalledPackageStateLabel(context.installedPackage) : "Published"}`}
+      state={context.installed ? (isInstalledPackageDeployed(context.installedPackage) ? "success" : "warning") : "info"}
+      tooltip={`${item.displayTitle || item.packageName} ${context.installed ? getInstalledPackageStateLabel(context.installedPackage) : "Published"}`}
+      view="text"
+    />,
   summary: ({ item }) => item.tagline ?? item.description ?? "No registry description discovered.",
   meta: ({ context, item, presentation }) => <MetaList item={item} context={context} definition={registryPackageMeta} presentation={presentation} />,
   fields: registryPackageFields,
@@ -148,10 +166,10 @@ export const registryPackageResource = {
     value: ({ item }) => item.rawMetadata
   },
   primaryAction: ({ item, context }) => {
-    return item.installable && item.installAction && !context.installed ? (
+    return canInstallPackage(item, context.installedPackage) ? (
       <IconActionButton
         disabled={context.disabled}
-        icon="install"
+        icon={packageActionDefinitions.install.icon}
         label={`Install ${item.displayTitle || item.packageName}`}
         onClick={() => context.onInstall(item.id)}
       />
@@ -188,8 +206,9 @@ export const installedPackageResource = {
   icon: ({ context, item }) => (
     <PackageIcon icon={context.registryPackage?.icon ?? null} title={context.registryPackage?.displayTitle || item.name} />
   ),
-  status: ({ item, presentation }) => <PackageStatus status={item.phase ?? item.status} view={presentation === "media" ? "chip" : "dot"} />,
+  status: ({ item }) => <PackageStatus status={item.phase ?? item.status} view="dot" />,
   statusPlacement: "icon",
+  type: ({ item }) => <ResourceTypeChip type={getInstalledPackageResourceType(item)} />,
   menuStatus: ({ item }) => (
     <StatusIndicatorButton
       label={`${item.name} ${item.phase === "Ready" || item.status === "Ready" ? "Deployed" : item.phase ?? item.status ?? "Reported"}`}
@@ -214,12 +233,12 @@ export const installedPackageResource = {
             }
           ]
         : []),
-      ...(context.canManageApps !== false && context.onUndeploy && canUninstallInstalledPackage(item)
+      ...(context.canManageApps !== false && context.onUninstall && canUninstallPackage(item)
         ? [
             {
-              icon: "undeploy" as const,
-              label: "Uninstall App",
-              onSelect: () => context.onUndeploy?.(item)
+              icon: packageActionDefinitions.uninstall.icon,
+              label: packageActionDefinitions.uninstall.label,
+              onSelect: () => context.onUninstall?.(item)
             }
           ]
         : [])
@@ -320,10 +339,6 @@ function PackageStatus({ status, view }: { status: string | null; view: "chip" |
 
 function getLiveLaunchUrl(item: InstalledPackage) {
   return item.launchUrl && (item.phase === "Ready" || item.status === "Ready") ? item.launchUrl : null;
-}
-
-function canUninstallInstalledPackage(pkg: InstalledPackage): boolean {
-  return pkg.name === "catalog-poc" || pkg.namespace === "catalog-poc";
 }
 
 function packageKindLabel(kind: string | null): string {

@@ -72,5 +72,6 @@ export type ResourceCardDefinition<T extends object, C = undefined> = {
   statusPlacement?: "header" | "icon";
   summary?: (args: ResourceRenderArgs<T, C>) => ReactNode;
   title: (args: ResourceRenderArgs<T, C>) => ReactNode;
+  type?: (args: ResourceRenderArgs<T, C>) => ReactNode;
   variant?: ResourceCardVariant | ((args: ResourceRenderArgs<T, C>) => ResourceCardVariant);
 };

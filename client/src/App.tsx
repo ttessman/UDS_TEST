@@ -145,7 +145,7 @@ export function App() {
     [installedPackages.length]
   );
 
-  const { installPackage, publishPackage, undeployPackage, unpublishPackage } = usePackageActions({
+  const packageActions = usePackageActions({
     refresh,
     setBusy,
     setError,
@@ -172,7 +172,7 @@ export function App() {
               context={{
                 getItemContext: (pkg) => ({
                   canManageApps,
-                  onUndeploy: undeployPackage,
+                  onUninstall: (packageToUninstall) => void packageActions.uninstall(packageToUninstall),
                   onOpen: openInstalledApp,
                   registryPackage: packagesByName.get(pkg.name.toLowerCase()) ?? null
                 }),
@@ -200,13 +200,12 @@ export function App() {
             canManageRegistry,
             filteredPackages,
             installedPackagesByName,
-            onInstall: (id) => void installPackage(id),
+            onInstall: (packageId) => void packageActions.install(packageId),
             onOpen: openInstalledApp,
-            onPublish: () => void publishPackage(),
             onRefresh: () => void refresh(),
             onSearchChange: setPackageQuery,
-            onUndeploy: (pkg) => void undeployPackage(pkg),
-            onUnpublish: (id) => void unpublishPackage(id),
+            onUninstall: (pkg) => void packageActions.uninstall(pkg),
+            onUnpublish: (packageId) => void packageActions.unpublish(packageId),
             packages,
             searchValue: packageQuery
           }}

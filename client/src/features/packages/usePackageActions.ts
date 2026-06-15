@@ -2,9 +2,10 @@ import type { CommandState, InstalledPackage } from "@uds-poc/shared";
 import {
   requestPackageInstall,
   requestPackagePublish,
-  requestPackageUndeploy,
+  requestPackageUninstall,
   requestPackageUnpublish
 } from "../../api/uds.js";
+import { packageActionDefinitions, type PackageActionId } from "./packageActions.js";
 
 type PackageActionController = {
   refresh: () => Promise<void>;
@@ -13,13 +14,18 @@ type PackageActionController = {
   setLogs: (update: (existing: CommandState[]) => CommandState[]) => void;
 };
 
+type PackageActionResponse = {
+  error?: string | null;
+  result?: CommandState | null;
+};
+
 export function usePackageActions({ refresh, setBusy, setError, setLogs }: PackageActionController) {
-  async function runPackageAction(action: () => Promise<{ error?: string | null; result?: CommandState | null }>, fallbackError: string) {
+  async function submitPackageAction(action: PackageActionId, request: () => Promise<PackageActionResponse>) {
     setBusy(true);
     setError(null);
 
     try {
-      const response = await action();
+      const response = await request();
       setLogs((existing) => (response.result ? [response.result, ...existing] : existing));
 
       if (response.error) {
@@ -28,19 +34,20 @@ export function usePackageActions({ refresh, setBusy, setError, setLogs }: Packa
 
       await refresh();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : fallbackError);
+      setError(caught instanceof Error ? caught.message : packageActionDefinitions[action].failureMessage);
     } finally {
       setBusy(false);
     }
   }
 
   return {
-    installPackage: (packageId: string) =>
-      runPackageAction(() => requestPackageInstall(packageId), "Install request failed"),
-    publishPackage: () => runPackageAction(() => requestPackagePublish(), "Publish request failed"),
-    undeployPackage: (pkg: InstalledPackage) =>
-      runPackageAction(() => requestPackageUndeploy(pkg.namespace, pkg.name), "Undeploy request failed"),
-    unpublishPackage: (packageId: string) =>
-      runPackageAction(() => requestPackageUnpublish(packageId), "Unpublish request failed")
+    install: (packageId: string) =>
+      submitPackageAction("install", () => requestPackageInstall(packageId)),
+    publish: () =>
+      submitPackageAction("publish", () => requestPackagePublish()),
+    uninstall: (pkg: InstalledPackage) =>
+      submitPackageAction("uninstall", () => requestPackageUninstall(pkg.namespace, pkg.name)),
+    unpublish: (packageId: string) =>
+      submitPackageAction("unpublish", () => requestPackageUnpublish(packageId))
   };
 }

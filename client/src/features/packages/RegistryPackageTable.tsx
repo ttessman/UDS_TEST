@@ -1,10 +1,20 @@
 import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
 import { Avatar, Box, Chip, Stack, Typography } from "@mui/material";
 import { IconActionButton } from "../../components/button/resourceTypes/IconActionButton.js";
+import { ResourceTypeChip } from "../../components/identity/ResourceTypeChip.js";
 import { StatusIndicatorButton } from "../../components/button/resourceTypes/StatusIndicatorButton.js";
 import { useContextMenu, type ContextMenuAction } from "../../components/menu/resourceTypes/ContextMenu.js";
 import { GenericTable, type Column } from "../../components/table/Table.js";
-import { formatBytes, relativeAge } from "../../lib/format.js";
+import { relativeAge } from "../../lib/format.js";
+import {
+  canInstallPackage,
+  canUninstallPackage,
+  canUnpublishPackage,
+  getRegistryPackageResourceType,
+  getRegistryPackageStateLabel,
+  isInstalledPackageDeployed,
+  packageActionDefinitions
+} from "./packageActions.js";
 
 export type RegistryPackageTableContext = {
   canManageApps: boolean;
@@ -14,7 +24,7 @@ export type RegistryPackageTableContext = {
   isInstalled: (pkg: RegistryPackage) => boolean;
   onInstall: (id: string) => void;
   onOpen: (url: string) => void;
-  onUndeploy: (pkg: InstalledPackage) => void;
+  onUninstall: (pkg: InstalledPackage) => void;
   onUnpublish: (id: string) => void;
 };
 
@@ -25,6 +35,7 @@ export function RegistryPackageTable({
   context: RegistryPackageTableContext;
   data: RegistryPackage[];
 }) {
+  const hasUpdatedColumn = data.some((pkg) => getRegistryPackageLastUpdated(pkg, context.getInstalledPackage(pkg)));
   const columns: Column<RegistryPackage>[] = [
     {
       id: "package",
@@ -36,29 +47,41 @@ export function RegistryPackageTable({
       sortValue: (pkg) => pkg.displayTitle || pkg.packageName
     },
     {
+      id: "type",
+      label: "Type",
+      render: (pkg) => {
+        const installedPackage = context.getInstalledPackage(pkg);
+        const type = getRegistryPackageResourceType(pkg, installedPackage);
+
+        return {
+          node: <ResourceTypeChip type={type} />,
+          text: type
+        };
+      },
+      sortValue: (pkg) => getRegistryPackageResourceType(pkg, context.getInstalledPackage(pkg))
+    },
+    {
       id: "version",
       label: "Version",
-      render: (pkg) => pkg.version ?? pkg.latestTag ?? pkg.tag ?? "unknown",
+      render: (pkg) => pkg.version ?? pkg.latestTag ?? pkg.tag ?? "",
       sortValue: (pkg) => pkg.version ?? pkg.latestTag ?? pkg.tag ?? ""
     },
-    {
-      id: "updated",
-      label: "Updated",
-      render: (pkg) => relativeAge(pkg.lastUpdated) ?? "unknown",
-      sortValue: (pkg) => pkg.lastUpdated ?? ""
-    },
-    {
-      id: "size",
-      label: "Size",
-      render: (pkg) => formatBytes(pkg.sizeBytes) ?? "unknown",
-      sortValue: (pkg) => pkg.sizeBytes ?? 0
-    },
+    ...(hasUpdatedColumn
+      ? [
+          {
+            id: "updated",
+            label: "Updated",
+            render: (pkg) => relativeAge(getRegistryPackageLastUpdated(pkg, context.getInstalledPackage(pkg))) ?? "",
+            sortValue: (pkg) => getRegistryPackageLastUpdated(pkg, context.getInstalledPackage(pkg)) ?? ""
+          } satisfies Column<RegistryPackage>
+        ]
+      : []),
     {
       id: "status",
       label: "State",
       render: (pkg) => {
         const installedPackage = context.getInstalledPackage(pkg);
-        const stateLabel = installedPackageStateLabel(installedPackage);
+        const stateLabel = getRegistryPackageStateLabel(installedPackage);
 
         return {
           node: installedPackage ? (
@@ -69,7 +92,7 @@ export function RegistryPackageTable({
               view="chip"
             />
           ) : (
-            <StatusIndicatorButton label="Not Installed" state="neutral" tooltip="Not installed in the cluster" view="chip" />
+            <StatusIndicatorButton label="Published" state="info" tooltip="Published to the registry" view="chip" />
           ),
           text: stateLabel
         };
@@ -150,29 +173,29 @@ function RegistryPackageActions({
           }
         ]
       : []),
-    ...(context.canManageApps && pkg.installable && pkg.installAction && !installedPackage
+    ...(context.canManageApps && canInstallPackage(pkg, installedPackage)
       ? [
           {
-            icon: "install" as const,
-            label: "Install App",
+            icon: packageActionDefinitions.install.icon,
+            label: packageActionDefinitions.install.label,
             onSelect: () => context.onInstall(pkg.id)
           }
         ]
       : []),
-    ...(context.canManageApps && installedPackage && canUninstallInstalledPackage(installedPackage)
+    ...(context.canManageApps && installedPackage && canUninstallPackage(installedPackage)
       ? [
           {
-            icon: "undeploy" as const,
-            label: "Uninstall App",
-            onSelect: () => context.onUndeploy(installedPackage)
+            icon: packageActionDefinitions.uninstall.icon,
+            label: packageActionDefinitions.uninstall.label,
+            onSelect: () => context.onUninstall(installedPackage)
           }
         ]
       : []),
     ...(context.canManageRegistry && canUnpublishPackage(pkg)
       ? [
           {
-            icon: "unpublish" as const,
-            label: "Unpublish",
+            icon: packageActionDefinitions.unpublish.icon,
+            label: packageActionDefinitions.unpublish.label,
             onSelect: () => context.onUnpublish(pkg.id)
           }
         ]
@@ -185,9 +208,9 @@ function RegistryPackageActions({
       content: (
         <Box component="li" sx={{ listStyle: "none", px: 1.5, pb: 0.15 }}>
           <StatusIndicatorButton
-            label={`${title} ${installedPackageStateLabel(installedPackage)}`}
-            state={installedPackage ? (isInstalledPackageDeployed(installedPackage) ? "success" : "warning") : "neutral"}
-            tooltip={`${title} ${installedPackageStateLabel(installedPackage)}`}
+            label={`${title} ${getRegistryPackageStateLabel(installedPackage)}`}
+            state={installedPackage ? (isInstalledPackageDeployed(installedPackage) ? "success" : "warning") : "info"}
+            tooltip={`${title} ${getRegistryPackageStateLabel(installedPackage)}`}
             view="text"
           />
         </Box>
@@ -231,22 +254,6 @@ function getLiveLaunchUrl(item: InstalledPackage) {
   return item.launchUrl && (item.phase === "Ready" || item.status === "Ready") ? item.launchUrl : null;
 }
 
-function installedPackageStateLabel(item: InstalledPackage | null): string {
-  if (!item) {
-    return "Not Installed";
-  }
-
-  return isInstalledPackageDeployed(item) ? "Deployed" : "Installed";
-}
-
-function isInstalledPackageDeployed(item: InstalledPackage | null): boolean {
-  return item?.phase === "Ready" || item?.status === "Ready";
-}
-
-function canUnpublishPackage(pkg: RegistryPackage): boolean {
-  return /^oci:\/\/(localhost|127\.0\.0\.1):\d+\/uds-poc\/catalog-poc:/.test(pkg.ociReference);
-}
-
-function canUninstallInstalledPackage(pkg: InstalledPackage): boolean {
-  return pkg.name === "catalog-poc" || pkg.namespace === "catalog-poc";
+function getRegistryPackageLastUpdated(pkg: RegistryPackage, installedPackage: InstalledPackage | null) {
+  return installedPackage?.lastUpdated ?? pkg.lastUpdated;
 }

@@ -12,7 +12,7 @@ export function ResourceIcon({ icon, status }: { icon: ReactNode; status: ReactN
       {status ? (
         <Box
           sx={{
-            bottom: -11,
+            bottom: -13,
             position: "absolute",
             right: -7
           }}

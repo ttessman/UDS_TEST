@@ -1,8 +1,7 @@
 import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
-import { Button, Stack, Typography } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import { RefreshCountButton } from "../../components/button/resourceTypes/RefreshCountButton.js";
 import { SearchField } from "../../components/form/resourceTypes/SearchField.js";
-import { AppIcon } from "../../components/icon/AppIcon.js";
 import { Section, sectionTemplate } from "../../components/section/Section.js";
 import { RegistryPackageTable } from "./RegistryPackageTable.js";
 
@@ -13,11 +12,10 @@ export type CatalogStoreSectionProps = {
   filteredPackages: RegistryPackage[];
   installedPackagesByName: Map<string, InstalledPackage>;
   onInstall: (id: string) => void;
-  onPublish: () => void;
   onOpen: (url: string) => void;
   onRefresh: () => void;
   onSearchChange: (value: string) => void;
-  onUndeploy: (pkg: InstalledPackage) => void;
+  onUninstall: (pkg: InstalledPackage) => void;
   onUnpublish: (id: string) => void;
   packages: RegistryPackage[];
   searchValue: string;
@@ -30,11 +28,10 @@ export function CatalogStoreSection({
   filteredPackages,
   installedPackagesByName,
   onInstall,
-  onPublish,
   onOpen,
   onRefresh,
   onSearchChange,
-  onUndeploy,
+  onUninstall,
   onUnpublish,
   packages,
   searchValue
@@ -56,17 +53,6 @@ export function CatalogStoreSection({
         </Stack>
       </sectionTemplate.header>
       <sectionTemplate.actions>
-        {canManageRegistry ? (
-          <Button
-            disabled={busy}
-            onClick={onPublish}
-            size="small"
-            startIcon={<AppIcon name="publish" />}
-            variant="outlined"
-          >
-            Publish
-          </Button>
-        ) : null}
         <SearchField
           iconPosition="end"
           label="Search UDS store packages"
@@ -101,7 +87,7 @@ export function CatalogStoreSection({
               installedPackagesByName.has(pkg.displayTitle.toLowerCase()),
             onInstall,
             onOpen,
-            onUndeploy,
+            onUninstall,
             onUnpublish
           }}
         />

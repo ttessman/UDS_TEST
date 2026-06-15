@@ -2,17 +2,17 @@ SHELL := /bin/bash
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install env dev run run-dev server client build typecheck start check-prereqs check-run-ready setup setup-macos deploy-uds deploy-uds-macos fix-uds-ports fix-uds-gateway-routing stop-uds-workaround down down-dev down-deploy down-uds setup-uds setup-dev setup-local-demo verify-uds uds-debug inspect-packages installed-packages registry-up registry-down package-catalog-poc publish-catalog-poc configure-catalog-poc deploy-catalog-poc verify-catalog-poc deploy-core git-status
+.PHONY: help install env dev run run-dev server client build typecheck start check-prereqs check-run-ready setup setup-macos deploy-uds deploy-uds-macos fix-uds-ports fix-uds-gateway-routing stop-uds-workaround down down-dev down-deploy down-uds setup-uds setup-dev setup-local-demo verify-uds uds-debug inspect-packages installed-packages registry-up registry-down package-catalog-poc publish-catalog-poc configure-catalog-poc deploy-catalog-poc verify-catalog-poc deploy- git-status
 
 help:
-	@printf "UDS Core local POC commands\n\n"
+	@printf "UDS  local POC commands\n\n"
 	@printf "Official path from fresh checkout:\n"
 	@printf "  make setup && make deploy-uds && make run dev && make deploy-catalog-poc\n"
 	@printf "macOS workaround path:\n"
 	@printf "  make setup && make deploy-uds-macos && make run dev && make deploy-catalog-poc\n\n"
 	@printf "Setup:\n"
 	@printf "  make setup               Set up local tools, npm dependencies, and env file\n"
-	@printf "  make deploy-uds          Deploy and verify the official UDS Core local demo\n"
+	@printf "  make deploy-uds          Deploy and verify the official UDS  local demo\n"
 	@printf "  make deploy-uds-macos    Experimental macOS seccomp workaround deploy\n"
 	@printf "  make fix-uds-ports       Clean project k3d leftovers and re-check ports 80/443\n"
 	@printf "  make fix-uds-gateway-routing Patch k3d host 80/443 to UDS gateway NodePorts\n"
@@ -37,7 +37,7 @@ help:
 	@printf "  make typecheck           Run TypeScript checks\n"
 	@printf "  make build               Build shared, server, and client\n"
 	@printf "  make check-run-ready     Verify setup completed before running dev servers\n"
-	@printf "  make verify-uds          Verify UDS CLI, cluster reachability, Core namespace, Package CRs\n"
+	@printf "  make verify-uds          Verify UDS CLI, cluster reachability,  namespace, Package CRs\n"
 	@printf "  make uds-debug           Print a focused UDS/k3d deploy debugging snapshot\n\n"
 	@printf "UDS/Zarf helpers:\n"
 	@printf "  make inspect-packages    Inspect configured UDS_REGISTRY_PACKAGE_REFS\n"
@@ -49,7 +49,7 @@ help:
 	@printf "  make configure-catalog-poc Point the backend at the catalog-poc OCI ref\n"
 	@printf "  make deploy-catalog-poc  Build, publish, configure, deploy, and verify catalog-poc\n"
 	@printf "  make verify-catalog-poc  Verify catalog-poc rollout and UDS Package endpoint\n"
-	@printf "  make deploy-core         Deploy official k3d-core-demo UDS Core bundle\n\n"
+	@printf "  make deploy-         Deploy official k3d--demo UDS  bundle\n\n"
 
 install:
 	npm install
@@ -105,8 +105,8 @@ setup:
 	@echo "Local setup complete. Next: make deploy-uds"
 
 deploy-uds: registry-up
-	@echo "UDS deploy: official UDS Core local demo"
-	$(MAKE) deploy-core
+	@echo "UDS deploy: official UDS  local demo"
+	$(MAKE) deploy-
 	@echo "UDS deploy complete. Next: make run dev && make deploy-catalog-poc"
 
 deploy-uds-macos: registry-up
@@ -175,8 +175,8 @@ deploy-catalog-poc: publish-catalog-poc configure-catalog-poc
 verify-catalog-poc:
 	./scripts/verify-catalog-poc.sh
 
-deploy-core:
-	./scripts/deploy-uds-core.sh
+deploy-:
+	./scripts/deploy-uds-.sh
 
 git-status:
 	git status --short

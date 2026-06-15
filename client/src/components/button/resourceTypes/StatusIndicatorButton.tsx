@@ -155,15 +155,15 @@ function dotSx(color: string, clickable: boolean) {
   return {
     appearance: "none",
     bgcolor: color,
-    border: "2px solid",
-    borderColor: "background.paper",
+    border: "1.5px solid",
+    borderColor: "var(--app-status-dot-ring)",
     borderRadius: "999px",
     cursor: clickable ? "pointer" : "default",
     display: "inline-flex",
     flex: "0 0 auto",
-    height: 17,
+    height: 22,
     m: 0,
     p: 0,
-    width: 17
+    width: 22
   };
 }

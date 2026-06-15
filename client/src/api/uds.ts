@@ -3,7 +3,7 @@ import type {
   InstalledPackagesResponse,
   PackagesResponse,
   PublishResponse,
-  UndeployResponse,
+  UndeployResponse as UninstallResponse,
   UnpublishResponse,
   UdsStatus
 } from "@uds-poc/shared";
@@ -57,8 +57,8 @@ export function requestPackageUnpublish(id: string): Promise<UnpublishResponse> 
   });
 }
 
-export function requestPackageUndeploy(namespace: string, name: string): Promise<UndeployResponse> {
-  return getJson<UndeployResponse>(
+export function requestPackageUninstall(namespace: string, name: string): Promise<UninstallResponse> {
+  return getJson<UninstallResponse>(
     `/api/uds/installed-packages/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}/undeploy`,
     { method: "POST" }
   );

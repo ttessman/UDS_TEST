@@ -9,6 +9,7 @@ import {
   ErrorOutlineOutlined,
   ExpandMore,
   HelpOutlineOutlined,
+  HubOutlined,
   InfoOutlined,
   Inventory2Outlined,
   LightMode,
@@ -22,6 +23,7 @@ import {
   Search,
   Terminal,
   UploadFileOutlined,
+  WebAssetOutlined,
   WarningAmber
 } from "@mui/icons-material";
 import type { SvgIconProps } from "@mui/material";
@@ -38,12 +40,16 @@ const icons = {
   lightMode: LightMode,
   more: MoreVert,
   open: OpenInNew,
+  resourceApp: WebAssetOutlined,
+  resourceCore: HubOutlined,
+  resourcePackage: Inventory2Outlined,
+  resourceUnknown: HelpOutlineOutlined,
   packageTags: LocalOfferOutlined,
   packageUpdated: AccessTimeOutlined,
   packageVersion: Inventory2Outlined,
   returnToSummary: ReplyRounded,
   refresh: RefreshOutlined,
-  undeploy: RemoveCircleOutlined,
+  uninstall: RemoveCircleOutlined,
   unpublish: DeleteOutlined,
   publish: UploadFileOutlined,
   terminal: Terminal,

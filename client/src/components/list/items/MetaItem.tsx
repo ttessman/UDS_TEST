@@ -3,7 +3,7 @@ import { Box, Chip, Stack, Tooltip, Typography } from "@mui/material";
 import { AppIcon, type AppIconName } from "../../icon/AppIcon.js";
 import { normalizeRenderValues, renderValuesAsText } from "../list.utils.js";
 
-export type MetaItemPresentation = "compactIconOnly" | "iconOnly" | "iconWithText" | "inline" | "menu";
+export type MetaItemPresentation = "compactIconOnly" | "iconOnly" | "iconWithText" | "inline" | "menu" | "overlayIconOnly";
 
 export type MetaItemDefinition<T, C = undefined> = {
   icon?: AppIconName;
@@ -55,7 +55,7 @@ export function MetaItem<T extends object, C>({
 
   const tooltip = field.tooltip?.({ context, item, value: renderValuesAsText(values) });
 
-  if (presentation === "compactIconOnly") {
+  if (presentation === "compactIconOnly" || presentation === "overlayIconOnly") {
     if (!field.icon) {
       return null;
     }

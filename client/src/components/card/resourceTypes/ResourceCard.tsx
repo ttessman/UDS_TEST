@@ -61,11 +61,15 @@ export function ResourceCard<T extends object, C = undefined>({
   const cardMediaBackground = mediaBackground ?? resolveResourceCardOption(definition.mediaBackground, args, ResourceCardMediaBackground.Auto);
   const cardMediaMetaDisplay =
     mediaMetaDisplay ?? resolveResourceCardOption(definition.mediaMetaDisplay, args, ResourceCardMetaDisplay.IconOnly);
-  const mediaSurfaceVariant = cardVariant === ResourceCardVariant.MediaFocus || cardVariant === ResourceCardVariant.AppLauncher;
+  const appLauncherVariant = cardVariant === ResourceCardVariant.AppLauncher || cardVariant === ResourceCardVariant.Compact;
+  const compactVariant = cardVariant === ResourceCardVariant.Compact;
+  const mediaSurfaceVariant = cardVariant === ResourceCardVariant.MediaFocus || appLauncherVariant;
   const meta = definition.meta?.({
     ...args,
     presentation:
-      cardVariant === ResourceCardVariant.AppLauncher && cardMediaMetaDisplay === ResourceCardMetaDisplay.IconOnly
+      compactVariant
+        ? "overlayIconOnly"
+        : appLauncherVariant && cardMediaMetaDisplay === ResourceCardMetaDisplay.IconOnly
         ? "compactIconOnly"
         : "iconWithText"
   });
@@ -118,6 +122,7 @@ export function ResourceCard<T extends object, C = undefined>({
   });
   const menuContent = useResourceCardMenuContent(menuItems, menuStateContent);
   const menu = useContextMenu(menuContent);
+  const resolvedMinHeight = compactVariant ? 150 : definition.minHeight;
 
   const handleCardClick = (event: MouseEvent<HTMLElement>) => {
     if (!onSelect || isInteractiveTarget(event.target, event.currentTarget)) {
@@ -138,7 +143,7 @@ export function ResourceCard<T extends object, C = undefined>({
   };
   const cardProps = {
     content: { spacing: "resource" as const },
-    definition: { aspectRatio: definition.aspectRatio, minHeight: definition.minHeight }
+    definition: { aspectRatio: definition.aspectRatio, minHeight: resolvedMinHeight }
   };
   const frontCardProps = {
     ...cardProps,
@@ -273,7 +278,7 @@ export function ResourceCard<T extends object, C = undefined>({
             display: "flex",
             flex: 1,
             justifyContent: "center",
-            minHeight: definition.minHeight ?? 245,
+            minHeight: compactVariant ? 132 : definition.minHeight ?? 245,
             position: "relative",
             width: "100%"
           }}
@@ -281,12 +286,20 @@ export function ResourceCard<T extends object, C = undefined>({
           <Stack
             sx={{
               alignItems: "center",
-              gap: 1.25,
+              gap: compactVariant ? 0.75 : 1.25,
               maxWidth: "calc(100% - (var(--card-padding-x) * 4))",
               minWidth: 0
             }}
           >
-            <Box sx={{ "& .MuiAvatar-root": { height: 88, width: 88, fontSize: 44 } }}>
+            <Box
+              sx={{
+                "& .MuiAvatar-root": {
+                  fontSize: compactVariant ? 30 : 44,
+                  height: compactVariant ? 58 : 88,
+                  width: compactVariant ? 58 : 88
+                }
+              }}
+            >
               <ResourceIcon icon={displayIcon} status={status} />
             </Box>
             <Typography
@@ -294,7 +307,7 @@ export function ResourceCard<T extends object, C = undefined>({
               title={typeof title === "string" ? title : undefined}
               sx={{
                 color: "text.primary",
-                fontSize: 14,
+                fontSize: compactVariant ? 12 : 14,
                 fontWeight: 800,
                 lineHeight: 1.15,
                 maxWidth: "100%",
@@ -333,8 +346,92 @@ export function ResourceCard<T extends object, C = undefined>({
       </cardTemplate.media>
     </Card>
   );
+  const CompactFrontCard = (
+    <Card {...frontCardProps} content={{ spacing: "resource" as const, sx: { p: 0 } }}>
+      <cardTemplate.header>
+        <Stack direction="row" sx={{ alignItems: "center", justifyContent: "flex-end", minWidth: 0 }}>
+          {headerActions(false)}
+        </Stack>
+      </cardTemplate.header>
+
+      <cardTemplate.media>
+        <Box
+          sx={{
+            ...getMediaBackgroundSx(cardMediaBackground),
+            alignItems: "stretch",
+            display: "flex",
+            flex: 1,
+            justifyContent: "stretch",
+            minHeight: 150,
+            position: "relative",
+            width: "100%"
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              flex: 1,
+              minHeight: 0,
+              minWidth: 0,
+              "& > *": {
+                display: "flex",
+                flex: 1,
+                minWidth: 0,
+                width: "100%"
+              },
+              "& .MuiAvatar-root": {
+                borderRadius: 0,
+                bgcolor: "transparent",
+                color: "var(--app-text-primary)",
+                fontSize: 58,
+                height: "100%",
+                minHeight: 150,
+                width: "100%"
+              }
+            }}
+          >
+            <ResourceIcon icon={displayIcon} status={null} />
+          </Box>
+          <Typography
+            component="h3"
+            title={typeof title === "string" ? title : undefined}
+            sx={{
+              bottom: "var(--card-padding-y)",
+              color: "var(--app-text-primary)",
+              fontSize: 13,
+              fontWeight: 800,
+              left: "var(--card-padding-x)",
+              lineHeight: 1.15,
+              maxWidth: meta ? "calc(100% - 96px)" : "calc(100% - (var(--card-padding-x) * 2))",
+              overflow: "hidden",
+              position: "absolute",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap"
+            }}
+          >
+            {title}
+          </Typography>
+          {meta ? (
+            <Box
+              sx={{
+                bottom: "calc(var(--card-padding-y) - 2px)",
+                maxWidth: "45%",
+                position: "absolute",
+                right: "var(--card-padding-x)"
+              }}
+            >
+              {meta}
+            </Box>
+          ) : null}
+          {menu.contextMenu}
+        </Box>
+      </cardTemplate.media>
+    </Card>
+  );
   const frontCard =
-    cardVariant === ResourceCardVariant.AppLauncher
+    compactVariant
+      ? CompactFrontCard
+      : appLauncherVariant
       ? AppLauncherFrontCard
       : cardVariant === ResourceCardVariant.MediaFocus
         ? MediaFrontCard
@@ -352,25 +449,32 @@ export function ResourceCard<T extends object, C = undefined>({
       </cardTemplate.header>
 
       <cardTemplate.content>
-        <Stack direction="row" sx={{ alignItems: "center", gap: 2, minWidth: 0 }}>
-          <ResourceIcon icon={backIcon} status={backIconStatus} />
-          <Typography
-            component="h3"
-            sx={{ color: "text.primary", fontSize: 18, fontWeight: 800, lineHeight: 1.2, overflowWrap: "anywhere" }}
-          >
-            {definition.title(args)}
-          </Typography>
-        </Stack>
+        {!compactVariant ? (
+          <>
+            <Stack direction="row" sx={{ alignItems: "center", gap: 2, minWidth: 0 }}>
+              <ResourceIcon icon={backIcon} status={backIconStatus} />
+              <Typography
+                component="h3"
+                sx={{ color: "text.primary", fontSize: 18, fontWeight: 800, lineHeight: 1.2, overflowWrap: "anywhere" }}
+              >
+                {definition.title(args)}
+              </Typography>
+            </Stack>
 
-        {summary ? (
-          <Typography sx={{ color: "text.secondary", fontSize: 13, lineHeight: 1.35, overflowWrap: "anywhere" }}>
-            {summary}
-          </Typography>
+            {summary ? (
+              <Typography sx={{ color: "text.secondary", fontSize: 13, lineHeight: 1.35, overflowWrap: "anywhere" }}>
+                {summary}
+              </Typography>
+            ) : null}
+          </>
         ) : null}
 
-        <Stack sx={{ flex: 1, gap: 1.5, minHeight: 0, overflow: "auto", pr: 0.5 }}>
+        <Stack sx={{ flex: 1, gap: compactVariant ? 1 : 1.5, minHeight: 0, overflow: "auto", pr: 0.5 }}>
           {definition.fields ? (
-            <DefinitionList item={args.item} definition={{ density: "compact", fields: definition.fields, omitEmptyValues: true }} />
+            <DefinitionList
+              item={args.item}
+              definition={{ density: compactVariant ? "dense" : "compact", fields: definition.fields, omitEmptyValues: true }}
+            />
           ) : null}
           {details}
           {definition.shape ? <ShapeAccordion title={definition.shape.title} value={shapeValue} /> : null}
@@ -381,7 +485,7 @@ export function ResourceCard<T extends object, C = undefined>({
   );
 
   return (
-    <CardFlip flipped={flipped} minHeight={definition.minHeight}>
+    <CardFlip flipped={flipped} minHeight={resolvedMinHeight}>
       <cardFlipTemplate.front>
         {frontCard}
       </cardFlipTemplate.front>
@@ -429,8 +533,8 @@ function getMediaBackgroundSx(mediaBackground: ResourceCardMediaBackground) {
   }
 
   return {
-    bgcolor: "var(--app-bg-paper-hover)",
-    backgroundImage: "linear-gradient(135deg, color-mix(in srgb, var(--app-bg-paper-hover) 78%, white) 0%, var(--app-bg-paper-hover) 100%)"
+    bgcolor: "var(--app-bg-media)",
+    backgroundImage: "var(--app-bg-media-gradient)"
   };
 }
 

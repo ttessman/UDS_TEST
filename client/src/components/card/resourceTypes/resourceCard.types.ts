@@ -33,6 +33,7 @@ export type ResolvedCodeBlock = {
 export enum ResourceCardVariant {
   Default = "default",
   AppLauncher = "appLauncher",
+  Compact = "compact",
   MediaFocus = "mediaFocus"
 }
 

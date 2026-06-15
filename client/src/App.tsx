@@ -21,6 +21,7 @@ import {
 import { getInstalledPackageFilterFields, getRegistryPackageFilterFields } from "./features/packages/packageFilters.js";
 import { usePackageActions } from "./features/packages/usePackageActions.js";
 import { udsStatusIndicators } from "./features/status/statusDefinitions.js";
+import { getInstalledPackagePreferenceId, useUserPreferences } from "./store/userPreferences.store.js";
 
 const canManageApps = true;
 const canManageRegistry = true;
@@ -34,6 +35,7 @@ export function App() {
   const [busy, setBusy] = useState(false);
   const [installedPackageQuery, setInstalledPackageQuery] = useState("");
   const [packageQuery, setPackageQuery] = useState("");
+  const userPreferences = useUserPreferences();
 
   async function refresh() {
     setBusy(true);
@@ -127,10 +129,24 @@ export function App() {
         .some((value) => String(value).toLowerCase().includes(query))
     );
   }, [installedPackageQuery, installedPackages]);
+  const favoriteInstalledPackages = useMemo(
+    () =>
+      sortFavoriteInstalledPackages(
+        installedPackages.filter((pkg) =>
+          userPreferences.isFavoriteInstalledPackage(getInstalledPackagePreferenceId(pkg.namespace, pkg.name))
+        ),
+        userPreferences.favoriteInstalledPackageIds
+      ),
+    [installedPackages, userPreferences]
+  );
+  const sortedFilteredInstalledPackages = useMemo(
+    () => sortFavoriteInstalledPackages(filteredInstalledPackages, userPreferences.favoriteInstalledPackageIds),
+    [filteredInstalledPackages, userPreferences.favoriteInstalledPackageIds]
+  );
   const installedPackageFilterFields = useMemo(() => getInstalledPackageFilterFields(), []);
   const installedPackageFilters = useFilters({
     fields: installedPackageFilterFields,
-    items: filteredInstalledPackages,
+    items: sortedFilteredInstalledPackages,
     modalTitle: "Filter installed packages"
   });
   const registryPackageFilterFields = useMemo(
@@ -196,7 +212,10 @@ export function App() {
                 filters: installedPackageFilters.control,
                 getItemContext: (pkg) => ({
                   canManageApps,
+                  isFavorite: userPreferences.isFavoriteInstalledPackage(getInstalledPackagePreferenceId(pkg.namespace, pkg.name)),
                   onUninstall: (packageToUninstall) => void packageActions.uninstall(packageToUninstall),
+                  onToggleFavorite: (packageToToggle) =>
+                    userPreferences.toggleFavoriteInstalledPackage(getInstalledPackagePreferenceId(packageToToggle.namespace, packageToToggle.name)),
                   onOpen: openInstalledApp,
                   registryPackage: packagesByName.get(pkg.name.toLowerCase()) ?? null
                 }),
@@ -234,6 +253,18 @@ export function App() {
             packages,
             searchValue: packageQuery
           }}
+          favoriteApps={{
+            items: favoriteInstalledPackages,
+            getItemContext: (pkg) => ({
+              canManageApps,
+              isFavorite: userPreferences.isFavoriteInstalledPackage(getInstalledPackagePreferenceId(pkg.namespace, pkg.name)),
+              onUninstall: (packageToUninstall) => void packageActions.uninstall(packageToUninstall),
+              onToggleFavorite: (packageToToggle) =>
+                userPreferences.toggleFavoriteInstalledPackage(getInstalledPackagePreferenceId(packageToToggle.namespace, packageToToggle.name)),
+              onOpen: openInstalledApp,
+              registryPackage: packagesByName.get(pkg.name.toLowerCase()) ?? null
+            })
+          }}
           logs={logs}
           logState={busy && logs.length === 0 ? "loading" : "ready"}
           status={status}
@@ -241,4 +272,27 @@ export function App() {
       </siteTemplate.footer>
     </SiteShell>
   );
+}
+
+function sortFavoriteInstalledPackages(items: InstalledPackage[], favoriteIds: string[]) {
+  const favoriteOrder = new Map(favoriteIds.map((id, index) => [id, index]));
+
+  return [...items].sort((a, b) => {
+    const aOrder = favoriteOrder.get(getInstalledPackagePreferenceId(a.namespace, a.name));
+    const bOrder = favoriteOrder.get(getInstalledPackagePreferenceId(b.namespace, b.name));
+
+    if (aOrder == null && bOrder == null) {
+      return 0;
+    }
+
+    if (aOrder == null) {
+      return 1;
+    }
+
+    if (bOrder == null) {
+      return -1;
+    }
+
+    return aOrder - bOrder;
+  });
 }

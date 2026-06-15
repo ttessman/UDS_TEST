@@ -28,7 +28,9 @@ export type RegistryPackageResourceContext = {
 
 export type InstalledPackageResourceContext = {
   canManageApps?: boolean;
+  isFavorite?: boolean;
   onUninstall?: (pkg: InstalledPackage) => void;
+  onToggleFavorite?: (pkg: InstalledPackage) => void;
   onOpen: (url: string) => void;
   registryPackage: RegistryPackage | null;
 };
@@ -209,6 +211,15 @@ export const installedPackageResource = {
   status: ({ item }) => <PackageStatus status={item.phase ?? item.status} view="dot" />,
   statusPlacement: "icon",
   type: ({ item }) => <ResourceTypeChip type={getInstalledPackageResourceType(item)} />,
+  primaryAction: ({ context, item }) =>
+    context.onToggleFavorite ? (
+      <IconActionButton
+        icon={context.isFavorite ? "favorite" : "favoriteBorder"}
+        label={`${context.isFavorite ? "Remove" : "Add"} ${item.name} ${context.isFavorite ? "from" : "to"} favorites`}
+        onClick={() => context.onToggleFavorite?.(item)}
+        tooltip={context.isFavorite ? "Remove from favorites" : "Add to favorites"}
+      />
+    ) : null,
   menuStatus: ({ item }) => (
     <StatusIndicatorButton
       label={`${item.name} ${getInstalledPackageStateLabel(item)}`}

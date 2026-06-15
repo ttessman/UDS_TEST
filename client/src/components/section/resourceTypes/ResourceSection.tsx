@@ -4,12 +4,13 @@ import { List, listTemplate } from "../../list/List.js";
 import { ListItem } from "../../list/items/ListItem.js";
 import type { ListLayout, ListState } from "../../list/list.types.js";
 import { RefreshCountButton } from "../../button/resourceTypes/RefreshCountButton.js";
-import { ResourceCard, type ResourceCardDefinition } from "../../card/resourceTypes/ResourceCard.js";
+import { ResourceCard, ResourceCardVariant, type ResourceCardDefinition } from "../../card/resourceTypes/ResourceCard.js";
 import { SearchField } from "../../form/resourceTypes/SearchField.js";
 import { Section, sectionTemplate } from "../Section.js";
 
 export type ResourceSectionContentConfig<T extends object, C = undefined> = {
   emptyMessage: string;
+  layout?: ListLayout;
   loadingMessage?: string;
   refreshLabel?: (count: number) => string;
   refreshTooltip?: (args: { busy: boolean; count: number }) => string;
@@ -18,6 +19,7 @@ export type ResourceSectionContentConfig<T extends object, C = undefined> = {
   searchPlaceholder?: string;
   subtitle?: (items: T[]) => ReactNode;
   title: ReactNode;
+  variant?: ResourceCardVariant;
 };
 
 export type ResourceSectionSearchState = {
@@ -68,10 +70,15 @@ export function ResourceSection<T extends object, C = undefined>({
     () =>
       data.map((item, index) => (
         <ListItem key={getResourceItemKey(item, index)}>
-          <ResourceCard item={item} definition={content.resource} context={context.getItemContext(item)} />
+          <ResourceCard
+            item={item}
+            definition={content.resource}
+            context={context.getItemContext(item)}
+            variant={content.variant}
+          />
         </ListItem>
       )),
-    [context, content.resource, data]
+    [context, content.resource, content.variant, data]
   );
 
   return (
@@ -118,7 +125,7 @@ export function ResourceSection<T extends object, C = undefined>({
       </sectionTemplate.subtitle>
       <sectionTemplate.content>
         <List
-          layout={defaultResourceSectionLayout}
+          layout={content.layout ?? defaultResourceSectionLayout}
           state={{
             emptyMessage: content.emptyMessage,
             isEmpty: data.length === 0,

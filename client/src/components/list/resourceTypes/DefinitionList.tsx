@@ -10,7 +10,7 @@ export type DefinitionField<T> = {
 };
 
 export type DefinitionListDefinition<T> = {
-  density?: "comfortable" | "compact";
+  density?: "comfortable" | "compact" | "dense";
   emptyValue?: ReactNode;
   fields: Array<DefinitionField<T>>;
   omitEmptyValues?: boolean;
@@ -41,7 +41,7 @@ export function DefinitionList<T extends object>({
 
   return (
     <List
-      layout={{ gap: definition.density === "compact" ? 0.75 : 1 }}
+      layout={{ gap: definition.density === "dense" ? 0.55 : definition.density === "compact" ? 0.75 : 1 }}
       state={{ isEmpty: fields.length === 0 }}
       sx={{ gridAutoRows: "auto", width: "100%" }}
     >

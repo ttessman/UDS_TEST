@@ -43,6 +43,34 @@ export function MetaList<T extends object, C = undefined>({
     [context, definition.density, definition.emptyValue, fields, item, presentation]
   );
 
+  if (presentation === "overlayIconOnly") {
+    return (
+      <Stack
+        direction="row"
+        sx={{
+          alignItems: "center",
+          bgcolor: "var(--app-overlay-chip-bg)",
+          border: "1px solid var(--app-overlay-chip-border)",
+          borderRadius: "999px",
+          color: "var(--app-overlay-chip-text)",
+          flexWrap: "wrap",
+          gap: 0.75,
+          minWidth: 0,
+          px: 0.85,
+          py: 0.45,
+          "& *": {
+            color: "inherit !important"
+          },
+          "& .MuiSvgIcon-root": {
+            fontSize: 17
+          }
+        }}
+      >
+        {metaItems}
+      </Stack>
+    );
+  }
+
   if (presentation === "compactIconOnly" || presentation === "iconOnly" || presentation === "iconWithText") {
     return (
       <Stack direction="row" sx={{ alignItems: "center", flexWrap: "wrap", gap: 1.25, minWidth: 0 }}>

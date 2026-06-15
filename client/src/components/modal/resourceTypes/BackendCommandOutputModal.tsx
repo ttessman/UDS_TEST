@@ -6,6 +6,12 @@ import type { ListState } from "../../list/list.types.js";
 import { CommandLogSection } from "../../section/resourceTypes/CommandLogSection.js";
 import { udsStatusIndicators } from "../../../features/status/statusDefinitions.js";
 import { CatalogStoreSection } from "../../../features/packages/CatalogStoreSection.js";
+import {
+  installedPackageResource,
+  type InstalledPackageResourceContext
+} from "../../../features/packages/packageResourceDefinitions.js";
+import { ResourceSection, type ResourceSectionContentConfig } from "../../section/resourceTypes/ResourceSection.js";
+import { ResourceCardVariant } from "../../card/resourceTypes/ResourceCard.js";
 import { Modal } from "../Modal.js";
 
 export type BackendCommandOutputModalDefinition = {
@@ -35,15 +41,43 @@ export type BackendCommandOutputCatalogStore = {
   searchValue: string;
 };
 
+export type BackendCommandOutputFavoriteApps = {
+  getItemContext: (pkg: InstalledPackage) => InstalledPackageResourceContext;
+  items: InstalledPackage[];
+};
+
+const favoriteAppsContent = {
+  title: "Favorite Apps",
+  resource: installedPackageResource,
+  emptyMessage: "No favorite apps selected.",
+  layout: {
+    alignItems: "stretch",
+    gap: 1.25,
+    gridTemplateColumns: {
+      xs: "repeat(2, minmax(0, 1fr))",
+      sm: "repeat(3, minmax(0, 1fr))",
+      md: "repeat(4, minmax(0, 1fr))",
+      lg: "repeat(5, minmax(0, 1fr))",
+      xl: "repeat(6, minmax(0, 1fr))"
+    },
+    justifyContent: "stretch",
+    justifyItems: "stretch"
+  },
+  subtitle: (items) => `${items.length} favorite ${items.length === 1 ? "app" : "apps"}.`,
+  variant: ResourceCardVariant.Compact
+} satisfies ResourceSectionContentConfig<InstalledPackage, InstalledPackageResourceContext>;
+
 export function BackendCommandOutputModal({
   catalogStore,
   definition = backendCommandOutputModalDefinition,
+  favoriteApps,
   logs,
   logState,
   status
 }: {
   catalogStore?: BackendCommandOutputCatalogStore;
   definition?: BackendCommandOutputModalDefinition;
+  favoriteApps?: BackendCommandOutputFavoriteApps;
   logs: CommandState[];
   logState: ListState;
   status: UdsStatus | null;
@@ -55,6 +89,16 @@ export function BackendCommandOutputModal({
     >
       <Stack sx={{ gap: 2 }}>
         <StatusIndicatorList item={status} definition={udsStatusIndicators} context={undefined} />
+        {favoriteApps && favoriteApps.items.length > 0 ? (
+          <ResourceSection<InstalledPackage, InstalledPackageResourceContext>
+            data={favoriteApps.items}
+            content={favoriteAppsContent}
+            context={{
+              getItemContext: favoriteApps.getItemContext,
+              status: "ready"
+            }}
+          />
+        ) : null}
         {catalogStore ? <CatalogStoreSection {...catalogStore} /> : null}
         <CommandLogSection items={logs} state={logState} />
       </Stack>

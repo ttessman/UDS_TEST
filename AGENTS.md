@@ -137,6 +137,18 @@ Avoid duplicating component trees when differences are primarily content, fields
 
 ---
 
+## User-Facing Domain Rule
+
+Before creating shared types, definitions, options, labels, or action vocabularies, ask:
+
+- What are the actual user-facing domains?
+- Which labels, states, actions, and filters belong to each domain?
+- Is a generic/shared lookup truly useful, or is it hiding two clearer domain-specific maps?
+
+For example, registry package concepts and installed package concepts may share words, but they are different user-facing domains. Prefer explicit domain maps such as registry package states/actions and installed package states/actions first. Add combined exports only when callers genuinely need a generic lookup.
+
+---
+
 ## Cognitive Load Rule
 
 Page and section level should answer:

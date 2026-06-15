@@ -14,9 +14,9 @@ import {
   canUninstallPackage,
   getInstalledPackageStateLabel,
   getRegistryPackageResourceType,
-  isInstalledPackageDeployed,
-  packageActionDefinitions
+  getRegistryPackageStateLabel,
 } from "./packageActions.js";
+import { packageActionDefinitions } from "./packageDefinitions.js";
 
 export type RegistryPackageResourceContext = {
   disabled: boolean;
@@ -129,19 +129,19 @@ export const registryPackageResource = {
     context.installed ? (
       <StatusIndicatorButton
         label={getInstalledPackageStateLabel(context.installedPackage)}
-        state={isInstalledPackageDeployed(context.installedPackage) ? "success" : "warning"}
+        state="success"
         tooltip={getInstalledPackageStateLabel(context.installedPackage)}
         view="dot"
       />
     ) : (
-      <StatusIndicatorButton label="Published" state="info" tooltip="Published to the registry" view="dot" />
+      <StatusIndicatorButton label={getRegistryPackageStateLabel(null)} state="info" tooltip={`${getRegistryPackageStateLabel(null)} to the registry`} view="dot" />
     ),
   type: ({ context, item }) => <ResourceTypeChip type={getRegistryPackageResourceType(item, context.installedPackage)} />,
   menuStatus: ({ context, item }) =>
     <StatusIndicatorButton
-      label={`${item.displayTitle || item.packageName} ${context.installed ? getInstalledPackageStateLabel(context.installedPackage) : "Published"}`}
-      state={context.installed ? (isInstalledPackageDeployed(context.installedPackage) ? "success" : "warning") : "info"}
-      tooltip={`${item.displayTitle || item.packageName} ${context.installed ? getInstalledPackageStateLabel(context.installedPackage) : "Published"}`}
+      label={`${item.displayTitle || item.packageName} ${context.installed ? getInstalledPackageStateLabel(context.installedPackage) : getRegistryPackageStateLabel(null)}`}
+      state={context.installed ? "success" : "info"}
+      tooltip={`${item.displayTitle || item.packageName} ${context.installed ? getInstalledPackageStateLabel(context.installedPackage) : getRegistryPackageStateLabel(null)}`}
       view="text"
     />,
   summary: ({ item }) => item.tagline ?? item.description ?? "No registry description discovered.",
@@ -211,9 +211,9 @@ export const installedPackageResource = {
   type: ({ item }) => <ResourceTypeChip type={getInstalledPackageResourceType(item)} />,
   menuStatus: ({ item }) => (
     <StatusIndicatorButton
-      label={`${item.name} ${item.phase === "Ready" || item.status === "Ready" ? "Deployed" : item.phase ?? item.status ?? "Reported"}`}
-      state={item.phase === "Ready" || item.status === "Ready" ? "success" : "neutral"}
-      tooltip={`${item.name} ${item.phase === "Ready" || item.status === "Ready" ? "Deployed" : item.phase ?? item.status ?? "Reported"}`}
+      label={`${item.name} ${getInstalledPackageStateLabel(item)}`}
+      state="success"
+      tooltip={`${item.name} ${getInstalledPackageStateLabel(item)}`}
       view="text"
     />
   ),

@@ -91,8 +91,11 @@ function FilterSelect<T>({
 
   return (
     <FormControl fullWidth size="small">
-      <InputLabel id={`${id}-label`}>{field.label}</InputLabel>
+      <InputLabel id={`${id}-label`} shrink>
+        {field.label}
+      </InputLabel>
       <Select
+        displayEmpty
         label={field.label}
         labelId={`${id}-label`}
         multiple={field.multiple}
@@ -106,24 +109,30 @@ function FilterSelect<T>({
         renderValue={(selected) =>
           Array.isArray(selected)
             ? selected.map((value) => field.options.find((option) => option.value === value)?.label ?? value).join(", ")
-            : field.options.find((option) => option.value === selected)?.label ?? field.placeholder ?? ""
+            : field.options.find((option) => option.value === selected)?.label ?? field.placeholder ?? field.allLabel ?? "All"
         }
         value={selectedValue}
       >
         {!field.multiple ? (
           <MenuItem value="">
-            <Typography color="text.secondary" sx={{ fontSize: 14 }}>
-              {field.allLabel ?? "All"}
-            </Typography>
+            <FilterOptionLabel>{field.allLabel ?? "All"}</FilterOptionLabel>
           </MenuItem>
         ) : null}
         {field.options.map((option) => (
           <MenuItem key={option.value} value={option.value}>
-            {option.label}
+            <FilterOptionLabel>{option.label}</FilterOptionLabel>
           </MenuItem>
         ))}
       </Select>
     </FormControl>
+  );
+}
+
+function FilterOptionLabel({ children }: { children: string }) {
+  return (
+    <Typography color="text.secondary" sx={{ fontSize: 14, fontWeight: 500 }}>
+      {children}
+    </Typography>
   );
 }
 

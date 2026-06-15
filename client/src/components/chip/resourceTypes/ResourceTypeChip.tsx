@@ -1,72 +1,74 @@
 import { Box, Chip, Tooltip } from "@mui/material";
 import { AppIcon, type AppIconName } from "../../icon/AppIcon.js";
 
-export type ResourceType = "app" | "core" | "package" | "unknown";
+export type ResourceTypeDefinition = {
+  icon: AppIconName;
+  label: string;
+  token: string;
+};
 
-const resourceTypeLabels = {
-  app: "APP",
-  core: "CORE",
-  package: "PACKAGE",
-  unknown: "UNKNOWN"
-} satisfies Record<ResourceType, string>;
+export const resourceTypeFieldDefinition = {
+  allLabel: "All Types",
+  label: "Type"
+} as const;
 
-const resourceTypeIcons = {
-  app: "resourceApp",
-  core: "resourceCore",
-  package: "resourcePackage",
-  unknown: "resourceUnknown"
-} satisfies Record<ResourceType, AppIconName>;
-
-const resourceTypeColors = {
+export const resourceTypeDefinitions = {
   app: {
-    bg: "var(--app-resource-type-app-bg)",
-    border: "var(--app-resource-type-app-border)",
-    main: "var(--app-resource-type-app-main)"
+    icon: "resourceApp",
+    label: "APP",
+    token: "app"
   },
   core: {
-    bg: "var(--app-resource-type-core-bg)",
-    border: "var(--app-resource-type-core-border)",
-    main: "var(--app-resource-type-core-main)"
+    icon: "resourceCore",
+    label: "CORE",
+    token: "core"
   },
   package: {
-    bg: "var(--app-resource-type-package-bg)",
-    border: "var(--app-resource-type-package-border)",
-    main: "var(--app-resource-type-package-main)"
+    icon: "resourcePackage",
+    label: "PACKAGE",
+    token: "package"
   },
   unknown: {
-    bg: "var(--app-resource-type-unknown-bg)",
-    border: "var(--app-resource-type-unknown-border)",
-    main: "var(--app-resource-type-unknown-main)"
+    icon: "resourceUnknown",
+    label: "UNKNOWN",
+    token: "unknown"
   }
-} satisfies Record<ResourceType, { bg: string; border: string; main: string }>;
+} satisfies Record<string, ResourceTypeDefinition>;
+
+export type ResourceType = keyof typeof resourceTypeDefinitions;
+
+export const resourceTypeOptions = Object.entries(resourceTypeDefinitions).map(([value, definition]) => ({
+  label: definition.label,
+  value
+}));
 
 export function ResourceTypeChip({ type }: { type: ResourceType }) {
-  const label = resourceTypeLabels[type];
-  const colors = resourceTypeColors[type];
+  const definition = resourceTypeDefinitions[type];
+  const colorToken = `--app-resource-type-${definition.token}`;
 
   return (
-    <Tooltip title={`${label} resource`}>
+    <Tooltip title={`${definition.label} resource`}>
       <Chip
-        aria-label={`${label} resource type`}
+        aria-label={`${definition.label} resource type`}
         icon={
           <Box
             aria-hidden="true"
             component="span"
             sx={{
-              color: `${colors.main} !important`,
+              color: `var(${colorToken}-main) !important`,
               display: "inline-flex",
               ml: "5px !important"
             }}
           >
-            <AppIcon name={resourceTypeIcons[type]} sx={{ fontSize: 15 }} />
+            <AppIcon name={definition.icon} sx={{ fontSize: 15 }} />
           </Box>
         }
-        label={label}
+        label={definition.label}
         size="small"
         sx={{
-          bgcolor: colors.bg,
-          borderColor: colors.border,
-          color: colors.main,
+          bgcolor: `var(${colorToken}-bg)`,
+          borderColor: `var(${colorToken}-border)`,
+          color: `var(${colorToken}-main)`,
           fontSize: 11,
           fontWeight: 900,
           height: 26,

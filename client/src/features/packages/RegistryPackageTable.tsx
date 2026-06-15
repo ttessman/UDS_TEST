@@ -11,10 +11,9 @@ import {
   canUninstallPackage,
   canUnpublishPackage,
   getRegistryPackageResourceType,
-  getRegistryPackageStateLabel,
-  isInstalledPackageDeployed,
-  packageActionDefinitions
+  getRegistryPackageStateLabel
 } from "./packageActions.js";
+import { packageActionDefinitions } from "./packageDefinitions.js";
 
 export type RegistryPackageTableContext = {
   canManageApps: boolean;
@@ -87,12 +86,12 @@ export function RegistryPackageTable({
           node: installedPackage ? (
             <StatusIndicatorButton
               label={stateLabel}
-              state={isInstalledPackageDeployed(installedPackage) ? "success" : "warning"}
+              state="success"
               tooltip={stateLabel}
               view="chip"
             />
           ) : (
-            <StatusIndicatorButton label="Published" state="info" tooltip="Published to the registry" view="chip" />
+            <StatusIndicatorButton label={stateLabel} state="info" tooltip={`${stateLabel} to the registry`} view="chip" />
           ),
           text: stateLabel
         };
@@ -209,7 +208,7 @@ function RegistryPackageActions({
         <Box component="li" sx={{ listStyle: "none", px: 1.5, pb: 0.15 }}>
           <StatusIndicatorButton
             label={`${title} ${getRegistryPackageStateLabel(installedPackage)}`}
-            state={installedPackage ? (isInstalledPackageDeployed(installedPackage) ? "success" : "warning") : "info"}
+            state={installedPackage ? "success" : "info"}
             tooltip={`${title} ${getRegistryPackageStateLabel(installedPackage)}`}
             view="text"
           />

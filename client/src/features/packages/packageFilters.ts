@@ -1,10 +1,13 @@
 import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
 import type { FilterField } from "../../components/filter/filter.types.js";
+import { resourceTypeFieldDefinition, resourceTypeOptions } from "../../components/chip/resourceTypes/ResourceTypeChip.js";
 import {
+  getInstalledPackageState,
   getInstalledPackageResourceType,
+  getRegistryPackageState,
   getRegistryPackageResourceType,
-  isInstalledPackageDeployed
 } from "./packageActions.js";
+import { installedPackageStateOptions, packageStateFieldDefinition, registryPackageStateOptions } from "./packageDefinitions.js";
 
 export function getRegistryPackageFilterFields({
   getInstalledPackage
@@ -13,7 +16,7 @@ export function getRegistryPackageFilterFields({
 }): Array<FilterField<RegistryPackage>> {
   return [
     {
-      allLabel: "All types",
+      allLabel: resourceTypeFieldDefinition.allLabel,
       apply: (pkg, value) => {
         const selected = String(value ?? "");
         if (!selected) {
@@ -22,26 +25,26 @@ export function getRegistryPackageFilterFields({
 
         return getRegistryPackageResourceType(pkg, getInstalledPackage(pkg)) === selected;
       },
-      label: "Type",
+      label: resourceTypeFieldDefinition.label,
       name: "type",
       options: resourceTypeOptions,
-      placeholder: "All types",
+      placeholder: resourceTypeFieldDefinition.allLabel,
       type: "select"
     },
     {
-      allLabel: "All states",
+      allLabel: packageStateFieldDefinition.allLabel,
       apply: (pkg, value) => {
         const selected = String(value ?? "");
         if (!selected) {
           return true;
         }
 
-        return getPackageStateValue(getInstalledPackage(pkg)) === selected;
+        return getRegistryPackageState(getInstalledPackage(pkg)) === selected;
       },
-      label: "Active state",
+      label: packageStateFieldDefinition.label,
       name: "state",
-      options: packageStateOptions,
-      placeholder: "All states",
+      options: registryPackageStateOptions,
+      placeholder: packageStateFieldDefinition.allLabel,
       type: "select"
     }
   ];
@@ -50,7 +53,7 @@ export function getRegistryPackageFilterFields({
 export function getInstalledPackageFilterFields(): Array<FilterField<InstalledPackage>> {
   return [
     {
-      allLabel: "All types",
+      allLabel: resourceTypeFieldDefinition.allLabel,
       apply: (pkg, value) => {
         const selected = String(value ?? "");
         if (!selected) {
@@ -59,48 +62,27 @@ export function getInstalledPackageFilterFields(): Array<FilterField<InstalledPa
 
         return getInstalledPackageResourceType(pkg) === selected;
       },
-      label: "Type",
+      label: resourceTypeFieldDefinition.label,
       name: "type",
       options: resourceTypeOptions,
-      placeholder: "All types",
+      placeholder: resourceTypeFieldDefinition.allLabel,
       type: "select"
     },
     {
-      allLabel: "All states",
+      allLabel: packageStateFieldDefinition.allLabel,
       apply: (pkg, value) => {
         const selected = String(value ?? "");
         if (!selected) {
           return true;
         }
 
-        return getPackageStateValue(pkg) === selected;
+        return getInstalledPackageState(pkg) === selected;
       },
-      label: "Active state",
+      label: packageStateFieldDefinition.label,
       name: "state",
-      options: packageStateOptions.filter((option) => option.value !== "published"),
-      placeholder: "All states",
+      options: installedPackageStateOptions,
+      placeholder: packageStateFieldDefinition.allLabel,
       type: "select"
     }
   ];
 }
-
-function getPackageStateValue(installedPackage: InstalledPackage | null) {
-  if (!installedPackage) {
-    return "published";
-  }
-
-  return isInstalledPackageDeployed(installedPackage) ? "deployed" : "installed";
-}
-
-const resourceTypeOptions = [
-  { label: "Core", value: "core" },
-  { label: "App", value: "app" },
-  { label: "Package", value: "package" },
-  { label: "Unknown", value: "unknown" }
-];
-
-const packageStateOptions = [
-  { label: "Published", value: "published" },
-  { label: "Installed", value: "installed" },
-  { label: "Deployed", value: "deployed" }
-];

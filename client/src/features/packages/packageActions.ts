@@ -1,39 +1,13 @@
 import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
-import type { AppIconName } from "../../components/icon/AppIcon.js";
 import type { ResourceType } from "../../components/chip/resourceTypes/ResourceTypeChip.js";
-
-export const packageActionIds = ["publish", "unpublish", "install", "uninstall"] as const;
-
-export type PackageActionId = (typeof packageActionIds)[number];
-
-export type PackageActionDefinition = {
-  failureMessage: string;
-  icon: AppIconName;
-  label: string;
-};
-
-export const packageActionDefinitions = {
-  publish: {
-    failureMessage: "Publish request failed",
-    icon: "publish",
-    label: "Publish"
-  },
-  unpublish: {
-    failureMessage: "Unpublish request failed",
-    icon: "unpublish",
-    label: "Unpublish"
-  },
-  install: {
-    failureMessage: "Install request failed",
-    icon: "install",
-    label: "Install App"
-  },
-  uninstall: {
-    failureMessage: "Uninstall request failed",
-    icon: "uninstall",
-    label: "Uninstall App"
-  }
-} satisfies Record<PackageActionId, PackageActionDefinition>;
+import {
+  installedPackageInstalledState,
+  installedPackageUninstalledState,
+  packageStateLabels,
+  registryPackagePublishedState,
+  type InstalledPackageStateId,
+  type RegistryPackageStateId
+} from "./packageDefinitions.js";
 
 export function canInstallPackage(pkg: RegistryPackage, installedPackage: InstalledPackage | null): boolean {
   return pkg.installable && Boolean(pkg.installAction) && !installedPackage;
@@ -75,34 +49,24 @@ export function getRegistryPackageResourceType(pkg: RegistryPackage, installedPa
   return "unknown";
 }
 
-export function getInstalledPackageState(item: InstalledPackage | null): "not-installed" | "installed" | "deployed" {
+export function getInstalledPackageState(item: InstalledPackage | null): InstalledPackageStateId {
   if (!item) {
-    return "not-installed";
+    return installedPackageUninstalledState;
   }
 
-  return isInstalledPackageDeployed(item) ? "deployed" : "installed";
+  return installedPackageInstalledState;
+}
+
+export function getRegistryPackageState(installedPackage: InstalledPackage | null): RegistryPackageStateId {
+  return installedPackage ? getInstalledPackageState(installedPackage) : registryPackagePublishedState;
 }
 
 export function getInstalledPackageStateLabel(item: InstalledPackage | null): string {
-  const state = getInstalledPackageState(item);
-
-  if (state === "deployed") {
-    return "Deployed";
-  }
-
-  if (state === "installed") {
-    return "Installed";
-  }
-
-  return "Not installed";
+  return packageStateLabels[getInstalledPackageState(item)];
 }
 
 export function getRegistryPackageStateLabel(installedPackage: InstalledPackage | null): string {
-  return installedPackage ? getInstalledPackageStateLabel(installedPackage) : "Published";
-}
-
-export function isInstalledPackageDeployed(item: InstalledPackage | null): boolean {
-  return item?.phase === "Ready" || item?.status === "Ready";
+  return packageStateLabels[getRegistryPackageState(installedPackage)];
 }
 
 function isCorePackageName(value: string | null | undefined) {

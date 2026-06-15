@@ -5,7 +5,7 @@ import {
   requestPackageUninstall,
   requestPackageUnpublish
 } from "../../api/uds.js";
-import { packageActionDefinitions, type PackageActionId } from "./packageActions.js";
+import { packageActionDefinitions, type PackageActionId } from "./packageDefinitions.js";
 
 type PackageActionController = {
   refresh: () => Promise<void>;

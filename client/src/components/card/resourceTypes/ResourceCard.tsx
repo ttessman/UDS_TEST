@@ -273,9 +273,35 @@ export function ResourceCard<T extends object, C = undefined>({
             width: "100%"
           }}
         >
-          <Box sx={{ "& .MuiAvatar-root": { height: 88, width: 88, fontSize: 44 } }}>
-            <ResourceIcon icon={displayIcon} status={null} />
-          </Box>
+          <Stack
+            sx={{
+              alignItems: "center",
+              gap: 1.25,
+              maxWidth: "calc(100% - (var(--card-padding-x) * 4))",
+              minWidth: 0
+            }}
+          >
+            <Box sx={{ "& .MuiAvatar-root": { height: 88, width: 88, fontSize: 44 } }}>
+              <ResourceIcon icon={displayIcon} status={null} />
+            </Box>
+            <Typography
+              component="h3"
+              title={typeof title === "string" ? title : undefined}
+              sx={{
+                color: "text.primary",
+                fontSize: 14,
+                fontWeight: 800,
+                lineHeight: 1.15,
+                maxWidth: "100%",
+                overflow: "hidden",
+                textAlign: "center",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap"
+              }}
+            >
+              {title}
+            </Typography>
+          </Stack>
           {meta || actions ? (
             <Stack
               direction="row"

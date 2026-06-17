@@ -2,11 +2,16 @@ node_modules
 dist
 .env
 build
+components/docs/.docusaurus
+components/docs/build
 zarf-package-*.tar.zst
 .DS_Store
 npm-debug.log*
 *.tsbuildinfo
 client/dist
 server/dist
+frontend/dist
+backend/dist
+docs/build
 shared/dist
-client/src/components/aide-forms/
+frontend/src/components/aide-forms/

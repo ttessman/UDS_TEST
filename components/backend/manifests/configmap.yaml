@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: uds-poc
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: uds-local-poc
+data:
+  PORT: "3001"
+  CLIENT_ORIGIN: "http://frontend.uds-poc.svc.cluster.local:5173"
+  UDS_REGISTRY_PACKAGE_REFS: "oci://host.k3d.internal:5001/uds-poc/docs:0.1.0,oci://host.k3d.internal:5001/uds-poc/catalog-poc:0.1.0"
+  UDS_REGISTRY_CATALOG_PATH: ""
+  UDS_REGISTRY_CATALOG_URL: ""
+  UDS_CORE_BUNDLE_REF: "k3d-core-demo:latest"
+  UDS_POC_ENABLE_INSTALL: "true"
+  UDS_APP_URL_SCHEME: "https"
+  UDS_REGISTRY_PLAIN_HTTP: "true"
+  UDS_POC_LOCAL_PORT_FORWARD_URLS: "false"
+  UDS_POC_USE_KUBECTL_FOR_PACKAGE_CRS: "true"
+  CATALOG_POC_NAME: "catalog-poc"
+  CATALOG_POC_NAMESPACE: "catalog-poc"
+  CATALOG_POC_REPOSITORY: "uds-poc"

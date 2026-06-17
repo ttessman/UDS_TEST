@@ -143,6 +143,8 @@ export type InstalledPackage = {
   architecture: string | null;
   /** Source: UDS Package CR `status.endpoints[]` when present. */
   endpoints: string[];
+  /** Backend-derived from `uds-poc.dev/launch-endpoints` when present; otherwise all reported endpoints. */
+  launchEndpoints: string[];
   /** Backend-derived launch URL from the first UDS Package CR endpoint. */
   launchUrl: string | null;
   /** Source: full Kubernetes Package CR item preserved because Zarf CR fields vary by version. */

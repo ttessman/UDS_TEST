@@ -2,19 +2,16 @@
   "name": "uds-core-local-poc",
   "private": true,
   "workspaces": [
-    "client",
-    "server",
+    "components/frontend",
+    "components/backend",
+    "components/docs",
     "shared"
   ],
-  "overrides": {
-    "react": "19.2.7",
-    "react-dom": "19.2.7"
-  },
   "scripts": {
-    "dev": "npm run dev -w server & npm run dev -w client",
-    "build": "npm run build -w shared && npm run build -w server && npm run build -w client",
-    "typecheck": "npm run build -w shared && npm run typecheck -w server && npm run typecheck -w client",
-    "start": "npm run start -w server"
+    "dev": "npm run dev -w @uds-poc/backend & npm run dev -w @uds-poc/frontend",
+    "build": "npm run build -w @uds-poc/shared && npm run build -w @uds-poc/backend && npm run build -w @uds-poc/frontend && npm run build -w @uds-poc/docs",
+    "typecheck": "npm run build -w @uds-poc/shared && npm run typecheck -w @uds-poc/backend && npm run typecheck -w @uds-poc/frontend",
+    "start": "npm run start -w @uds-poc/backend"
   },
   "engines": {
     "node": ">=20"

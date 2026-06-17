@@ -1,6 +1,20 @@
 # AGENTS.md
 
-## Primary Goal
+## Main Goal
+
+Refactor this singular repo into a clearer containerized monorepo structure with separate frontend, backend, documentation, and sample package areas.
+
+This supports a containerized monorepo for a local UDS package discovery and install-state POC via k8s. The target user flow is:
+
+1. Use make commands to set up local prerequisites. (see existing readme)
+2. Deploy UDS Core locally, using the macOS workaround only when needed.
+3. Start the backend and frontend containers.
+4. Use the frontend to discover package metadata and launch/deploy apps into the UDS cluster.
+5. Use the docs app to explain the POC, local development workflow, container workflow, and future Kubernetes/UDS deployment direction.
+
+The refactor is not done until the make-command path is coherent, the app areas are independently runnable/containerized, and the frontend can support the local UDS package launch workflow.
+
+## Engineering Goal
 
 Optimize for:
 
@@ -14,6 +28,106 @@ Prefer code that helps Feature 27 ship faster, not just Feature 1.
 
 Higher-level files communicate product intent.
 Lower-level files own rendering, styling, layout, repeated behavior, and infrastructure.
+
+---
+
+## Active Resume Checklist: Monorepo Containerization
+
+Read this section first when resuming the repo refactor into containerized POC components.
+
+Current active goal:
+
+- Convert the singular POC repo into a containerized monorepo organized around deployable POC components.
+- Keep the POC deployment direction focused on Kubernetes/UDS package structure.
+- Make docs a first-class Docusaurus app that documents the POC and can run independently.
+- Keep the sample `catalog-poc` package/app as the local UDS package deployment proof point.
+
+Current intended shape:
+
+```text
+components/
+  frontend/     React 19 + Vite UI container
+  backend/      Express API container
+  docs/         Docusaurus 3 documentation site container
+  catalog-poc/  Sample Zarf/UDS package and sample app container inputs
+shared/         Cross-app TypeScript contracts only, not a container
+scripts/        Root-level repo/UDS operations, not app utilities
+deploy/kubernetes/
+kustomization.yaml
+                Plain Kubernetes entrypoint for frontend/backend/docs manifests
+```
+
+Current decisions:
+
+- Keep React 19 as the repo standard.
+- Keep frontend-only UI components under `components/frontend/src/components`.
+- Keep `shared/` at the repo root for cross-app domain/API contracts. Do not rename it to `utils`; these are shared types and models, not generic helpers.
+- Keep `scripts/` at the repo root because they operate on the whole POC, local registry, k3d/UDS, and repo lifecycle.
+- Treat `scripts/` as host-side Make helpers only. Runtime containers should not call repo scripts or depend on local checkout files.
+- Script defaults under `scripts/vars/` are build/package/deploy orchestration values, not frontend runtime configuration and not UDS app metadata.
+- If Prisma is already present or added, keep it isolated to `components/backend/` and use it for backend-owned persistence such as user settings.
+- User settings should move from frontend `localStorage` to API-backed storage once Prisma/backend persistence exists.
+- Do not use Docker Compose as a supported path for this POC. UDS runs on Kubernetes.
+- The deployment goal remains Kubernetes/UDS manifests and UDS package structure.
+- Plain Kubernetes manifests for frontend/backend/docs live under `components/*/manifests`, with root `kustomization.yaml` as the current entrypoint.
+- Current exposed UDS hosts are `app.uds.dev` for frontend, `docs.uds.dev` for docs, and `api.uds.dev` for the backend API.
+- In-cluster callers should prefer service DNS such as `backend.uds-poc.svc.cluster.local:3001`; browser-facing callers can use the UDS hosts.
+- App routing uses UDS Package `network.expose` entries through the tenant gateway. Keep frontend/backend together as the platform package in `uds-poc`. Keep docs as a separate app package in the `docs` namespace. Do not create multiple Package CRs in the same namespace.
+- Store data comes from backend-inspected OCI/Zarf package metadata.
+- Installed cards come from Kubernetes Package CR state.
+- Browser-triggered installs should call the backend API; the backend deploys a selected OCI ref with `zarf package deploy` from inside the backend container.
+- The backend container includes the needed CLIs (`kubectl`, `uds`, and `zarf`) and should not shell out to Make or repo scripts.
+- The local POC currently grants broad backend cluster permissions so browser-triggered installs can create resources. Harden this before treating the pattern as production-ready.
+
+Current docs status:
+
+- `components/docs/` is now a real Docusaurus app container, not a loose markdown folder.
+- Docusaurus content lives under `components/docs/docs/`.
+- Starter pages currently include intro, architecture, local development, container runbook, Kubernetes routing, UDS notes, make targets, frontend architecture, and project requirements.
+- The docs should explain the POC, the local container workflow, and the future Kubernetes/UDS direction.
+- The docs app is a separate Docusaurus app package and is exposed as `https://docs.uds.dev/` from the `docs` Package CR endpoint metadata.
+- The primary docs launch path should come from installed package endpoint metadata, not a special nav button.
+- Docs local authoring commands live in `components/docs/Makefile`.
+- Component-local authoring commands live in `components/frontend/Makefile`, `components/backend/Makefile`, and `components/docs/Makefile`.
+- Historical root docs paths such as `docs/PROJECT_REQUIREMENTS.md` have moved; update IDE tabs and links to `components/docs/docs/project-requirements.md`.
+
+Current command readiness:
+
+- React 19 is the repo standard and is installed for the frontend and docs workspaces.
+- Root Makefile commands should stay focused on Kubernetes, UDS, Zarf, registry, and container lifecycle.
+- Last known docs build state: `components/docs make build` and root `make build/docs` both pass. Docusaurus uses the hash router, so the sitemap plugin warning is expected and non-fatal.
+- Last known backend build state: `npm run build -w @uds-poc/shared`, `npm run build -w @uds-poc/backend`, and `make build/backend` pass.
+- Last known backend image: `localhost:5001/uds-poc/backend:0.1.0`.
+- Do not assume the full UDS runtime flow is verified yet:
+  `make setup && make deploy-uds-macos && make build && make up && make build/catalog-poc && make up/catalog-poc`
+- `make up` pushes/packages/publishes/deploys already-built platform and docs images to Kubernetes, then stays running to hold localhost port-forwards open.
+- `make build` builds frontend/backend/docs container images. Use `make build/backend`, `make build/frontend`, or `make build/docs` to rebuild one image.
+- `make build/catalog-poc` builds the sample app image. `make up/catalog-poc` pushes, packages, publishes, configures, deploys, and verifies the sample app package.
+- Use a second terminal for follow-up deploy commands such as `make build/catalog-poc` and `make up/catalog-poc`.
+- Before calling the full UDS flow, re-verify cluster state and the local registry/package loop.
+
+Known TODOs:
+
+1. Re-verify cluster health after the current restart before deploying packages.
+2. Verify the full frontend/backend/docs app image set with `make build`.
+3. Verify the frontend/backend platform Zarf package with `make package-platform`.
+4. Verify the docs Zarf package with `make package-docs`.
+5. Re-verify `make up` from a clean UDS Core state; it should deploy the platform package and docs package, then port-forward frontend/backend/docs.
+6. Confirm the backend pod can run `kubectl`, `uds`, and `zarf`, can read Package CRs, and can inspect/deploy the configured local OCI refs.
+7. Confirm Store entries include separate `docs` and `catalog-poc` packages, not a generic `uds-poc-apps` bundle.
+8. Re-verify the staged catalog sample flow:
+   - `make build/catalog-poc`
+   - `make up/catalog-poc`
+9. Verify the UDS gateway host routing for `https://app.uds.dev/`, `https://api.uds.dev/`, and `https://docs.uds.dev/`.
+10. Re-verify the full UDS flow after the move:
+   - `make deploy-uds-macos`
+   - `make build`
+   - `make up`
+   - `make build/catalog-poc`
+   - `make up/catalog-poc`
+11. Confirm the installed package card can launch the docs endpoint URL `https://docs.uds.dev/` from docs Package CR endpoint metadata.
+12. Confirm the frontend can show the sample package as both available from registry metadata and installed from Package CR state.
+13. Keep `components/catalog-poc` as the sample app/package container area for the local registry push/pull/deploy loop.
 
 ---
 
@@ -43,7 +157,7 @@ Operational rules for future agents:
 - Do not remove the gateway `LoadBalancer` status patch casually. With ServiceLB disabled, the patch gives deploy waits an external IP value.
 - Use `make uds-debug`, `make verify-uds`, and `make stop-uds-workaround` when diagnosing stuck deploys.
 
-Detailed history and rationale: [docs/MACOS_UDS_WORKAROUND.md](docs/MACOS_UDS_WORKAROUND.md)
+Detailed history and rationale: [components/docs/docs/uds-notes.md](components/docs/docs/uds-notes.md)
 
 ---
 
@@ -53,51 +167,57 @@ Use this section when resuming the UDS POC work.
 
 Current verified state:
 
+- This state partially predates the latest platform/docs split; re-verify after the current cluster restart.
 - `make deploy-uds-macos` can deploy the slim local Core path on macOS with the seccomp workaround.
 - `make verify-uds` succeeds even when no literal `uds-core` namespace exists.
 - Core evidence currently comes from ready Package CRs:
   - `authservice/authservice Ready`
   - `keycloak/keycloak Ready`
-- The frontend at `http://localhost:5173/` renders:
+- The frontend should be reached through UDS routing at `https://app.uds.dev/` after `make up`; localhost port-forwards are debug conveniences only.
+- The frontend has rendered:
   - UDS installed: yes
   - Cluster reachable: yes
   - UDS Core running: yes
   - Core evidence: `Package CR authservice/authservice Ready`
-  - Installed Packages count: 2
+  - Installed Packages count from real Package CR state
 - The installed package side is real cluster state from:
 
 ```bash
 uds zarf tools kubectl get package -A -o json
 ```
 
-Known mismatch to fix next:
+Current package-source expectations:
 
-- The available package side is still using fallback refs:
-  - `oci://ghcr.io/defenseunicorns/packages/uds/core:latest`
-  - `oci://ghcr.io/defenseunicorns/packages/uds/podinfo:latest`
-- Both currently fail `zarf package inspect definition` on arm64 with `not found`.
-- This means the UI correctly distinguishes Registry Packages vs Installed Packages, but the Registry Package source is not yet a useful local app-package source.
+- The available package side should not rely on remote fallback Core refs.
+- The backend should inspect local OCI/Zarf refs for installable packages.
+- The expected local Store refs are docs and catalog-poc, published through the local registry/package loop.
+- Docs is a separate app package, exposed as `https://docs.uds.dev/`, and should appear as its own Store/installed package entry.
+- Catalog POC is the non-Core sample app package used to prove install/deploy from the Store.
+- `uds-poc` is the platform package for frontend/backend, not the installable docs/sample app grouping.
 
 Next required milestone:
 
-- Add a local registry push/pull/deploy loop for a non-Core sample app package.
-- This is required to test real app packages end to end.
+- Re-verify the local registry push/pull/deploy loop for docs and catalog-poc after the current restart.
+- Confirm the backend can inspect local refs from inside the cluster using `host.k3d.internal:5001`.
+- Confirm the backend can deploy selected local OCI refs from the frontend install action.
+- This is required before treating the full POC flow as ready end to end.
 
-Recommended implementation order:
+Current sample app/package state:
 
-1. Add a tiny sample Zarf package under `examples/uds-poc-sample/`.
-2. Include a simple workload, service, and a valid `uds.dev/v1alpha1` Package CR so installed package count/status can prove deployment.
-3. Add local registry make targets, likely:
+1. The sample Zarf package now lives under `components/catalog-poc/`.
+2. It includes a simple workload, service, and `uds.dev/v1alpha1` Package CR intended to prove deployment through installed package count/status.
+3. Local registry make targets exist:
    - `make registry-up`
    - `make registry-down`
-   - `make package-sample`
-   - `make publish-sample`
-   - `make deploy-sample`
-   - `make verify-sample`
-4. Prefer a separate local `registry:2` on `localhost:5001` for the first POC loop unless there is a deliberate reason to use the in-cluster Zarf registry.
-5. After publish, set or generate `UDS_REGISTRY_PACKAGE_REFS` to the local OCI ref so `GET /api/uds/packages` reads the sample from real OCI/package metadata.
-6. Deploy the same OCI ref through the backend or make target.
-7. Confirm the frontend shows:
+   - `make build/catalog-poc`
+   - `make package-catalog-poc`
+   - `make publish-catalog-poc`
+   - `make up/catalog-poc`
+   - `make verify-catalog-poc`
+4. The local registry path uses `registry:2` on `localhost:5001`.
+5. Package push/publish/deploy steps should use the generic scripts under `scripts/package/`, with app-specific values loaded from `scripts/vars/defaults.env`.
+6. `make up/catalog-poc` should deploy the same OCI ref into the active UDS cluster.
+7. After verification, confirm the frontend shows:
    - sample package available from registry
    - sample package installed from Package CR
    - total installed package count increased beyond the Core baseline

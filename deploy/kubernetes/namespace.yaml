@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: uds-poc
+  labels:
+    app.kubernetes.io/name: uds-poc
+    app.kubernetes.io/part-of: uds-local-poc

@@ -1,0 +1,76 @@
+apiVersion: uds.dev/v1alpha1
+kind: Package
+metadata:
+  name: uds-poc
+  namespace: uds-poc
+  annotations:
+    uds-poc.dev/launch-endpoints: app
+spec:
+  network:
+    allow:
+      - description: frontend to backend API
+        direction: Egress
+        selector:
+          app.kubernetes.io/name: frontend
+        remoteNamespace: uds-poc
+        remoteSelector:
+          app.kubernetes.io/name: backend
+        port: 3001
+      - description: frontend to backend API
+        direction: Ingress
+        selector:
+          app.kubernetes.io/name: backend
+        remoteNamespace: uds-poc
+        remoteSelector:
+          app.kubernetes.io/name: frontend
+        port: 3001
+      - description: frontend to docs app
+        direction: Egress
+        selector:
+          app.kubernetes.io/name: frontend
+        remoteNamespace: docs
+        remoteSelector:
+          app.kubernetes.io/name: docs
+        port: 8080
+      - description: backend to Kubernetes API
+        direction: Egress
+        selector:
+          app.kubernetes.io/name: backend
+        remoteGenerated: KubeAPI
+        ports:
+          - 443
+          - 6443
+      - description: backend to local OCI registry
+        direction: Egress
+        selector:
+          app.kubernetes.io/name: backend
+        remoteHost: host.k3d.internal
+        remoteProtocol: HTTP
+        port: 5001
+    expose:
+      - description: UDS POC frontend
+        gateway: tenant
+        host: app
+        port: 5173
+        selector:
+          app.kubernetes.io/name: frontend
+        service: frontend
+        targetPort: 8080
+        uptime:
+          checks:
+            paths:
+              - /
+      - description: UDS POC backend API
+        gateway: tenant
+        host: api
+        port: 3001
+        selector:
+          app.kubernetes.io/name: backend
+        service: backend
+        targetPort: 3001
+        uptime:
+          checks:
+            paths:
+              - /api/health
+    serviceMesh:
+      mode: ambient

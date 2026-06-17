@@ -2,14 +2,16 @@ SHELL := /bin/bash
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install env dev run run-dev server client build typecheck start check-prereqs check-run-ready setup setup-macos deploy-uds deploy-uds-macos fix-uds-ports fix-uds-gateway-routing stop-uds-workaround down down-dev down-deploy down-uds setup-uds setup-dev setup-local-demo verify-uds uds-debug inspect-packages installed-packages registry-up registry-down package-catalog-poc publish-catalog-poc configure-catalog-poc deploy-catalog-poc verify-catalog-poc deploy- git-status
+.PHONY: help up up/backend up/frontend up/docs up/catalog-poc ports build build/backend build/frontend build/docs build/catalog-poc push/apps push/docs push/catalog-poc check-prereqs check-run-ready setup setup-macos deploy-uds deploy-core deploy-uds-macos fix-uds-ports fix-uds-gateway-routing stop-uds-workaround down down-deploy down-uds setup-local-demo verify-uds uds-debug inspect-packages installed-packages registry-up registry-down package-platform publish-platform deploy-platform package-docs publish-docs deploy-docs package-catalog-poc publish-catalog-poc deploy-catalog-poc verify-catalog-poc git-status
 
 help:
 	@printf "UDS  local POC commands\n\n"
 	@printf "Official path from fresh checkout:\n"
-	@printf "  make setup && make deploy-uds && make run dev && make deploy-catalog-poc\n"
+	@printf "  make setup && make deploy-uds && make build && make up\n"
+	@printf "  make build/catalog-poc && make up/catalog-poc\n"
 	@printf "macOS workaround path:\n"
-	@printf "  make setup && make deploy-uds-macos && make run dev && make deploy-catalog-poc\n\n"
+	@printf "  make setup && make deploy-uds-macos && make build && make up\n"
+	@printf "  make build/catalog-poc && make up/catalog-poc\n\n"
 	@printf "Setup:\n"
 	@printf "  make setup               Set up local tools, npm dependencies, and env file\n"
 	@printf "  make deploy-uds          Deploy and verify the official UDS  local demo\n"
@@ -17,26 +19,27 @@ help:
 	@printf "  make fix-uds-ports       Clean project k3d leftovers and re-check ports 80/443\n"
 	@printf "  make fix-uds-gateway-routing Patch k3d host 80/443 to UDS gateway NodePorts\n"
 	@printf "  make stop-uds-workaround Stop a stale macOS workaround deploy/watcher process\n"
-	@printf "  make down                Stop dev servers, remove app deploys, delete local UDS/k3d cluster, and remove local registry\n"
-	@printf "  make down-dev            Stop local dev servers only\n"
+	@printf "  make down                Remove app deploys, delete local UDS/k3d cluster, and remove local registry\n"
 	@printf "  make down-deploy         Remove repo-deployed sample apps only\n"
 	@printf "  make down-uds            Delete local UDS/k3d cluster, registry, and review shared gateway ports\n"
-	@printf "  make install             Install npm workspace dependencies\n"
-	@printf "  make env                 Create server/.env from example if missing\n"
 	@printf "  make setup-macos         Check/install local CLI prerequisites only\n"
 	@printf "  make setup-local-demo    Alias for deploy-uds\n"
 	@printf "  make check-prereqs       Print local tool prerequisite status\n\n"
 	@printf "Run:\n"
-	@printf "  make run dev             Check setup, then start API and frontend dev servers\n"
-	@printf "  make dev                 Alias for make run dev\n"
-	@printf "  make run-dev             Alias for make run dev\n"
-	@printf "  make server              Start only Express API\n"
-	@printf "  make client              Start only Vite frontend\n"
-	@printf "  make start               Start compiled Express API\n\n"
+	@printf "  make up                  Push/package/publish/deploy built platform and docs images, then port-forward them\n"
+	@printf "  make up/frontend         Redeploy the platform package and wait for frontend rollout\n"
+	@printf "  make up/backend          Redeploy the platform package and wait for backend rollout\n"
+	@printf "  make up/docs             Publish/deploy the docs package and wait for docs rollout\n"
+	@printf "  make up/catalog-poc      Publish/deploy the built catalog-poc sample app package\n"
+	@printf "  make ports               Port-forward already-deployed frontend/backend/docs services\n"
+	@printf "  Component-local dev commands live in components/*/Makefile\n\n"
 	@printf "Verify/build:\n"
-	@printf "  make typecheck           Run TypeScript checks\n"
-	@printf "  make build               Build shared, server, and client\n"
-	@printf "  make check-run-ready     Verify setup completed before running dev servers\n"
+	@printf "  make build               Build all frontend/backend/docs container images\n"
+	@printf "  make build/backend       Build only the backend container image\n"
+	@printf "  make build/frontend      Build only the frontend container image\n"
+	@printf "  make build/docs          Build only the docs container image\n"
+	@printf "  make build/catalog-poc   Build only the catalog-poc sample app container image\n"
+	@printf "  make check-run-ready     Verify setup completed before deploying/port-forwarding POC apps\n"
 	@printf "  make verify-uds          Verify UDS CLI, cluster reachability,  namespace, Package CRs\n"
 	@printf "  make uds-debug           Print a focused UDS/k3d deploy debugging snapshot\n\n"
 	@printf "UDS/Zarf helpers:\n"
@@ -44,139 +47,166 @@ help:
 	@printf "  make installed-packages  Print installed Zarf Package CRs\n"
 	@printf "  make registry-up         Start local OCI registry on localhost:5001\n"
 	@printf "  make registry-down       Remove the local OCI registry container\n"
-	@printf "  make package-catalog-poc Build the minimal catalog-poc image and Zarf package\n"
+	@printf "  make push/apps           Push frontend/backend platform images to the local OCI registry\n"
+	@printf "  make push/docs           Push the docs image to the local OCI registry\n"
+	@printf "  make push/catalog-poc    Push the catalog-poc image to the local OCI registry\n"
+	@printf "  make package-platform    Create the frontend/backend platform Zarf package from already-built images\n"
+	@printf "  make publish-platform    Publish frontend/backend platform Zarf package to local OCI\n"
+	@printf "  make deploy-platform     Deploy frontend/backend platform package to Kubernetes\n"
+	@printf "  make package-docs        Create the docs Zarf package from the built docs image\n"
+	@printf "  make publish-docs        Publish docs to the local OCI registry\n"
+	@printf "  make deploy-docs         Deploy docs package to Kubernetes\n"
+	@printf "  make package-catalog-poc Create the minimal catalog-poc Zarf package from the built image\n"
 	@printf "  make publish-catalog-poc Publish catalog-poc to the local OCI registry\n"
-	@printf "  make configure-catalog-poc Point the backend at the catalog-poc OCI ref\n"
-	@printf "  make deploy-catalog-poc  Build, publish, configure, deploy, and verify catalog-poc\n"
+	@printf "  make deploy-catalog-poc  Compatibility one-shot for build/catalog-poc + up/catalog-poc\n"
 	@printf "  make verify-catalog-poc  Verify catalog-poc rollout and UDS Package endpoint\n"
-	@printf "  make deploy-         Deploy official k3d--demo UDS  bundle\n\n"
+	@printf "  make deploy-core     Deploy official k3d-core-demo UDS Core bundle\n\n"
 
-install:
-	npm install
+up: check-run-ready deploy-platform deploy-docs ports
 
-env:
-	@if [ ! -f server/.env ]; then cp server/.env.example server/.env; echo "Created server/.env"; else echo "server/.env already exists"; fi
+up/backend: check-run-ready publish-platform
+	@source ./scripts/vars/load-vars.sh; ZARF_PLAIN_HTTP="$${UDS_POC_PLAIN_HTTP}" ./scripts/package/deploy-zarf-package.sh "$${UDS_POC_PLATFORM_PACKAGE_ARCHIVE}" "$${UDS_POC_PLATFORM_NAMESPACE}" backend
+	@source ./scripts/vars/load-vars.sh; ./scripts/package/restart-rollouts.sh "$${UDS_POC_PLATFORM_NAMESPACE}" backend
+	@source ./scripts/vars/load-vars.sh; ./scripts/package/wait-rollouts.sh "$${UDS_POC_PLATFORM_NAMESPACE}" backend
 
-dev:
-	@if [ "$(firstword $(MAKECMDGOALS))" = "run" ]; then :; else $(MAKE) run-dev; fi
+up/frontend: check-run-ready publish-platform
+	@source ./scripts/vars/load-vars.sh; ZARF_PLAIN_HTTP="$${UDS_POC_PLAIN_HTTP}" ./scripts/package/deploy-zarf-package.sh "$${UDS_POC_PLATFORM_PACKAGE_ARCHIVE}" "$${UDS_POC_PLATFORM_NAMESPACE}" frontend
+	@source ./scripts/vars/load-vars.sh; ./scripts/package/restart-rollouts.sh "$${UDS_POC_PLATFORM_NAMESPACE}" frontend
+	@source ./scripts/vars/load-vars.sh; ./scripts/package/wait-rollouts.sh "$${UDS_POC_PLATFORM_NAMESPACE}" frontend
 
-run:
-	@if [ "$(word 2,$(MAKECMDGOALS))" = "dev" ]; then \
-		$(MAKE) run-dev; \
-	else \
-		echo "Usage: make run dev"; \
-		exit 1; \
-	fi
+up/docs: check-run-ready deploy-docs
 
-run-dev: env check-run-ready
-	npm run dev
+up/catalog-poc: check-run-ready publish-catalog-poc
+	@source ./scripts/vars/load-vars.sh; ZARF_PLAIN_HTTP="$${UDS_POC_PLAIN_HTTP}" ./scripts/package/deploy-zarf-package.sh "$${CATALOG_POC_OCI_REF}" "$${CATALOG_POC_NAMESPACE}" "$${CATALOG_POC_NAME}"
+	./scripts/debug/verify-catalog-poc.sh
 
-server: env
-	npm run dev -w server
-
-client:
-	npm run dev -w client
+ports:
+	./scripts/up/run-uds-poc-apps.sh
 
 build:
-	npm run build
+	./scripts/build/build-uds-poc-image.sh all
 
-typecheck:
-	npm run typecheck
+build/backend:
+	./scripts/build/build-uds-poc-image.sh backend
 
-start: build env
-	npm run start
+build/frontend:
+	./scripts/build/build-uds-poc-image.sh frontend
+
+build/docs:
+	./scripts/build/build-uds-poc-image.sh docs
+
+build/catalog-poc:
+	./scripts/build/build-catalog-poc-image.sh
 
 check-prereqs:
-	./scripts/check-prereqs.sh
+	./scripts/setup/check-prereqs.sh
 
 check-run-ready:
-	./scripts/check-run-ready.sh
+	./scripts/debug/check-run-ready.sh
 
 setup-macos:
-	./scripts/setup-macos.sh
+	./scripts/setup/setup-macos.sh
 
 setup:
 	@echo "Setup phase 1/3: local CLI prerequisites"
-	UDS_POC_FULL_SETUP=true ./scripts/setup-macos.sh
+	UDS_POC_FULL_SETUP=true ./scripts/setup/setup-macos.sh
 	@echo "Setup phase 2/3: npm dependencies"
-	$(MAKE) install
+	npm install
 	@echo "Setup phase 3/3: local environment file"
-	$(MAKE) env
+	@if [ ! -f components/backend/.env ]; then cp components/backend/.env.example components/backend/.env; echo "Created components/backend/.env"; else echo "components/backend/.env already exists"; fi
 	@echo "Local setup complete. Next: make deploy-uds"
 
 deploy-uds: registry-up
-	@echo "UDS deploy: official UDS  local demo"
-	$(MAKE) deploy-
-	@echo "UDS deploy complete. Next: make run dev && make deploy-catalog-poc"
+	@echo "UDS deploy: official UDS Core local demo"
+	$(MAKE) deploy-core
+	@echo "UDS deploy complete. Next: make build && make up"
+	@echo "Then, in another terminal: make build/catalog-poc && make up/catalog-poc"
 
 deploy-uds-macos: registry-up
-	./scripts/deploy-uds-macos-workaround.sh
+	./scripts/uds/deploy-uds-macos-workaround.sh
 
 fix-uds-ports:
-	./scripts/fix-uds-ports.sh
+	./scripts/uds/fix-uds-ports.sh
 
 fix-uds-gateway-routing:
-	./scripts/fix-uds-gateway-routing.sh
+	./scripts/uds/fix-uds-gateway-routing.sh
 
 stop-uds-workaround:
-	./scripts/stop-uds-workaround.sh
+	./scripts/uds/stop-uds-workaround.sh
 
 down:
-	$(MAKE) down-dev
 	$(MAKE) down-deploy
 	$(MAKE) down-uds
 
-down-dev:
-	./scripts/down-dev.sh
-
 down-deploy:
-	./scripts/down-deploy.sh
+	./scripts/cleanup/down-deploy.sh
 
 down-uds:
-	./scripts/down-uds.sh
-
-setup-dev: setup
-
-setup-uds: deploy-uds
+	./scripts/cleanup/down-uds.sh
 
 setup-local-demo: deploy-uds
 
 verify-uds:
-	./scripts/verify-uds.sh
+	./scripts/debug/verify-uds.sh
 
 uds-debug:
-	./scripts/uds-debug.sh
+	./scripts/debug/uds-debug.sh
 
-inspect-packages: env
-	./scripts/inspect-packages.sh
+inspect-packages:
+	./scripts/debug/inspect-packages.sh
 
 installed-packages:
 	uds zarf tools kubectl get package -A -o json
 
 registry-up:
-	./scripts/registry-up.sh
+	./scripts/registry/registry-up.sh
 
 registry-down:
-	./scripts/registry-down.sh
+	./scripts/registry/registry-down.sh
 
-package-catalog-poc: registry-up
-	./scripts/package-catalog-poc.sh
+push/apps: registry-up
+	@source ./scripts/vars/load-vars.sh; ./scripts/package/push-image.sh "$${UDS_POC_BACKEND_IMAGE}" "Run make build/backend first, or make build for all images."
+	@source ./scripts/vars/load-vars.sh; ./scripts/package/push-image.sh "$${UDS_POC_FRONTEND_IMAGE}" "Run make build/frontend first, or make build for all images."
+
+push/docs: registry-up
+	@source ./scripts/vars/load-vars.sh; ./scripts/package/push-image.sh "$${DOCS_IMAGE}" "Run make build/docs first."
+
+push/catalog-poc: registry-up
+	@source ./scripts/vars/load-vars.sh; ./scripts/package/push-image.sh "$${CATALOG_POC_IMAGE}" "Run make build/catalog-poc first."
+
+package-platform: registry-up push/apps
+	@source ./scripts/vars/load-vars.sh; ZARF_PACKAGE_ARCH="$${UDS_POC_ARCH}" ZARF_PLAIN_HTTP="$${UDS_POC_PLAIN_HTTP}" ./scripts/package/package-zarf-dir.sh . "$${UDS_POC_PLATFORM_PACKAGE_ARCHIVE}"
+
+publish-platform: package-platform
+	@source ./scripts/vars/load-vars.sh; ZARF_PLAIN_HTTP="$${UDS_POC_PLAIN_HTTP}" ./scripts/package/publish-zarf-package.sh "$${UDS_POC_PLATFORM_PACKAGE_ARCHIVE}" "oci://$${UDS_POC_REGISTRY}/$${UDS_POC_REPOSITORY}" "$${UDS_POC_PLATFORM_OCI_REF}"
+
+deploy-platform: publish-platform
+	@source ./scripts/vars/load-vars.sh; ZARF_PLAIN_HTTP="$${UDS_POC_PLAIN_HTTP}" ./scripts/package/deploy-zarf-package.sh "$${UDS_POC_PLATFORM_PACKAGE_ARCHIVE}"
+	@source ./scripts/vars/load-vars.sh; ./scripts/package/restart-rollouts.sh "$${UDS_POC_PLATFORM_NAMESPACE}" backend frontend
+	@source ./scripts/vars/load-vars.sh; ./scripts/package/wait-rollouts.sh "$${UDS_POC_PLATFORM_NAMESPACE}" backend frontend
+
+package-docs: registry-up push/docs
+	@source ./scripts/vars/load-vars.sh; ZARF_PACKAGE_ARCH="$${UDS_POC_ARCH}" ZARF_PLAIN_HTTP="$${UDS_POC_PLAIN_HTTP}" ./scripts/package/package-zarf-dir.sh "$${DOCS_PACKAGE_DIR}" "$${DOCS_PACKAGE_ARCHIVE}"
+
+publish-docs: package-docs
+	@source ./scripts/vars/load-vars.sh; ZARF_PLAIN_HTTP="$${UDS_POC_PLAIN_HTTP}" ./scripts/package/publish-zarf-package.sh "$${DOCS_PACKAGE_ARCHIVE}" "oci://$${UDS_POC_REGISTRY}/$${UDS_POC_REPOSITORY}" "$${DOCS_OCI_REF}"
+
+deploy-docs: publish-docs
+	@source ./scripts/vars/load-vars.sh; ZARF_PLAIN_HTTP="$${UDS_POC_PLAIN_HTTP}" ./scripts/package/deploy-zarf-package.sh "$${DOCS_OCI_REF}" "$${DOCS_NAMESPACE}" "$${DOCS_NAME}"
+
+package-catalog-poc: registry-up push/catalog-poc
+	@source ./scripts/vars/load-vars.sh; ZARF_PACKAGE_ARCH="$${UDS_POC_ARCH}" ZARF_PLAIN_HTTP="$${UDS_POC_PLAIN_HTTP}" ./scripts/package/package-zarf-dir.sh "$${CATALOG_POC_PACKAGE_DIR}" "$${CATALOG_POC_PACKAGE_ARCHIVE}"
 
 publish-catalog-poc: package-catalog-poc
-	./scripts/publish-catalog-poc.sh
+	@source ./scripts/vars/load-vars.sh; ZARF_PLAIN_HTTP="$${UDS_POC_PLAIN_HTTP}" ./scripts/package/publish-zarf-package.sh "$${CATALOG_POC_PACKAGE_ARCHIVE}" "oci://$${UDS_POC_REGISTRY}/$${UDS_POC_REPOSITORY}" "$${CATALOG_POC_OCI_REF}"
 
-configure-catalog-poc:
-	./scripts/configure-catalog-poc-env.sh
-
-deploy-catalog-poc: publish-catalog-poc configure-catalog-poc
-	./scripts/deploy-catalog-poc.sh
-	./scripts/verify-catalog-poc.sh
+deploy-catalog-poc: build/catalog-poc up/catalog-poc
 
 verify-catalog-poc:
-	./scripts/verify-catalog-poc.sh
+	./scripts/debug/verify-catalog-poc.sh
 
-deploy-:
-	./scripts/deploy-uds-.sh
+deploy-core:
+	./scripts/uds/deploy-uds-core.sh
 
 git-status:
 	git status --short

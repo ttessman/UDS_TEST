@@ -1,0 +1,31 @@
+apiVersion: uds.dev/v1alpha1
+kind: Package
+metadata:
+  name: docs
+  namespace: docs
+spec:
+  network:
+    allow:
+      - description: frontend proxy to docs
+        direction: Ingress
+        selector:
+          app.kubernetes.io/name: docs
+        remoteNamespace: uds-poc
+        remoteSelector:
+          app.kubernetes.io/name: frontend
+        port: 8080
+    expose:
+      - description: UDS POC documentation
+        gateway: tenant
+        host: docs
+        port: 3002
+        selector:
+          app.kubernetes.io/name: docs
+        service: docs
+        targetPort: 8080
+        uptime:
+          checks:
+            paths:
+              - /
+    serviceMesh:
+      mode: ambient

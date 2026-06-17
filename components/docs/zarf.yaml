@@ -1,0 +1,19 @@
+kind: ZarfPackageConfig
+metadata:
+  name: docs
+  version: 0.1.0
+  description: Docusaurus documentation app for the local UDS POC.
+
+components:
+  - name: docs
+    required: true
+    manifests:
+      - name: docs
+        namespace: docs
+        files:
+          - ../../deploy/kubernetes/docs-namespace.yaml
+          - ../../deploy/kubernetes/docs-package.yaml
+          - manifests/deployment.yaml
+          - manifests/service.yaml
+    images:
+      - localhost:5001/uds-poc/docs:0.1.0

@@ -1,0 +1,24 @@
+kind: ZarfPackageConfig
+metadata:
+  name: uds-poc-platform
+  version: 0.1.0
+  description: Frontend and backend platform apps for the local UDS POC.
+
+components:
+  - name: uds-poc-platform
+    required: true
+    manifests:
+      - name: uds-poc-platform
+        namespace: uds-poc
+        files:
+          - deploy/kubernetes/namespace.yaml
+          - deploy/kubernetes/uds-poc-package.yaml
+          - components/backend/manifests/configmap.yaml
+          - components/backend/manifests/rbac.yaml
+          - components/backend/manifests/deployment.yaml
+          - components/backend/manifests/service.yaml
+          - components/frontend/manifests/deployment.yaml
+          - components/frontend/manifests/service.yaml
+    images:
+      - localhost:5001/uds-poc/backend:0.1.0
+      - localhost:5001/uds-poc/frontend:0.1.0

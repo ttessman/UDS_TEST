@@ -12,19 +12,7 @@ const config = {
   organizationName: "uds-poc",
   projectName: "uds-core-local-poc",
   future: {
-    experimental_router: "hash",
-    v4: true,
-    faster: {
-      swcJsLoader: false,
-      swcJsMinimizer: false,
-      swcHtmlMinimizer: false,
-      lightningCssMinimizer: false,
-      mdxCrossCompilerCache: false,
-      rspackBundler: false,
-      rspackPersistentCache: false,
-      ssgWorkerThreads: false,
-      gitEagerVcs: false
-    }
+    experimental_router: "hash"
   },
   onBrokenLinks: "warn",
   markdown: {
@@ -43,7 +31,7 @@ const config = {
       "classic",
       {
         docs: {
-          sidebarPath: "./sidebars.js",
+          sidebarPath: "./sidebars.mjs",
           routeBasePath: "/"
         },
         blog: false,

@@ -30,7 +30,7 @@ Target structure:
       static/
       src/
       package.json
-      docusaurus.config.js
+      docusaurus.config.mjs
       sidebars.js
       Dockerfile
     catalog-poc/

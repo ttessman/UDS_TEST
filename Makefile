@@ -193,6 +193,8 @@ publish-docs: package-docs
 
 deploy-docs: publish-docs
 	@source ./scripts/vars/load-vars.sh; ZARF_PLAIN_HTTP="$${UDS_POC_PLAIN_HTTP}" ./scripts/package/deploy-zarf-package.sh "$${DOCS_OCI_REF}" "$${DOCS_NAMESPACE}" "$${DOCS_NAME}"
+	@source ./scripts/vars/load-vars.sh; ./scripts/package/restart-rollouts.sh "$${DOCS_NAMESPACE}" "$${DOCS_NAME}"
+	@source ./scripts/vars/load-vars.sh; ./scripts/package/wait-rollouts.sh "$${DOCS_NAMESPACE}" "$${DOCS_NAME}"
 
 package-catalog-poc: registry-up push/catalog-poc
 	@source ./scripts/vars/load-vars.sh; ZARF_PACKAGE_ARCH="$${UDS_POC_ARCH}" ZARF_PLAIN_HTTP="$${UDS_POC_PLAIN_HTTP}" ./scripts/package/package-zarf-dir.sh "$${CATALOG_POC_PACKAGE_DIR}" "$${CATALOG_POC_PACKAGE_ARCHIVE}"

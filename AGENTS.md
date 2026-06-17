@@ -88,6 +88,11 @@ Current docs status:
 - The docs app is a separate Docusaurus app package and is exposed as `https://docs.uds.dev/` from the `docs` Package CR endpoint metadata.
 - The primary docs launch path should come from installed package endpoint metadata, not a special nav button.
 - Docs local authoring commands live in `components/docs/Makefile`.
+- Latest live check: the docs Package CR is `Ready`, `https://docs.uds.dev/` renders the Introduction page through the UDS tenant gateway, and a cache-bypassed Chrome CDP reload reported zero runtime exceptions.
+- Current docs fix: keep the hash-router Docusaurus build path, set `components/docs/docs/intro.md` to `slug: /`, and keep the Docusaurus config/sidebar as `.mjs` files without package-wide `"type": "module"`.
+- Do not re-add `"type": "module"` to `components/docs/package.json` without checking the generated browser bundle for raw `require(` calls. Docusaurus generated `.docusaurus/client-modules.js` can otherwise leak build-time `require(...)` into runtime JS.
+- `make build/docs` and `make up/docs` have been run after the docs build fix. `deploy-docs` now restarts and waits for the docs Deployment so the mutable `docs:0.1.0` image is pulled after rebuilds.
+- Chrome DevTools CDP note: the Raycast Chrome launcher must include `--remote-allow-origins=*`; otherwise HTTP `/json/version` works but WebSocket inspection fails with `403`.
 - Component-local authoring commands live in `components/frontend/Makefile`, `components/backend/Makefile`, and `components/docs/Makefile`.
 - Historical root docs paths such as `docs/PROJECT_REQUIREMENTS.md` have moved; update IDE tabs and links to `components/docs/docs/project-requirements.md`.
 
@@ -108,26 +113,27 @@ Current command readiness:
 
 Known TODOs:
 
-1. Re-verify cluster health after the current restart before deploying packages.
-2. Verify the full frontend/backend/docs app image set with `make build`.
-3. Verify the frontend/backend platform Zarf package with `make package-platform`.
-4. Verify the docs Zarf package with `make package-docs`.
-5. Re-verify `make up` from a clean UDS Core state; it should deploy the platform package and docs package, then port-forward frontend/backend/docs.
-6. Confirm the backend pod can run `kubectl`, `uds`, and `zarf`, can read Package CRs, and can inspect/deploy the configured local OCI refs.
-7. Confirm Store entries include separate `docs` and `catalog-poc` packages, not a generic `uds-poc-apps` bundle.
-8. Re-verify the staged catalog sample flow:
+1. Re-verify the docs installed package launch action from the frontend card.
+2. Re-verify cluster health after docs redeploy.
+3. Verify the full frontend/backend/docs app image set with `make build`.
+4. Verify the frontend/backend platform Zarf package with `make package-platform`.
+5. Verify the docs Zarf package with `make package-docs`.
+6. Re-verify `make up` from a clean UDS Core state; it should deploy the platform package and docs package, then port-forward frontend/backend/docs.
+7. Confirm the backend pod can run `kubectl`, `uds`, and `zarf`, can read Package CRs, and can inspect/deploy the configured local OCI refs.
+8. Confirm Store entries include separate `docs` and `catalog-poc` packages, not a generic `uds-poc-apps` bundle.
+9. Re-verify the staged catalog sample flow:
    - `make build/catalog-poc`
    - `make up/catalog-poc`
-9. Verify the UDS gateway host routing for `https://app.uds.dev/`, `https://api.uds.dev/`, and `https://docs.uds.dev/`.
-10. Re-verify the full UDS flow after the move:
+10. Verify the UDS gateway host routing for `https://app.uds.dev/`, `https://api.uds.dev/`, and `https://docs.uds.dev/`.
+11. Re-verify the full UDS flow after the move:
    - `make deploy-uds-macos`
    - `make build`
    - `make up`
    - `make build/catalog-poc`
    - `make up/catalog-poc`
-11. Confirm the installed package card can launch the docs endpoint URL `https://docs.uds.dev/` from docs Package CR endpoint metadata.
-12. Confirm the frontend can show the sample package as both available from registry metadata and installed from Package CR state.
-13. Keep `components/catalog-poc` as the sample app/package container area for the local registry push/pull/deploy loop.
+12. Confirm the installed package card can launch the docs endpoint URL `https://docs.uds.dev/` from docs Package CR endpoint metadata.
+13. Confirm the frontend can show the sample package as both available from registry metadata and installed from Package CR state.
+14. Keep `components/catalog-poc` as the sample app/package container area for the local registry push/pull/deploy loop.
 
 ---
 

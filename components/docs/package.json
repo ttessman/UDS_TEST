@@ -2,7 +2,6 @@
   "name": "@uds-poc/docs",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
   "scripts": {
     "start": "docusaurus start --host ${HOST:-127.0.0.1} --port ${PORT:-3002}",
     "build": "NO_UPDATE_NOTIFIER=1 docusaurus build",

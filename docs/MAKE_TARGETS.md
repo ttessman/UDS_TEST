@@ -57,7 +57,7 @@ make deploy-catalog-poc
 | `make down` | Stops local dev servers, removes repo-deployed apps, deletes the local `uds` k3d cluster, and removes the local POC registry for a clean retry. |
 | `make down-dev` | Stops local dev servers only. |
 | `make down-deploy` | Removes repo-deployed sample apps from the current UDS cluster only. |
-| `make down-uds` | Deletes the local `uds` k3d cluster, project-owned k3d leftovers, and the local POC registry only. |
+| `make down-uds` | Deletes the local `uds` k3d cluster, project-owned k3d leftovers, and the local POC registry, then reviews shared gateway ports. |
 
 ## App-Only Run
 
@@ -111,7 +111,7 @@ make deploy-core
 - `make down` runs `down-dev`, `down-deploy`, and `down-uds`; `down-uds` also removes the repo-owned local OCI registry.
 - `make down-dev` stops local dev servers on ports `3001` and `5173`.
 - `make down-deploy` removes repo-deployed sample app namespaces from the current UDS cluster. It defaults to `catalog-poc`; override with `DOWN_DEPLOY_NAMESPACES="catalog-poc other-app" make down-deploy`.
-- `make down-uds` deletes the local `uds` k3d cluster, related k3d containers, `k3d-uds` network, `k3d-uds-images` volume, and `uds-poc-registry` container.
+- `make down-uds` deletes the local `uds` k3d cluster, related k3d containers, `k3d-uds` network, `k3d-uds-images` volume, and `uds-poc-registry` container. It then reviews shared gateway ports `80` and `443`; in an interactive terminal, it asks before stopping unrelated Docker containers or processes, and in non-interactive runs it prints the manual cleanup commands.
 - `make deploy-core` is the lower-level bundle deploy target and defaults to `k3d-core-demo:latest`.
 - `make setup` runs local tool setup, `install`, and `env`.
 - `make setup-local-demo` is an alias for `make deploy-uds`.

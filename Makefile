@@ -20,7 +20,7 @@ help:
 	@printf "  make down                Stop dev servers, remove app deploys, delete local UDS/k3d cluster, and remove local registry\n"
 	@printf "  make down-dev            Stop local dev servers only\n"
 	@printf "  make down-deploy         Remove repo-deployed sample apps only\n"
-	@printf "  make down-uds            Delete local UDS/k3d cluster and local registry only\n"
+	@printf "  make down-uds            Delete local UDS/k3d cluster, registry, and review shared gateway ports\n"
 	@printf "  make install             Install npm workspace dependencies\n"
 	@printf "  make env                 Create server/.env from example if missing\n"
 	@printf "  make setup-macos         Check/install local CLI prerequisites only\n"

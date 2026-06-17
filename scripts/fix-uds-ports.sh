@@ -9,7 +9,7 @@ fi
 
 echo "Fixing UDS host ports: ${ports[*]}"
 echo
-echo "Step 1/2: remove project-owned local UDS/k3d leftovers"
+echo "Step 1/2: remove project-owned local UDS/k3d leftovers and review shared ports"
 ./scripts/down-uds.sh
 
 echo

@@ -63,7 +63,7 @@ make deploy-catalog-poc
 | `make down` | Stops local dev servers, removes repo-deployed apps, deletes the local `uds` k3d cluster, and removes the local POC registry for a clean retry. |
 | `make down-dev` | Stops local dev servers only. |
 | `make down-deploy` | Removes repo-deployed sample apps from the current UDS cluster only. |
-| `make down-uds` | Deletes the local `uds` k3d cluster, project-owned k3d leftovers, and the local POC registry only. |
+| `make down-uds` | Deletes the local `uds` k3d cluster, project-owned k3d leftovers, and the local POC registry, then reviews shared gateway ports. |
 
 Open:
 
@@ -163,7 +163,7 @@ To clean up before retrying either deploy path:
 make down
 ```
 
-This stops local dev servers on ports `3001` and `5173`, removes repo-deployed sample apps such as `catalog-poc`, then removes the local `uds` k3d cluster, related k3d containers, the `k3d-uds` Docker network, the `k3d-uds-images` volume, and the repo-owned `uds-poc-registry` container. It does not prune unrelated Docker containers or images. Use `make down-dev`, `make down-deploy`, `make down-uds`, or `make registry-down` when you only want one layer of that cleanup.
+This stops local dev servers on ports `3001` and `5173`, removes repo-deployed sample apps such as `catalog-poc`, then removes the local `uds` k3d cluster, related k3d containers, the `k3d-uds` Docker network, the `k3d-uds-images` volume, and the repo-owned `uds-poc-registry` container. After UDS cleanup, `make down-uds` reviews the shared gateway ports `80` and `443`; if another Docker container or process is still using one and the command is running interactively, it asks before stopping it. In non-interactive runs, it prints the manual `docker stop ...` or `kill ...` command instead. It does not prune unrelated Docker containers or images. Use `make down-dev`, `make down-deploy`, `make down-uds`, or `make registry-down` when you only want one layer of that cleanup.
 
 `make down-deploy` defaults to the app namespaces owned by this POC. To remove a specific set without deleting the cluster, pass:
 

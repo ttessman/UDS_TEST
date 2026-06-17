@@ -216,7 +216,7 @@ export function ResourceCard<T extends object, C = undefined>({
     <Card {...frontCardProps}>
       <cardTemplate.header>
         <Stack direction="row" sx={{ alignItems: "center", justifyContent: "flex-end", minWidth: 0 }}>
-          {headerActions(false)}
+          {headerActions(true)}
         </Stack>
       </cardTemplate.header>
 
@@ -266,7 +266,7 @@ export function ResourceCard<T extends object, C = undefined>({
     <Card {...frontCardProps} content={{ spacing: "resource" as const, sx: { p: 0 } }}>
       <cardTemplate.header>
         <Stack direction="row" sx={{ alignItems: "center", justifyContent: "flex-end", minWidth: 0 }}>
-          {headerActions(false)}
+          {headerActions(true)}
         </Stack>
       </cardTemplate.header>
 
@@ -350,7 +350,7 @@ export function ResourceCard<T extends object, C = undefined>({
     <Card {...frontCardProps} content={{ spacing: "resource" as const, sx: { p: 0 } }}>
       <cardTemplate.header>
         <Stack direction="row" sx={{ alignItems: "center", justifyContent: "flex-end", minWidth: 0 }}>
-          {headerActions(false)}
+          {headerActions(true)}
         </Stack>
       </cardTemplate.header>
 

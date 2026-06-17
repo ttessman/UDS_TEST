@@ -13,6 +13,7 @@ export type ListRenderState = {
 export type ListLayout = {
   alignItems?: "start" | "center" | "end" | "stretch";
   gap?: number;
+  gridAutoRows?: string;
   gridTemplateColumns?: {
     xs: string;
     sm?: string;

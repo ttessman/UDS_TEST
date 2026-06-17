@@ -81,8 +81,10 @@ function ContextMenu({
             border: "1px solid",
             borderColor: "var(--app-border)",
             boxShadow: "0 10px 24px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.1)",
+            maxWidth: 320,
             mt: 1,
             overflow: "visible",
+            width: "min(320px, calc(100vw - 32px))",
             "&::before": {
               bgcolor: hasState ? stateBackground : "var(--app-bg-paper)",
               borderLeft: "1px solid var(--app-border)",
@@ -146,6 +148,7 @@ function ContextMenu({
         <MenuItem
           disabled
           sx={{
+            alignItems: "flex-start",
             gap: 0.75,
             minHeight: 0,
             py: 1.05,
@@ -161,7 +164,7 @@ function ContextMenu({
             primary={content.noActionsLabel ?? "No actions supported"}
             slotProps={{
               primary: {
-                sx: { fontSize: 15, lineHeight: 1.2 }
+                sx: { fontSize: 15, lineHeight: 1.2, whiteSpace: "normal" }
               }
             }}
           />

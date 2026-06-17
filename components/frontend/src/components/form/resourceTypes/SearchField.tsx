@@ -89,9 +89,9 @@ export function SearchField({
         },
         ...fieldRootSx,
         {
-          flex: isExpanded ? undefined : `0 0 ${searchFieldCollapsedWidth}px`,
-          maxWidth: isExpanded ? undefined : searchFieldCollapsedWidth,
-          width: isExpanded ? undefined : searchFieldCollapsedWidth
+          flex: isExpanded ? "1 1 0" : `0 0 ${searchFieldCollapsedWidth}px`,
+          maxWidth: isExpanded ? "none" : searchFieldCollapsedWidth,
+          width: isExpanded ? "100%" : searchFieldCollapsedWidth
         }
       ]}
       transition={reduceMotion ? { duration: 0 } : searchFieldMotion.transition}
@@ -153,7 +153,7 @@ export function SearchField({
         {
           alignItems: "center",
           display: "flex",
-          flexWrap: { xs: "wrap", sm: "nowrap" },
+          flexWrap: "nowrap",
           gap: 1,
           justifyContent: "flex-end",
           maxWidth: searchFieldExpandedWidth + searchFieldCollapsedWidth + 8,

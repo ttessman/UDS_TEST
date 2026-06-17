@@ -25,7 +25,7 @@ export function List({
         alignItems: layout?.alignItems,
         display: "grid",
         gap: layout?.gap ?? (columns?.lg || columns?.md ? 3 : 1.5),
-        gridAutoRows: "1fr",
+        gridAutoRows: layout?.gridAutoRows ?? "1fr",
         gridTemplateColumns: columns ?? { xs: "1fr" },
         justifyContent: layout?.justifyContent,
         justifyItems: layout?.justifyItems,

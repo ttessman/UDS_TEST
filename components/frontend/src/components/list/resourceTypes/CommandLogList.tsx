@@ -27,8 +27,9 @@ export function CommandLogList({
   return (
     <List
       layout={{
-        alignItems: "stretch",
+        alignItems: "start",
         gap: 1.25,
+        gridAutoRows: "auto",
         gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))", lg: "repeat(3, minmax(0, 1fr))" }
       }}
       state={{

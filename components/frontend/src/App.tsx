@@ -18,6 +18,7 @@ import {
   installedPackageResource,
   type InstalledPackageResourceContext
 } from "./features/packages/packageResourceDefinitions.js";
+import { ResourceCardVariant } from "./components/card/resourceTypes/ResourceCard.js";
 import { getInstalledPackageResourceType } from "./features/packages/packageActions.js";
 import { getInstalledPackageFilterFields, getRegistryPackageFilterFields } from "./features/packages/packageFilters.js";
 import { usePackageActions } from "./features/packages/usePackageActions.js";
@@ -26,6 +27,19 @@ import { getInstalledPackagePreferenceId, useUserPreferences } from "./store/use
 
 const canManageApps = true;
 const canManageRegistry = true;
+const installedPackageInventoryLayout = {
+  alignItems: "stretch",
+  gap: 1.5,
+  gridTemplateColumns: {
+    xs: "minmax(0, 1fr)",
+    sm: "repeat(2, minmax(0, 1fr))",
+    md: "repeat(4, minmax(0, 1fr))",
+    lg: "repeat(5, minmax(0, 1fr))",
+    xl: "repeat(6, minmax(0, 1fr))"
+  },
+  justifyContent: "stretch",
+  justifyItems: "stretch"
+} as const;
 
 export function App() {
   const [status, setStatus] = useState<UdsStatus | null>(null);
@@ -176,6 +190,7 @@ export function App() {
         resource: installedPackageResource,
         emptyMessage: "No installed Package CRs were returned by the cluster.",
         loadingMessage: "Loading installed packages...",
+        layout: installedPackageInventoryLayout,
         refreshLabel: (count) => `${count} installed packages`,
         refreshTooltip: ({ busy: isRefreshing, count }) =>
           `${count} installed packages. ${isRefreshing ? "Refreshing package data" : "Refresh package data"}`,
@@ -184,7 +199,8 @@ export function App() {
         subtitle: (items) =>
           installedPackages.length === items.length
             ? "Packages reported by Kubernetes Package custom resources in the active cluster."
-            : `${installedPackages.length} total installed packages, ${items.length} matching the current search.`
+            : `${installedPackages.length} total installed packages, ${items.length} matching the current search.`,
+        variant: ResourceCardVariant.Compact
       }) satisfies ResourceSectionContentConfig<InstalledPackage, InstalledPackageResourceContext>,
     [installedPackages.length]
   );

@@ -92,11 +92,21 @@ export function CommandLogCard({ definition, log }: { definition: CommandLogList
           </Typography>
 
           {summary.fields.length > 0 ? (
-            <List layout={{ gap: 0.55 }} state={{ isEmpty: summary.fields.length === 0 }}>
-              <listTemplate.content>
-                <>{commandFields}</>
-              </listTemplate.content>
-            </List>
+            <Box
+              component="dl"
+              sx={{
+                m: 0,
+                maxHeight: 124,
+                overflow: "auto",
+                pr: 0.25
+              }}
+            >
+              <List layout={{ gap: 0.55, gridAutoRows: "auto" }} state={{ isEmpty: summary.fields.length === 0 }}>
+                <listTemplate.content>
+                  <>{commandFields}</>
+                </listTemplate.content>
+              </List>
+            </Box>
           ) : null}
 
           {commandMessage}

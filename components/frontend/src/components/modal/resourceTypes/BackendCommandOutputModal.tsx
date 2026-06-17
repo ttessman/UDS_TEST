@@ -52,19 +52,19 @@ const favoriteAppsContent = {
   emptyMessage: "No favorite apps selected.",
   layout: {
     alignItems: "stretch",
-    gap: 1.25,
+    gap: 1.5,
     gridTemplateColumns: {
-      xs: "repeat(2, minmax(0, 1fr))",
-      sm: "repeat(3, minmax(0, 1fr))",
-      md: "repeat(4, minmax(0, 1fr))",
-      lg: "repeat(5, minmax(0, 1fr))",
-      xl: "repeat(6, minmax(0, 1fr))"
+      xs: "minmax(0, 1fr)",
+      sm: "repeat(2, minmax(0, 1fr))",
+      md: "repeat(3, minmax(0, 1fr))",
+      lg: "repeat(3, minmax(0, 1fr))",
+      xl: "repeat(4, minmax(0, 1fr))"
     },
     justifyContent: "stretch",
     justifyItems: "stretch"
   },
   subtitle: (items) => `${items.length} favorite ${items.length === 1 ? "app" : "apps"}.`,
-  variant: ResourceCardVariant.Compact
+  variant: ResourceCardVariant.AppLauncher
 } satisfies ResourceSectionContentConfig<InstalledPackage, InstalledPackageResourceContext>;
 
 export function BackendCommandOutputModal({

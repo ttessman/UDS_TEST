@@ -14,3 +14,12 @@
   --ifm-hero-background-color: #17384f;
   --ifm-hero-text-color: #ffffff;
 }
+
+body.sales-microsite-page .navbar,
+body.sales-microsite-page .footer {
+  display: none;
+}
+
+body.sales-microsite-page .main-wrapper {
+  min-height: 100vh;
+}

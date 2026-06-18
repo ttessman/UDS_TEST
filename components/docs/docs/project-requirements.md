@@ -55,9 +55,12 @@ Docs requirements:
 - Docs should run on port `3001` or another non-conflicting port.
 - Include starter pages:
   - `components/docs/docs/intro.md`
+  - `components/docs/docs/quickstart.md`
+  - `components/docs/docs/product-model.md`
+  - `components/docs/docs/user-journeys.md`
   - `components/docs/docs/architecture.md`
-  - `components/docs/docs/local-development.md`
-  - `components/docs/docs/container-runbook.md`
+  - `components/docs/docs/components.md`
+  - `components/docs/docs/kubernetes-runbook.md`
   - `components/docs/docs/uds-notes.md`
 - Explain that UDS runs on Kubernetes and the POC should move toward Kubernetes manifests / UDS package structure.
 - Do not make docs just a markdown folder. It should be independently runnable and containerized.

@@ -122,7 +122,7 @@ Docusaurus pages live in `components/docs/docs/`.
 Useful references:
 
 - [Project requirements](components/docs/docs/project-requirements.md)
-- [Make targets](components/docs/docs/make-targets.md)
+- [Commands](components/docs/docs/commands.md)
 - [Frontend architecture](components/docs/docs/frontend-architecture.md)
 - [UDS notes](components/docs/docs/uds-notes.md)
 

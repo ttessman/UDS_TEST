@@ -87,9 +87,10 @@ Current docs status:
 - The docs should explain the POC, the local container workflow, and the future Kubernetes/UDS direction.
 - The docs app is a separate Docusaurus app package and is exposed as `https://docs.uds.dev/` from the `docs` Package CR endpoint metadata.
 - The primary docs launch path should come from installed package endpoint metadata, not a special nav button.
+- The docs root is now a sales-first microsite, not a docs index. Keep `components/docs/src/pages/index.tsx` focused on the POC pitch, product story, and visual proof; keep deeper details under Learn/Reference pages.
 - Docs local authoring commands live in `components/docs/Makefile`.
 - Latest live check: the docs Package CR is `Ready`, `https://docs.uds.dev/` renders the Introduction page through the UDS tenant gateway, and a cache-bypassed Chrome CDP reload reported zero runtime exceptions.
-- Current docs fix: keep the hash-router Docusaurus build path, set `components/docs/docs/intro.md` to `slug: /`, and keep the Docusaurus config/sidebar as `.mjs` files without package-wide `"type": "module"`.
+- Current docs fix: keep the hash-router Docusaurus build path, keep the Docusaurus config/sidebar as `.mjs` files without package-wide `"type": "module"`, and use the custom React microsite page at `components/docs/src/pages/index.tsx` for the root route.
 - Do not re-add `"type": "module"` to `components/docs/package.json` without checking the generated browser bundle for raw `require(` calls. Docusaurus generated `.docusaurus/client-modules.js` can otherwise leak build-time `require(...)` into runtime JS.
 - `make build/docs` and `make up/docs` have been run after the docs build fix. `deploy-docs` now restarts and waits for the docs Deployment so the mutable `docs:0.1.0` image is pulled after rebuilds.
 - Chrome DevTools CDP note: the Raycast Chrome launcher must include `--remote-allow-origins=*`; otherwise HTTP `/json/version` works but WebSocket inspection fails with `403`.
@@ -443,6 +444,12 @@ A resource adapter should not:
 - duplicate base primitive layout responsibilities
 
 If a pattern is reusable across multiple resource adapters, move it down into the base primitive family (`Card`, `List`, `Section`, `Accordion`, etc.) or a nearby generic hook/helper. If an abstraction hides visible content while adding prop plumbing, inline it into the base primitive's slots.
+
+Specialized resource types and section components should earn their existence. Create one when it adds behavior, owns a distinct interaction, hides genuinely complex composition, or prevents meaningful duplication. If the difference is mostly content, fields, visual items, or simple layout, use the base renderer directly with data, slots, and a small render callback.
+
+When a specialized component starts to look like a configurable renderer, push that behavior down into the base primitive instead. For example, a timeline should not remain a bespoke `TimelineSection` if the base `Section` can render items and optional connectors with a callback; make the base renderer capable, then use it directly for timeline content.
+
+Reusable specialized compositions should still use the base primitive. A hero section is acceptable when it defines stable named regions such as `left` and `right`, while the caller provides visible content through slots. Avoid fake data plumbing such as one-item arrays and pointless keys just to force a composition through a list renderer.
 
 ---
 

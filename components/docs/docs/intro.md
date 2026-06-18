@@ -1,12 +1,14 @@
 ---
 sidebar_position: 1
-slug: /
+slug: /overview
 ---
 
-# Introduction
+# POC Overview
 
-This documentation app is the third runnable area in the monorepo, alongside the React frontend and Express backend.
+This POC demonstrates a UDS-backed app catalog for deployable packages.
 
-The POC helps validate local UDS package discovery and installed package state without pretending the registry, package, or UDS deployment schemas are fully settled. Registry package data and installed package data remain separate domains until real UDS metadata proves a combined model is useful.
+The core idea is simple: stop hardcoding application lists in the client. Let the backend read package metadata, installed Package CR state, and launch endpoints from the UDS/Zarf/Kubernetes layer the platform already uses.
 
-Use this site for project runbooks, architecture notes, and UDS-specific context that should be available without opening the application code.
+The React frontend presents the resulting catalog. The Express backend owns UDS access and deployment actions. The docs app explains the product direction, run path, and technical model.
+
+This is still a proof of concept. Registry package data and installed package data remain separate domains until real UDS metadata proves a combined model is useful.

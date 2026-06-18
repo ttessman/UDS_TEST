@@ -1,15 +1,30 @@
 const sidebars = {
   docsSidebar: [
-    "intro",
-    "architecture",
-    "local-development",
-    "container-runbook",
-    "kubernetes-routing",
-    "uds-notes",
+    {
+      type: "category",
+      label: "Learn",
+      collapsed: false,
+      items: [
+        { type: "doc", id: "intro", label: "POC Overview" },
+        "quickstart",
+        "product-model",
+        "user-journeys",
+        "architecture",
+        "components",
+        "kubernetes-runbook",
+        "commands"
+      ]
+    },
     {
       type: "category",
       label: "Reference",
-      items: ["make-targets", "frontend-architecture", "project-requirements"]
+      collapsed: false,
+      items: [
+        { type: "doc", id: "uds-notes", label: "macOS UDS Workaround" },
+        "frontend-architecture",
+        "project-requirements",
+        "history-notes"
+      ]
     }
   ]
 };

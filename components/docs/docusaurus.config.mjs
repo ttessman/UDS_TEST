@@ -1,4 +1,5 @@
 import { themes as prismThemes } from "prism-react-renderer";
+import slotTransform from "@beqa/unplugin-transform-react-slots";
 
 const baseUrl = process.env.UDS_DOCS_BASE_URL || "/";
 const siteUrl = process.env.UDS_DOCS_URL || "https://docs.uds.dev";
@@ -32,7 +33,7 @@ const config = {
       {
         docs: {
           sidebarPath: "./sidebars.mjs",
-          routeBasePath: "/"
+          routeBasePath: "learn"
         },
         blog: false,
         theme: {
@@ -40,6 +41,27 @@ const config = {
         }
       }
     ]
+  ],
+  plugins: [
+    function reactSlotsPlugin() {
+      return {
+        name: "react-slots-transform",
+        configureWebpack() {
+          return {
+            resolve: {
+              alias: {
+                "react-transition-group/TransitionGroupContext$": "react-transition-group/esm/TransitionGroupContext.js"
+              }
+            },
+            plugins: [
+              slotTransform.webpack({
+                include: [/\.[jt]sx$/]
+              })
+            ]
+          };
+        }
+      };
+    }
   ],
   themeConfig: {
     colorMode: {
@@ -49,8 +71,10 @@ const config = {
     navbar: {
       title: "UDS Local POC",
       items: [
-        { type: "docSidebar", sidebarId: "docsSidebar", position: "left", label: "Docs" },
-        { href: "https://app.uds.dev", label: "Frontend", position: "right" }
+        { to: "/", label: "Home", position: "left" },
+        { to: "/learn/quickstart", label: "Quickstart", position: "left" },
+        { to: "/learn/architecture", label: "Architecture", position: "left" },
+        { href: "https://app.uds.dev", label: "Open Catalog", position: "right" }
       ]
     },
     footer: {
@@ -59,9 +83,9 @@ const config = {
         {
           title: "Runbooks",
           items: [
-            { label: "Local Development", to: "/local-development" },
-            { label: "Container Runbook", to: "/container-runbook" },
-            { label: "UDS Notes", to: "/uds-notes" }
+            { label: "Quickstart", to: "/learn/quickstart" },
+            { label: "Kubernetes Runbook", to: "/learn/kubernetes-runbook" },
+            { label: "macOS UDS Workaround", to: "/learn/uds-notes" }
           ]
         }
       ],

@@ -9,7 +9,7 @@ type FeatureGridSectionProps<T> = {
 
 const headerSx = {
   "& h2": {
-    color: "#111827",
+    color: "var(--docs-text-primary)",
     fontSize: 28,
     lineHeight: 1.2,
     m: "0 0 22px",
@@ -18,7 +18,7 @@ const headerSx = {
 };
 
 const sectionSx = {
-  background: "linear-gradient(90deg, #f8fbff, #eef6ff 50%, #f8fbff)",
+  background: "var(--docs-band-bg)",
   maxWidth: 1160,
   mt: "26px",
   mx: "auto",
@@ -41,12 +41,12 @@ const itemSx = {
     width: 40
   },
   "& h3": {
-    color: "#111827",
+    color: "var(--docs-text-primary)",
     fontSize: 16,
     m: "0 0 8px"
   },
   "& p": {
-    color: "#56657a",
+    color: "var(--docs-muted)",
     fontSize: 14,
     lineHeight: 1.55,
     m: 0

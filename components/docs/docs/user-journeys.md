@@ -15,7 +15,3 @@ A normal user finds an installed resource card, opens its launch menu, and start
 ## Admin User
 
 An admin reviews available Store entries, installs an approved package, watches backend command feedback, and sees the installed resource appear after the cluster reports it.
-
-## Future Storybook Links
-
-TODO: add Storybook links for these journeys once the interaction states are captured as reusable stories.

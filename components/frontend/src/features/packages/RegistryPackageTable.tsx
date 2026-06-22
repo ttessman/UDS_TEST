@@ -1,11 +1,11 @@
 import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
 import { Avatar, Box, Chip, Stack, Typography } from "@mui/material";
-import { IconActionButton } from "../../components/button/resourceTypes/IconActionButton.js";
-import { ResourceTypeChip } from "../../components/chip/resourceTypes/ResourceTypeChip.js";
-import { StatusIndicatorButton } from "../../components/button/resourceTypes/StatusIndicatorButton.js";
-import { useContextMenu, type ContextMenuAction } from "../../components/menu/resourceTypes/ContextMenu.js";
-import { GenericTable, type Column } from "../../components/table/Table.js";
-import { relativeAge } from "../../lib/format.js";
+import { IconActionButton } from "@uds-poc/shared-ui/components/button/resourceTypes/IconActionButton";
+import { ResourceTypeChip } from "@uds-poc/shared-ui/components/chip/resourceTypes/ResourceTypeChip";
+import { StatusIndicatorButton } from "@uds-poc/shared-ui/components/button/resourceTypes/StatusIndicatorButton";
+import { useContextMenu, type ContextMenuAction } from "@uds-poc/shared-ui/components/menu/resourceTypes/ContextMenu";
+import { GenericTable, type Column } from "@uds-poc/shared-ui/components/table/Table";
+import { relativeAge } from "@uds-poc/shared-ui/lib/format";
 import {
   canInstallPackage,
   canUninstallPackage,

@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
 import { Stack, Typography } from "@mui/material";
-import { RefreshCountButton } from "../../components/button/resourceTypes/RefreshCountButton.js";
-import { SearchField } from "../../components/form/resourceTypes/SearchField.js";
-import { Section, sectionTemplate } from "../../components/section/Section.js";
+import { RefreshCountButton } from "@uds-poc/shared-ui/components/button/resourceTypes/RefreshCountButton";
+import { SearchField } from "@uds-poc/shared-ui/components/form/resourceTypes/SearchField";
+import { Section, sectionTemplate } from "@uds-poc/shared-ui/components/section/Section";
 import { RegistryPackageTable } from "./RegistryPackageTable.js";
 
 export type CatalogStoreSectionProps = {

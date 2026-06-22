@@ -1,4 +1,4 @@
-import type { AppIconName } from "../../components/icon/AppIcon.js";
+import type { AppIconName } from "@uds-poc/shared-ui/components/icon/AppIcon";
 
 export const registryPackageStateLabels = {
   published: "Published",

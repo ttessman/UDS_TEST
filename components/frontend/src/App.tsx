@@ -6,19 +6,19 @@ import {
   getRegistryPackages,
   getUdsStatus
 } from "./api/uds.js";
-import { useFilters } from "./components/filter/useFilters.js";
-import { StatusIndicatorList } from "./components/list/resourceTypes/StatusIndicatorList.js";
-import { BackendCommandOutputModal } from "./components/modal/resourceTypes/BackendCommandOutputModal.js";
-import type { ResourceSectionContentConfig } from "./components/section/resourceTypes/ResourceSection.js";
-import { ResourceSection } from "./components/section/resourceTypes/ResourceSection.js";
-import { SiteShell, siteContentSx, siteTemplate } from "./components/site/SiteShell.js";
-import { SiteFooter } from "./components/site/SiteFooter.js";
-import { SiteHeader } from "./components/site/SiteHeader.js";
+import { useFilters } from "@uds-poc/shared-ui/components/filter/useFilters";
+import { StatusIndicatorList } from "@uds-poc/shared-ui/components/list/resourceTypes/StatusIndicatorList";
+import { BackendCommandOutputModal, backendCommandOutputModalDefinition } from "./features/logs/BackendCommandOutputModal.js";
+import type { ResourceSectionContentConfig } from "@uds-poc/shared-ui/components/section/resourceTypes/ResourceSection";
+import { ResourceSection } from "@uds-poc/shared-ui/components/section/resourceTypes/ResourceSection";
+import { SiteShell, siteContentSx, siteTemplate } from "@uds-poc/shared-ui/components/site/SiteShell";
+import { SiteFooter } from "@uds-poc/shared-ui/components/site/SiteFooter";
+import { SiteHeader } from "@uds-poc/shared-ui/components/site/SiteHeader";
 import {
   installedPackageResource,
   type InstalledPackageResourceContext
 } from "./features/packages/packageResourceDefinitions.js";
-import { ResourceCardVariant } from "./components/card/resourceTypes/ResourceCard.js";
+import { ResourceCardVariant } from "@uds-poc/shared-ui/components/card/resourceTypes/ResourceCard";
 import { getInstalledPackageResourceType } from "./features/packages/packageActions.js";
 import { getInstalledPackageFilterFields, getRegistryPackageFilterFields } from "./features/packages/packageFilters.js";
 import { usePackageActions } from "./features/packages/usePackageActions.js";
@@ -219,7 +219,7 @@ export function App() {
   return (
     <SiteShell>
       <siteTemplate.header>
-        <SiteHeader />
+        <SiteHeader backendLogsModalId={backendCommandOutputModalDefinition.modalId} />
       </siteTemplate.header>
       <siteTemplate.content>
         <Container maxWidth={false} sx={{ ...siteContentSx, py: 3 }}>

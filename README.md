@@ -48,6 +48,8 @@ make up
 
 By the end of `make up`, frontend, backend, and docs should be deployed in the cluster from the images produced by `make build`. The command stays running to hold localhost port-forwards open.
 
+`make up` also refreshes the local UDS tenant/admin gateways after app deployment. This keeps the named routes usable when long-running local clusters have stale Istio gateway workload certificates.
+
 Additional installable packages follow the same staged shape:
 
 ```bash
@@ -96,6 +98,7 @@ make deploy-platform
 make package-docs
 make publish-docs
 make deploy-docs
+make refresh-uds-gateways
 make ports
 make build/<component>
 make up/<component>

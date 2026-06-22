@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 .DEFAULT_GOAL := help
 
-.PHONY: help up up/backend up/frontend up/docs up/catalog-poc ports build build/backend build/frontend build/docs build/catalog-poc push/apps push/docs push/catalog-poc check-prereqs check-run-ready setup setup-macos deploy-uds deploy-core deploy-uds-macos fix-uds-ports fix-uds-gateway-routing stop-uds-workaround down down-deploy down-uds setup-local-demo verify-uds uds-debug inspect-packages installed-packages registry-up registry-down package-platform publish-platform deploy-platform package-docs publish-docs deploy-docs package-catalog-poc publish-catalog-poc deploy-catalog-poc verify-catalog-poc git-status
+.PHONY: help up up/backend up/frontend up/docs up/catalog-poc ports build build/backend build/frontend build/docs build/catalog-poc push/apps push/docs push/catalog-poc check-prereqs check-run-ready setup setup-macos deploy-uds deploy-core deploy-uds-macos fix-uds-ports fix-uds-gateway-routing refresh-uds-gateways stop-uds-workaround down down-deploy down-uds setup-local-demo verify-uds uds-debug inspect-packages installed-packages registry-up registry-down package-platform publish-platform deploy-platform package-docs publish-docs deploy-docs package-catalog-poc publish-catalog-poc deploy-catalog-poc verify-catalog-poc git-status
 
 help:
 	@printf "UDS  local POC commands\n\n"
@@ -18,6 +18,7 @@ help:
 	@printf "  make deploy-uds-macos    Experimental macOS seccomp workaround deploy\n"
 	@printf "  make fix-uds-ports       Clean project k3d leftovers and re-check ports 80/443\n"
 	@printf "  make fix-uds-gateway-routing Patch k3d host 80/443 to UDS gateway NodePorts\n"
+	@printf "  make refresh-uds-gateways Restart UDS gateways to refresh local Istio route certificates\n"
 	@printf "  make stop-uds-workaround Stop a stale macOS workaround deploy/watcher process\n"
 	@printf "  make down                Remove app deploys, delete local UDS/k3d cluster, and remove local registry\n"
 	@printf "  make down-deploy         Remove repo-deployed sample apps only\n"
@@ -62,23 +63,26 @@ help:
 	@printf "  make verify-catalog-poc  Verify catalog-poc rollout and UDS Package endpoint\n"
 	@printf "  make deploy-core     Deploy official k3d-core-demo UDS Core bundle\n\n"
 
-up: check-run-ready deploy-platform deploy-docs ports
+up: check-run-ready deploy-platform deploy-docs refresh-uds-gateways ports
 
 up/backend: check-run-ready publish-platform
 	@source ./scripts/vars/load-vars.sh; ZARF_PLAIN_HTTP="$${UDS_POC_PLAIN_HTTP}" ./scripts/package/deploy-zarf-package.sh "$${UDS_POC_PLATFORM_PACKAGE_ARCHIVE}" "$${UDS_POC_PLATFORM_NAMESPACE}" backend
 	@source ./scripts/vars/load-vars.sh; ./scripts/package/restart-rollouts.sh "$${UDS_POC_PLATFORM_NAMESPACE}" backend
 	@source ./scripts/vars/load-vars.sh; ./scripts/package/wait-rollouts.sh "$${UDS_POC_PLATFORM_NAMESPACE}" backend
+	./scripts/uds/refresh-uds-gateways.sh
 
 up/frontend: check-run-ready publish-platform
 	@source ./scripts/vars/load-vars.sh; ZARF_PLAIN_HTTP="$${UDS_POC_PLAIN_HTTP}" ./scripts/package/deploy-zarf-package.sh "$${UDS_POC_PLATFORM_PACKAGE_ARCHIVE}" "$${UDS_POC_PLATFORM_NAMESPACE}" frontend
 	@source ./scripts/vars/load-vars.sh; ./scripts/package/restart-rollouts.sh "$${UDS_POC_PLATFORM_NAMESPACE}" frontend
 	@source ./scripts/vars/load-vars.sh; ./scripts/package/wait-rollouts.sh "$${UDS_POC_PLATFORM_NAMESPACE}" frontend
+	./scripts/uds/refresh-uds-gateways.sh
 
-up/docs: check-run-ready deploy-docs
+up/docs: check-run-ready deploy-docs refresh-uds-gateways
 
 up/catalog-poc: check-run-ready publish-catalog-poc
 	@source ./scripts/vars/load-vars.sh; ZARF_PLAIN_HTTP="$${UDS_POC_PLAIN_HTTP}" ./scripts/package/deploy-zarf-package.sh "$${CATALOG_POC_OCI_REF}" "$${CATALOG_POC_NAMESPACE}" "$${CATALOG_POC_NAME}"
 	./scripts/debug/verify-catalog-poc.sh
+	./scripts/uds/refresh-uds-gateways.sh
 
 ports:
 	./scripts/up/run-uds-poc-apps.sh
@@ -130,6 +134,9 @@ fix-uds-ports:
 
 fix-uds-gateway-routing:
 	./scripts/uds/fix-uds-gateway-routing.sh
+
+refresh-uds-gateways:
+	./scripts/uds/refresh-uds-gateways.sh
 
 stop-uds-workaround:
 	./scripts/uds/stop-uds-workaround.sh

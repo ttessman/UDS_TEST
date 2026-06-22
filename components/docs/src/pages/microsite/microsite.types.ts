@@ -1,19 +1,8 @@
-import type { AppTileGeneratedIconTone } from "../../components/tile/AppTileGeneratedIcon";
 import type { IconName } from "../../components/icon/Icon";
 
 export type NavItem = {
   href: string;
   label: string;
-};
-
-export type ResourceTone = AppTileGeneratedIconTone;
-
-export type InstalledResource = {
-  name: string;
-  type: string;
-  version: string;
-  host: string;
-  tone: ResourceTone;
 };
 
 export type ProblemStoryGraphicKind = "list" | "state" | "users";

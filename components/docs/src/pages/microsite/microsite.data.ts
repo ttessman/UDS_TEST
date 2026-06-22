@@ -1,12 +1,12 @@
 import type {
   ArchitectureNode,
-  InstalledResource,
   NavItem,
   PlatformNode,
   ProblemCard,
   ProofCard,
   SolutionStep
 } from "./microsite.types";
+import type { InstalledPackage } from "@uds-poc/shared";
 
 export const learnNav: NavItem[] = [
   { href: "/learn/quickstart", label: "Quickstart" },
@@ -25,11 +25,72 @@ export const referenceNav: NavItem[] = [
   { href: "/learn/history-notes", label: "History & Notes" }
 ];
 
-export const installedResources: InstalledResource[] = [
-  { name: "Keycloak", type: "App", version: "v24.0.4", host: "auth.uds.local", tone: "blue" },
-  { name: "PostgreSQL", type: "Service", version: "v16.2", host: "postgres.uds.local", tone: "cyan" },
-  { name: "MinIO", type: "App", version: "v2024.3.1", host: "minio.uds.local", tone: "rose" },
-  { name: "Prometheus", type: "Service", version: "v2.51.0", host: "prom.uds.local", tone: "orange" }
+// Static microsite proof data. The live frontend uses backend/cluster state for installed resources.
+export const installedResources: InstalledPackage[] = [
+  {
+    architecture: "arm64",
+    endpoints: ["https://app.uds.dev", "https://api.uds.dev"],
+    generation: 1,
+    id: "uds-poc/uds-poc",
+    lastUpdated: "2026-06-18T12:46:00.000Z",
+    launchEndpoints: ["https://app.uds.dev"],
+    launchUrl: "https://app.uds.dev",
+    name: "uds-poc",
+    namespace: "uds-poc",
+    phase: "Ready",
+    sourcePackageData: { metadata: { name: "uds-poc", namespace: "uds-poc" } },
+    sources: ["kubernetes-package-crd", "backend-derived"],
+    status: "Installed",
+    version: "0.1.0"
+  },
+  {
+    architecture: "arm64",
+    endpoints: ["https://docs.uds.dev"],
+    generation: 1,
+    id: "docs/docs",
+    lastUpdated: "2026-06-18T12:45:00.000Z",
+    launchEndpoints: ["https://docs.uds.dev"],
+    launchUrl: "https://docs.uds.dev",
+    name: "docs",
+    namespace: "docs",
+    phase: "Ready",
+    sourcePackageData: { metadata: { name: "docs", namespace: "docs" } },
+    sources: ["kubernetes-package-crd", "backend-derived"],
+    status: "Installed",
+    version: "0.1.0"
+  },
+  {
+    architecture: "arm64",
+    endpoints: ["https://catalog-poc.uds.dev"],
+    generation: 1,
+    id: "catalog-poc/catalog-poc",
+    lastUpdated: "2026-06-18T12:48:00.000Z",
+    launchEndpoints: ["https://catalog-poc.uds.dev"],
+    launchUrl: "https://catalog-poc.uds.dev",
+    name: "catalog-poc",
+    namespace: "catalog-poc",
+    phase: "Ready",
+    sourcePackageData: { metadata: { name: "catalog-poc", namespace: "catalog-poc" } },
+    sources: ["kubernetes-package-crd", "backend-derived"],
+    status: "Installed",
+    version: "0.1.0"
+  },
+  {
+    architecture: "arm64",
+    endpoints: ["https://sso.uds.dev", "https://keycloak.admin.uds.dev"],
+    generation: 1,
+    id: "keycloak/keycloak",
+    lastUpdated: "2026-06-18T12:42:00.000Z",
+    launchEndpoints: ["https://sso.uds.dev"],
+    launchUrl: "https://sso.uds.dev",
+    name: "keycloak",
+    namespace: "keycloak",
+    phase: "Ready",
+    sourcePackageData: { metadata: { name: "keycloak", namespace: "keycloak" } },
+    sources: ["kubernetes-package-crd"],
+    status: "Installed",
+    version: "v24.0.4"
+  }
 ];
 
 export const valueProps: SolutionStep[] = [

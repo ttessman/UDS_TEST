@@ -1,13 +1,13 @@
 import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
 import { Avatar, Chip, Stack, Typography } from "@mui/material";
-import { formatBytes, relativeAge, yesNo } from "../../lib/format.js";
-import { IconActionButton } from "../../components/button/resourceTypes/IconActionButton.js";
-import { ResourceCardVariant, type ResourceCardDefinition } from "../../components/card/resourceTypes/ResourceCard.js";
-import { ResourceTypeChip } from "../../components/chip/resourceTypes/ResourceTypeChip.js";
-import type { DefinitionField } from "../../components/list/resourceTypes/DefinitionList.js";
-import { MetaList, type MetaListDefinition } from "../../components/list/resourceTypes/MetaList.js";
-import { StatusIndicatorButton } from "../../components/button/resourceTypes/StatusIndicatorButton.js";
-import type { StatusIndicatorTone } from "../../components/status/status.types.js";
+import { formatBytes, relativeAge, yesNo } from "@uds-poc/shared-ui/lib/format";
+import { IconActionButton } from "@uds-poc/shared-ui/components/button/resourceTypes/IconActionButton";
+import { ResourceCardVariant, type ResourceCardDefinition } from "@uds-poc/shared-ui/components/card/resourceTypes/ResourceCard";
+import { ResourceTypeChip } from "@uds-poc/shared-ui/components/chip/resourceTypes/ResourceTypeChip";
+import type { DefinitionField } from "@uds-poc/shared-ui/components/list/resourceTypes/DefinitionList";
+import { MetaList, type MetaListDefinition } from "@uds-poc/shared-ui/components/list/resourceTypes/MetaList";
+import { StatusIndicatorButton } from "@uds-poc/shared-ui/components/button/resourceTypes/StatusIndicatorButton";
+import type { StatusIndicatorTone } from "@uds-poc/shared-ui/components/status/status.types";
 import {
   canInstallPackage,
   getInstalledPackageResourceType,

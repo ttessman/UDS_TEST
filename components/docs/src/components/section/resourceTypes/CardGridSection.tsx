@@ -12,7 +12,7 @@ type CardGridSectionProps<T> = {
 
 const headerSx = {
   "& h2": {
-    color: "#111827",
+    color: "var(--docs-text-primary)",
     fontSize: 28,
     lineHeight: 1.2,
     m: "0 0 22px",
@@ -28,18 +28,18 @@ const sectionSx = {
 };
 
 const cardSx = {
-  background: "rgba(255, 255, 255, 0.92)",
-  border: "1px solid #d8e2f1",
+  background: "var(--docs-card-bg)",
+  border: "1px solid var(--docs-border)",
   borderRadius: "8px",
-  boxShadow: "0 16px 38px rgba(30, 49, 78, 0.08)",
+  boxShadow: "var(--docs-card-shadow)",
   p: "22px",
   "& h3": {
-    color: "#111827",
+    color: "var(--docs-text-primary)",
     fontSize: 16,
     m: "0 0 8px"
   },
   "& p": {
-    color: "#56657a",
+    color: "var(--docs-muted)",
     fontSize: 14,
     lineHeight: 1.55,
     m: 0

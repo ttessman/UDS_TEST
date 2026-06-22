@@ -5,12 +5,13 @@
     "components/frontend",
     "components/backend",
     "components/docs",
-    "shared"
+    "shared",
+    "shared-ui"
   ],
   "scripts": {
     "dev": "npm run dev -w @uds-poc/backend & npm run dev -w @uds-poc/frontend",
-    "build": "npm run build -w @uds-poc/shared && npm run build -w @uds-poc/backend && npm run build -w @uds-poc/frontend && npm run build -w @uds-poc/docs",
-    "typecheck": "npm run build -w @uds-poc/shared && npm run typecheck -w @uds-poc/backend && npm run typecheck -w @uds-poc/frontend",
+    "build": "npm run build -w @uds-poc/shared && npm run build -w @uds-poc/shared-ui && npm run build -w @uds-poc/backend && npm run build -w @uds-poc/frontend && npm run build -w @uds-poc/docs",
+    "typecheck": "npm run build -w @uds-poc/shared && npm run typecheck -w @uds-poc/shared-ui && npm run typecheck -w @uds-poc/backend && npm run typecheck -w @uds-poc/frontend",
     "start": "npm run start -w @uds-poc/backend"
   },
   "engines": {

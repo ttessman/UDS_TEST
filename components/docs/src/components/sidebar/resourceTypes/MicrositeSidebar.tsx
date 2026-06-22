@@ -1,5 +1,6 @@
 import Link from "@docusaurus/Link";
 import { CtaButton } from "../../button/CtaButton";
+import { ColorModeToggleButton } from "../../button/resourceTypes/ColorModeToggleButton";
 import { Icon } from "../../icon/Icon";
 import { NavLinks } from "../../nav/NavLinks";
 import { Sidebar, sidebarTemplate } from "../Sidebar";
@@ -19,6 +20,9 @@ export function MicrositeSidebar({ learnItems, referenceItems }: MicrositeSideba
           UDS Local POC
         </CtaButton>
       </sidebarTemplate.brand>
+      <sidebarTemplate.actions>
+        <ColorModeToggleButton />
+      </sidebarTemplate.actions>
       <sidebarTemplate.nav>
         <NavLinks
           groups={[

@@ -14,7 +14,7 @@ type TimelineSectionProps<T extends { color?: TimelineItemTone }> = {
 
 const headerSx = {
   "& h2": {
-    color: "#111827",
+    color: "var(--docs-text-primary)",
     fontSize: 28,
     lineHeight: 1.2,
     m: "0 0 22px",
@@ -23,14 +23,16 @@ const headerSx = {
 };
 
 const standardSectionSx = {
+  mb: { xs: "34px", lg: "56px" },
   maxWidth: 1080,
   mx: "auto",
+  pb: { xs: "18px", lg: "28px" },
   pt: "46px",
   px: { xs: "18px", sm: "32px" }
 };
 
 const bandedSectionSx = {
-  background: "linear-gradient(90deg, #f8fbff, #f3fff9 52%, #f8fbff)",
+  background: "var(--docs-band-bg)",
   maxWidth: 1160,
   mt: "22px",
   mx: "auto",
@@ -38,19 +40,21 @@ const bandedSectionSx = {
 };
 
 const listSx = {
+  "--timeline-gap": "20px",
   alignItems: "stretch",
   display: "grid",
-  gap: "20px",
+  gap: "var(--timeline-gap)",
   gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))", lg: "repeat(4, minmax(0, 1fr))" }
 };
 
 const cardSx = {
-  background: "rgba(255, 255, 255, 0.92)",
-  border: "1px solid #d8e2f1",
+  "--timeline-card-padding-x": "18px",
+  background: "var(--docs-card-bg)",
+  border: "1px solid var(--docs-border)",
   borderRadius: "8px",
-  boxShadow: "0 16px 38px rgba(30, 49, 78, 0.08)",
+  boxShadow: "var(--docs-card-shadow)",
   minHeight: 144,
-  p: "18px",
+  p: "var(--timeline-card-padding-x)",
   position: "relative",
   "& .icon": {
     borderRadius: "8px",
@@ -58,18 +62,18 @@ const cardSx = {
     width: 42
   },
   "& h3": {
-    color: "#111827",
+    color: "var(--docs-text-primary)",
     fontSize: 16,
     m: "0 0 8px"
   },
   "& p": {
-    color: "#56657a",
+    color: "var(--docs-muted)",
     fontSize: 14,
     lineHeight: 1.55,
     m: 0
   },
   "& ul": {
-    color: "#334155",
+    color: "var(--docs-text-secondary)",
     fontSize: 13,
     lineHeight: 1.75,
     m: 0,
@@ -85,14 +89,19 @@ const borderByTone: Record<TimelineItemTone, string> = {
 };
 
 const connectorSx = {
-  color: "#64748b",
+  color: "var(--docs-muted)",
   display: { xs: "none", lg: "block" },
   fontSize: 14,
   fontWeight: 800,
   letterSpacing: 0,
+  lineHeight: 1,
   position: "absolute",
-  right: "-28px",
+  pointerEvents: "none",
+  right: "calc(var(--timeline-gap) * -1)",
+  textAlign: "center",
   top: "50%",
+  transform: "translateY(-50%)",
+  width: "var(--timeline-gap)",
   zIndex: 2
 };
 
@@ -117,7 +126,7 @@ export function TimelineSection<T extends { color?: TimelineItemTone }>({
       }}
       data={data}
       renderConnector={() => (
-        <Box aria-hidden="true" component="span" sx={connectorSx}>
+        <Box aria-hidden="true" component="span" data-timeline-connector sx={connectorSx}>
           {"->"}
         </Box>
       )}

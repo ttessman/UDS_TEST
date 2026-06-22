@@ -1,0 +1,31 @@
+{
+  "name": "@uds-poc/shared-ui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    "./styles.css": "./src/styles.css",
+    "./components/*": "./dist/components/*.js",
+    "./lib/*": "./dist/lib/*.js",
+    "./store/*": "./dist/store/*.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@beqa/react-slots": "^1.1.3",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.1.0",
+    "@mui/material": "^9.1.0",
+    "@uds-poc/shared": "0.0.0",
+    "motion": "^12.40.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

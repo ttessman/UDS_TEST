@@ -24,7 +24,7 @@ pids+=("$!")
 kubectl -n "${UDS_POC_PLATFORM_NAMESPACE}" port-forward svc/backend "${backend_port}:3001" &
 pids+=("$!")
 
-kubectl -n "${UDS_POC_DOCS_NAMESPACE}" port-forward svc/docs "${docs_port}:3002" &
+kubectl -n "${DOCS_NAMESPACE}" port-forward svc/docs "${docs_port}:3002" &
 pids+=("$!")
 
 echo

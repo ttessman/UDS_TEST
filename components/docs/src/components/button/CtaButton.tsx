@@ -42,7 +42,7 @@ const baseSx: SxProps<Theme> = {
 const variantSx = {
   brand: {
     background: "transparent",
-    color: "#0f172a",
+    color: "var(--docs-text-primary)",
     fontSize: 18,
     fontWeight: 850,
     minHeight: "auto",
@@ -66,9 +66,9 @@ const variantSx = {
     }
   },
   chrome: {
-    background: "#eef4ff",
-    border: "1px solid #d7e3f8",
-    color: "#2058d8",
+    background: "var(--docs-control-bg)",
+    border: "1px solid var(--docs-control-border)",
+    color: "var(--docs-control-text)",
     cursor: "pointer",
     font: "inherit",
     fontWeight: 800,
@@ -76,14 +76,14 @@ const variantSx = {
     minWidth: 0,
     px: 2,
     "&:hover": {
-      background: "#e2edff",
+      background: "var(--docs-control-bg-hover)",
       textDecoration: "none",
       transform: "none"
     }
   },
   nav: {
     background: "transparent",
-    color: "#243047",
+    color: "var(--docs-nav-text)",
     display: "flex",
     fontSize: 14,
     fontWeight: 700,
@@ -94,8 +94,8 @@ const variantSx = {
     py: 1,
     width: "100%",
     "&:hover": {
-      background: "#eef4ff",
-      color: "#2058d8",
+      background: "var(--docs-nav-hover-bg)",
+      color: "var(--docs-nav-active-text)",
       textDecoration: "none",
       transform: "none"
     }
@@ -147,8 +147,8 @@ export function CtaButton({
         variantSx[variant],
         selected && variant === "nav"
           ? {
-              background: "#eef4ff",
-              color: "#2058d8"
+              background: "var(--docs-nav-active-bg)",
+              color: "var(--docs-nav-active-text)"
             }
           : undefined,
         ...(Array.isArray(sx) ? sx : [sx])

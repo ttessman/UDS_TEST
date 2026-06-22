@@ -6,7 +6,7 @@ export function NavLabel({ children }: { children: ReactNode }) {
     <Box
       component="span"
       sx={{
-        color: "#69758a",
+        color: "var(--docs-nav-label)",
         display: "block",
         fontSize: 12,
         fontWeight: 850,

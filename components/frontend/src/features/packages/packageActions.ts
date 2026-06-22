@@ -1,5 +1,5 @@
 import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
-import type { ResourceType } from "../../components/chip/resourceTypes/ResourceTypeChip.js";
+import type { ResourceType } from "@uds-poc/shared-ui/components/chip/resourceTypes/ResourceTypeChip";
 import {
   installedPackageInstalledState,
   installedPackageUninstalledState,

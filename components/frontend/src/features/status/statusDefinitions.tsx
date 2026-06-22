@@ -3,8 +3,8 @@ import { Box, Stack, Typography } from "@mui/material";
 import type {
   StatusIndicatorListDefinition,
   StatusIndicatorTone
-} from "../../components/list/resourceTypes/StatusIndicatorList.js";
-import { yesNo } from "../../lib/format.js";
+} from "@uds-poc/shared-ui/components/list/resourceTypes/StatusIndicatorList";
+import { yesNo } from "@uds-poc/shared-ui/lib/format";
 
 export const udsStatusIndicators = {
   modalTitle: "UDS Environment Status",

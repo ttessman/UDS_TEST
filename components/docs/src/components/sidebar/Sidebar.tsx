@@ -5,7 +5,7 @@ import type { Slot, SlotChildren } from "@beqa/react-slots";
 import { Box } from "@mui/material";
 import { CtaButton } from "../button/CtaButton";
 
-export type SidebarChildren = SlotChildren<Slot<"brand"> | Slot<"nav"> | Slot<"cta">>;
+export type SidebarChildren = SlotChildren<Slot<"actions"> | Slot<"brand"> | Slot<"nav"> | Slot<"cta">>;
 
 export const sidebarTemplate = createTemplate<SidebarChildren>();
 
@@ -26,8 +26,8 @@ export function Sidebar({ children, id = "microsite-navigation", menuLabel = "Me
         component="header"
         sx={{
           alignItems: "center",
-          background: "#ffffff",
-          borderBottom: "1px solid #e5eaf3",
+          background: "var(--docs-sidebar-bg)",
+          borderBottom: "1px solid var(--docs-sidebar-border)",
           display: { xs: "flex", lg: "none" },
           justifyContent: "space-between",
           minHeight: 86,
@@ -38,16 +38,18 @@ export function Sidebar({ children, id = "microsite-navigation", menuLabel = "Me
         }}
       >
         {hasSlot.brand ? <slot.brand /> : null}
-        <CtaButton
-          aria-controls={id}
-          aria-expanded={isDrawerOpen}
-          component="button"
-          onClick={() => setIsDrawerOpen(true)}
-          type="button"
-          variant="chrome"
-        >
-          {menuLabel}
-        </CtaButton>
+        <Box sx={{ alignItems: "center", display: "flex", gap: 1 }}>
+          <CtaButton
+            aria-controls={id}
+            aria-expanded={isDrawerOpen}
+            component="button"
+            onClick={() => setIsDrawerOpen(true)}
+            type="button"
+            variant="chrome"
+          >
+            {menuLabel}
+          </CtaButton>
+        </Box>
       </Box>
       {isDrawerOpen ? (
         <Box
@@ -55,7 +57,7 @@ export function Sidebar({ children, id = "microsite-navigation", menuLabel = "Me
           component="button"
           onClick={closeDrawer}
           sx={{
-            background: "rgba(15, 23, 42, 0.28)",
+            background: "var(--docs-scrim)",
             border: 0,
             display: { xs: "block", lg: "none" },
             inset: 0,
@@ -69,15 +71,16 @@ export function Sidebar({ children, id = "microsite-navigation", menuLabel = "Me
         component="aside"
         id={id}
         sx={{
-          background: "rgba(255, 255, 255, 0.96)",
-          borderRight: "1px solid #e3e9f4",
-          boxShadow: "16px 0 45px rgba(22, 34, 56, 0.07)",
+          background: "var(--docs-sidebar-bg)",
+          borderRight: "1px solid var(--docs-sidebar-border)",
+          boxShadow: "var(--docs-sidebar-shadow)",
           display: "flex",
           flexDirection: "column",
           gap: 2.75,
           height: "100vh",
           left: { xs: 0, lg: "auto" },
           maxWidth: { xs: 390, lg: "none" },
+          overflowY: "auto",
           p: "22px 18px",
           position: { xs: "fixed", lg: "sticky" },
           top: 0,
@@ -89,15 +92,18 @@ export function Sidebar({ children, id = "microsite-navigation", menuLabel = "Me
       >
         <Box sx={{ alignItems: "center", display: "flex", gap: 2, justifyContent: "space-between" }}>
           {hasSlot.brand ? <slot.brand /> : null}
-          <CtaButton
-            component="button"
-            onClick={closeDrawer}
-            sx={{ display: { xs: "inline-flex", lg: "none" } }}
-            type="button"
-            variant="chrome"
-          >
-            Close
-          </CtaButton>
+          <Box sx={{ alignItems: "center", display: "flex", gap: 1 }}>
+            {hasSlot.actions ? <slot.actions /> : null}
+            <CtaButton
+              component="button"
+              onClick={closeDrawer}
+              sx={{ display: { xs: "inline-flex", lg: "none" } }}
+              type="button"
+              variant="chrome"
+            >
+              Close
+            </CtaButton>
+          </Box>
         </Box>
         <Box onClick={closeDrawer}>{hasSlot.nav ? <slot.nav /> : null}</Box>
         {hasSlot.cta ? <Box sx={{ mt: "auto" }}><slot.cta /></Box> : null}

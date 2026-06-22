@@ -3,6 +3,9 @@ import Link from "@docusaurus/Link";
 import { Box } from "@mui/material";
 import { useEffect } from "react";
 import { CtaButton } from "../components/button/CtaButton";
+import { BulletedContentCard } from "../components/card/resourceTypes/BulletedContentCard";
+import { IconContentCard } from "../components/card/resourceTypes/IconContentCard";
+import { StoryContentCard } from "../components/card/resourceTypes/StoryContentCard";
 import { RocketGraphic } from "../components/graphics/RocketGraphic";
 import { problemStoryGraphics, proofStoryGraphics, StoryGraphic } from "../components/graphics/StoryGraphic";
 import { Icon } from "../components/icon/Icon";
@@ -28,9 +31,8 @@ import {
 } from "./microsite/microsite.data";
 
 const pageShellSx = {
-  background:
-    "radial-gradient(circle at 65% 8%, rgba(74, 129, 255, 0.12), transparent 30%), linear-gradient(180deg, #ffffff 0%, #f7faff 42%, #ffffff 100%)",
-  color: "#111827",
+  background: "var(--docs-page-bg)",
+  color: "var(--docs-text-primary)",
   display: "grid",
   gridTemplateColumns: { xs: "1fr", lg: "230px minmax(0, 1fr)" },
   minHeight: "100vh"
@@ -83,11 +85,11 @@ function LandingPage() {
           <CardGridSection
             data={{ items: problemCards }}
             renderItem={(card) => (
-              <>
-                <StoryGraphic shapes={problemStoryGraphics[card.visual]} />
-                <h3>{card.title}</h3>
-                <p>{card.text}</p>
-              </>
+              <StoryContentCard
+                graphic={<StoryGraphic shapes={problemStoryGraphics[card.visual]} />}
+                text={card.text}
+                title={card.title}
+              />
             )}
           >
             <sectionTemplate.header>
@@ -113,11 +115,11 @@ function LandingPage() {
           <CardGridSection
             data={{ items: proofCards }}
             renderItem={(card) => (
-              <>
-                <StoryGraphic shapes={proofStoryGraphics[card.kind]} />
-                <h3>{card.title}</h3>
-                <p>{card.text}</p>
-              </>
+              <StoryContentCard
+                graphic={<StoryGraphic shapes={proofStoryGraphics[card.kind]} />}
+                text={card.text}
+                title={card.title}
+              />
             )}
             variant="compact"
           >
@@ -128,12 +130,7 @@ function LandingPage() {
           <TimelineSection
             data={{ items: platformNodes }}
             renderItem={(node) => (
-              <>
-                <h3>{node.title}</h3>
-                <ul>
-                  {node.items.map((item) => <li key={item}>{item}</li>)}
-                </ul>
-              </>
+              <BulletedContentCard items={node.items} title={node.title} />
             )}
             variant="banded"
           >
@@ -144,11 +141,7 @@ function LandingPage() {
           <TimelineSection
             data={{ items: architectureNodes }}
             renderItem={(node) => (
-              <>
-                <Icon name={node.icon} />
-                <h3>{node.title}</h3>
-                <p>{node.text}</p>
-              </>
+              <IconContentCard icon={<Icon name={node.icon} />} text={node.text} title={node.title} />
             )}
           >
             <sectionTemplate.header>

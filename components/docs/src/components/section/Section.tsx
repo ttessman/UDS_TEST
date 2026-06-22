@@ -59,7 +59,7 @@ export function Section<T>({
   );
 
   return (
-    <Box component="section" data-section-variant={context.variant} sx={context.sx}>
+    <Box component="section" data-section-variant={context.variant} sx={[{ mt: 0 }, ...(Array.isArray(context.sx) ? context.sx : [context.sx])]}>
       {hasSlot.header ? <Box sx={context.headerSx}><slot.header /></Box> : null}
       <Box sx={context.listSx}>
         {sectionContent}

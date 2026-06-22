@@ -27,17 +27,17 @@ export function CtaSection({ actions = [], children, sx }: CtaSectionProps) {
         },
         sx: [
           {
-            background: "linear-gradient(180deg, #ffffff, #f7faff)",
-            border: "1px solid #dbe5f4",
+            background: "var(--docs-card-bg)",
+            border: "1px solid var(--docs-border)",
             borderRadius: "8px",
-            boxShadow: "0 12px 30px rgba(31, 55, 97, 0.08)",
+            boxShadow: "var(--docs-card-shadow)",
             p: 1.75,
             "& strong": {
-              color: "#111827",
+              color: "var(--docs-text-primary)",
               fontSize: 14
             },
             "& p": {
-              color: "#56657a",
+              color: "var(--docs-muted)",
               fontSize: 13,
               lineHeight: 1.45,
               m: 0

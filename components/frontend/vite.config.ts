@@ -1,3 +1,4 @@
+import path from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import unplugin from "@beqa/unplugin-transform-react-slots";
@@ -7,6 +8,11 @@ const docsProxyTarget = process.env.VITE_DOCS_PROXY_TARGET ?? "http://localhost:
 
 export default defineConfig({
   plugins: [unplugin.vite(), react()],
+  resolve: {
+    alias: {
+      "@uds-poc/shared-ui": path.resolve(__dirname, "../../shared-ui/src")
+    }
+  },
   server: {
     port: 5173,
     proxy: {

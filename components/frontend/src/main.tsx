@@ -3,9 +3,9 @@ import ReactDOM from "react-dom/client";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import type { PaletteMode } from "@mui/material";
 import { App } from "./App.js";
-import { ColorModeProvider } from "./store/colorMode.store.js";
-import { ModalProvider } from "./store/modal.store.js";
-import "./styles.css";
+import { ColorModeProvider } from "@uds-poc/shared-ui/store/colorMode.store";
+import { ModalProvider } from "@uds-poc/shared-ui/store/modal.store";
+import "@uds-poc/shared-ui/styles.css";
 
 const initialStoredMode = window.localStorage.getItem("uds-poc-color-mode");
 const initialColorMode: PaletteMode = initialStoredMode === "light" || initialStoredMode === "dark" ? initialStoredMode : "dark";

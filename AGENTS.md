@@ -73,6 +73,7 @@ Current decisions:
 - Current exposed UDS hosts are `app.uds.dev` for frontend, `docs.uds.dev` for docs, and `api.uds.dev` for the backend API.
 - In-cluster callers should prefer service DNS such as `backend.uds-poc.svc.cluster.local:3001`; browser-facing callers can use the UDS hosts.
 - App routing uses UDS Package `network.expose` entries through the tenant gateway. Keep frontend/backend together as the platform package in `uds-poc`. Keep docs as a separate app package in the `docs` namespace. Do not create multiple Package CRs in the same namespace.
+- `make up` and `make up/<component>` refresh the local UDS tenant/admin gateways after app deployment. This is intentional for the local POC because stale Istio gateway workload certificates can make all named routes return Envoy upstream connection errors while pods and Package CRs are healthy.
 - Store data comes from backend-inspected OCI/Zarf package metadata.
 - Installed cards come from Kubernetes Package CR state.
 - Browser-triggered installs should call the backend API; the backend deploys a selected OCI ref with `zarf package deploy` from inside the backend container.
@@ -83,27 +84,36 @@ Current docs status:
 
 - `components/docs/` is now a real Docusaurus app container, not a loose markdown folder.
 - Docusaurus content lives under `components/docs/docs/`.
-- Starter pages currently include intro, architecture, local development, container runbook, Kubernetes routing, UDS notes, make targets, frontend architecture, and project requirements.
-- The docs should explain the POC, the local container workflow, and the future Kubernetes/UDS direction.
 - The docs app is a separate Docusaurus app package and is exposed as `https://docs.uds.dev/` from the `docs` Package CR endpoint metadata.
-- The primary docs launch path should come from installed package endpoint metadata, not a special nav button.
 - The docs root is now a sales-first microsite, not a docs index. Keep `components/docs/src/pages/index.tsx` focused on the POC pitch, product story, and visual proof; keep deeper details under Learn/Reference pages.
-- Docs local authoring commands live in `components/docs/Makefile`.
-- Latest live check: the docs Package CR is `Ready`, `https://docs.uds.dev/` renders the Introduction page through the UDS tenant gateway, and a cache-bypassed Chrome CDP reload reported zero runtime exceptions.
-- Current docs fix: keep the hash-router Docusaurus build path, keep the Docusaurus config/sidebar as `.mjs` files without package-wide `"type": "module"`, and use the custom React microsite page at `components/docs/src/pages/index.tsx` for the root route.
+- The primary docs launch path should come from installed package endpoint metadata, not a special nav button.
+- Current docs microsite uses shared `ResourceCard` compact visuals with static `InstalledPackage` proof data. This is intentionally not live; the frontend app uses backend/cluster state for live installed resources.
+- The hero `ShowcaseSection` should stay static/presentation-only. It may use shared compact card visuals, but should not expose card menus, launch actions, selection handlers, details, or runtime actions.
+- Showcase mock card order should be `UDS-POC`, `Docs`, `Catalog-POC`, `Keycloak`.
+- Docs color mode is owned by `DocsThemeProvider`; keep docs shell/sidebar/section tokens in sync with shared UI color mode.
+- `ContentCard` is the generic docs card primitive. Resource-type folders should contain adapters that compose primitives, not miscellaneous standalone components.
+- Latest verification: `npm run build -w @uds-poc/shared-ui` and `npm run build -w @uds-poc/docs` pass.
 - Do not re-add `"type": "module"` to `components/docs/package.json` without checking the generated browser bundle for raw `require(` calls. Docusaurus generated `.docusaurus/client-modules.js` can otherwise leak build-time `require(...)` into runtime JS.
-- `make build/docs` and `make up/docs` have been run after the docs build fix. `deploy-docs` now restarts and waits for the docs Deployment so the mutable `docs:0.1.0` image is pulled after rebuilds.
 - Chrome DevTools CDP note: the Raycast Chrome launcher must include `--remote-allow-origins=*`; otherwise HTTP `/json/version` works but WebSocket inspection fails with `403`.
 - Component-local authoring commands live in `components/frontend/Makefile`, `components/backend/Makefile`, and `components/docs/Makefile`.
 - Historical root docs paths such as `docs/PROJECT_REQUIREMENTS.md` have moved; update IDE tabs and links to `components/docs/docs/project-requirements.md`.
+
+Current shared UI migration status:
+
+- Reusable React/MUI renderer families now live in `shared-ui/` as the `@uds-poc/shared-ui` workspace.
+- Shared UI owns reusable component families, shared token CSS, small UI helper libs, modal state, and color-mode state.
+- Frontend app wiring stays in `components/frontend/src`, including `main.tsx`, `App.tsx`, API clients, package install workflows, and feature-specific state.
+- Important exception: if a file under `components/frontend/src/components` imports frontend feature modules, treat it as an app adapter until dependency inversion is done. Do not let `shared-ui` import from `components/frontend/src/features`.
+- Docs should use real shared UI components where it helps the sales microsite reflect the POC. Keep extending that pattern instead of reintroducing docs-only card lookalikes.
+- Vite stays frontend-only. `shared-ui` should be bundler-neutral React TypeScript consumed by Vite for frontend and Docusaurus/Webpack for docs.
+- Docusaurus Faster/Rspack can be revisited later as a docs build optimization, but do not combine that bundler change with the shared-ui migration unless needed.
 
 Current command readiness:
 
 - React 19 is the repo standard and is installed for the frontend and docs workspaces.
 - Root Makefile commands should stay focused on Kubernetes, UDS, Zarf, registry, and container lifecycle.
-- Last known docs build state: `components/docs make build` and root `make build/docs` both pass. Docusaurus uses the hash router, so the sitemap plugin warning is expected and non-fatal.
-- Last known backend build state: `npm run build -w @uds-poc/shared`, `npm run build -w @uds-poc/backend`, and `make build/backend` pass.
-- Last known backend image: `localhost:5001/uds-poc/backend:0.1.0`.
+- Last known docs build state: `npm run build -w @uds-poc/docs` passes. Docusaurus uses the hash router, so the sitemap plugin warning is expected and non-fatal.
+- Last known shared UI build state: `npm run build -w @uds-poc/shared-ui` passes.
 - Do not assume the full UDS runtime flow is verified yet:
   `make setup && make deploy-uds-macos && make build && make up && make build/catalog-poc && make up/catalog-poc`
 - `make up` pushes/packages/publishes/deploys already-built platform and docs images to Kubernetes, then stays running to hold localhost port-forwards open.
@@ -114,27 +124,17 @@ Current command readiness:
 
 Known TODOs:
 
-1. Re-verify the docs installed package launch action from the frontend card.
-2. Re-verify cluster health after docs redeploy.
-3. Verify the full frontend/backend/docs app image set with `make build`.
-4. Verify the frontend/backend platform Zarf package with `make package-platform`.
-5. Verify the docs Zarf package with `make package-docs`.
-6. Re-verify `make up` from a clean UDS Core state; it should deploy the platform package and docs package, then port-forward frontend/backend/docs.
-7. Confirm the backend pod can run `kubectl`, `uds`, and `zarf`, can read Package CRs, and can inspect/deploy the configured local OCI refs.
-8. Confirm Store entries include separate `docs` and `catalog-poc` packages, not a generic `uds-poc-apps` bundle.
-9. Re-verify the staged catalog sample flow:
+1. Re-verify the full frontend/backend/docs app image set with `make build`.
+2. Re-verify `make up` from a clean UDS Core state; it should deploy the platform package and docs package, refresh gateways, then hold port-forwards open.
+3. Confirm `https://app.uds.dev/`, `https://api.uds.dev/`, and `https://docs.uds.dev/` route through the UDS tenant/admin gateways after `make up`.
+4. Confirm the docs installed package card launches `https://docs.uds.dev/` from Package CR endpoint metadata.
+5. Confirm backend pod can run `kubectl`, `uds`, and `zarf`, can read Package CRs, and can inspect/deploy configured local OCI refs.
+6. Confirm Store entries include separate `docs` and `catalog-poc` packages, not a generic `uds-poc-apps` bundle.
+7. Re-verify the staged catalog sample flow:
    - `make build/catalog-poc`
    - `make up/catalog-poc`
-10. Verify the UDS gateway host routing for `https://app.uds.dev/`, `https://api.uds.dev/`, and `https://docs.uds.dev/`.
-11. Re-verify the full UDS flow after the move:
-   - `make deploy-uds-macos`
-   - `make build`
-   - `make up`
-   - `make build/catalog-poc`
-   - `make up/catalog-poc`
-12. Confirm the installed package card can launch the docs endpoint URL `https://docs.uds.dev/` from docs Package CR endpoint metadata.
-13. Confirm the frontend can show the sample package as both available from registry metadata and installed from Package CR state.
-14. Keep `components/catalog-poc` as the sample app/package container area for the local registry push/pull/deploy loop.
+8. Confirm the frontend can show the sample package as both available from registry metadata and installed from Package CR state.
+9. Keep `components/catalog-poc` as the sample app/package container area for the local registry push/pull/deploy loop.
 
 ---
 
@@ -162,83 +162,10 @@ Operational rules for future agents:
 - Do not replace the gateway status patch with `NodePort`; UDS Core Pepr policy rejects NodePort services.
 - Do not remove the ServiceLB disablement casually. It avoids local `svclb-*` host-port conflicts across UDS gateway LoadBalancer services.
 - Do not remove the gateway `LoadBalancer` status patch casually. With ServiceLB disabled, the patch gives deploy waits an external IP value.
+- If `app.uds.dev`, `api.uds.dev`, or `docs.uds.dev` return `upstream connect error or disconnect/reset before headers` while pods/endpoints are ready, run `make refresh-uds-gateways` before chasing app code. The observed root cause was an expired Istio gateway workload certificate rejected by ztunnel.
 - Use `make uds-debug`, `make verify-uds`, and `make stop-uds-workaround` when diagnosing stuck deploys.
 
 Detailed history and rationale: [components/docs/docs/uds-notes.md](components/docs/docs/uds-notes.md)
-
----
-
-## Current POC TODOs And Resume Notes
-
-Use this section when resuming the UDS POC work.
-
-Current verified state:
-
-- This state partially predates the latest platform/docs split; re-verify after the current cluster restart.
-- `make deploy-uds-macos` can deploy the slim local Core path on macOS with the seccomp workaround.
-- `make verify-uds` succeeds even when no literal `uds-core` namespace exists.
-- Core evidence currently comes from ready Package CRs:
-  - `authservice/authservice Ready`
-  - `keycloak/keycloak Ready`
-- The frontend should be reached through UDS routing at `https://app.uds.dev/` after `make up`; localhost port-forwards are debug conveniences only.
-- The frontend has rendered:
-  - UDS installed: yes
-  - Cluster reachable: yes
-  - UDS Core running: yes
-  - Core evidence: `Package CR authservice/authservice Ready`
-  - Installed Packages count from real Package CR state
-- The installed package side is real cluster state from:
-
-```bash
-uds zarf tools kubectl get package -A -o json
-```
-
-Current package-source expectations:
-
-- The available package side should not rely on remote fallback Core refs.
-- The backend should inspect local OCI/Zarf refs for installable packages.
-- The expected local Store refs are docs and catalog-poc, published through the local registry/package loop.
-- Docs is a separate app package, exposed as `https://docs.uds.dev/`, and should appear as its own Store/installed package entry.
-- Catalog POC is the non-Core sample app package used to prove install/deploy from the Store.
-- `uds-poc` is the platform package for frontend/backend, not the installable docs/sample app grouping.
-
-Next required milestone:
-
-- Re-verify the local registry push/pull/deploy loop for docs and catalog-poc after the current restart.
-- Confirm the backend can inspect local refs from inside the cluster using `host.k3d.internal:5001`.
-- Confirm the backend can deploy selected local OCI refs from the frontend install action.
-- This is required before treating the full POC flow as ready end to end.
-
-Current sample app/package state:
-
-1. The sample Zarf package now lives under `components/catalog-poc/`.
-2. It includes a simple workload, service, and `uds.dev/v1alpha1` Package CR intended to prove deployment through installed package count/status.
-3. Local registry make targets exist:
-   - `make registry-up`
-   - `make registry-down`
-   - `make build/catalog-poc`
-   - `make package-catalog-poc`
-   - `make publish-catalog-poc`
-   - `make up/catalog-poc`
-   - `make verify-catalog-poc`
-4. The local registry path uses `registry:2` on `localhost:5001`.
-5. Package push/publish/deploy steps should use the generic scripts under `scripts/package/`, with app-specific values loaded from `scripts/vars/defaults.env`.
-6. `make up/catalog-poc` should deploy the same OCI ref into the active UDS cluster.
-7. After verification, confirm the frontend shows:
-   - sample package available from registry
-   - sample package installed from Package CR
-   - total installed package count increased beyond the Core baseline
-
-Important modeling rule:
-
-- Available/published package data remains `RegistryPackage`.
-- Cluster-deployed state remains `InstalledPackage`.
-- Do not merge these into a generic `App` model until real UDS metadata proves that terminology.
-
-Chrome inspection note:
-
-- The Chrome DevTools MCP bridge may fail because it tries `http://192.168.65.254:9222/json/version` while Chrome binds remote debugging to `127.0.0.1:9222`.
-- Direct local CDP inspection worked via Node/WebSocket against Chrome on `127.0.0.1`.
 
 ---
 
@@ -418,10 +345,6 @@ Prefer:
 <ResourceCard item={item} definition={definition} context={context} />
 ```
 
-```tsx
-<AideForm config={formConfig} />
-```
-
 Avoid feature-specific components when they mostly duplicate rendering structure.
 
 ---
@@ -462,26 +385,6 @@ Feature-level components should read like intent plus data flow:
 - wire validation or business callbacks
 - render the generic configured renderer
 
-Use the same mental model as a form renderer:
-
-```tsx
-const fields = [
-  { type: "text", name: "username", label: "UserID", validate: validateUserId },
-  { type: "password", name: "password", label: "Password" },
-  { type: "button", name: "submit", label: "Login" }
-];
-
-return (
-  <AideForm
-    config={fields}
-    formData={values}
-    errors={errors}
-    handleChange={handleChange}
-    handleSubmit={handleSubmit}
-  />
-);
-```
-
 Apply this beyond forms:
 
 - cards define fields/meta/actions; renderers own layout
@@ -491,7 +394,7 @@ Apply this beyond forms:
 
 Avoid feature configs that hide nested component trees or inline JSX render mazes. If a definition needs repeated metadata, create a reusable metadata renderer such as `MetaList`, `DefinitionList`, or `ResourceSection` and pass typed config into it.
 
-Metadata renderers should also follow the global renderer model. A `MetaList` should be a list/resource renderer variant with typed item definitions, not a one-off component with ad hoc JSX. Think of it like `AideForm`: each meta entry is a typed field/item definition, and the renderer owns layout, labels, empty values, icons, responsive behavior, and appearance variants.
+Metadata renderers should also follow the global renderer model. A `MetaList` should be a list/resource renderer variant with typed item definitions, not a one-off component with ad hoc JSX. Each meta entry is a typed field/item definition, and the renderer owns layout, labels, empty values, icons, responsive behavior, and appearance variants.
 
 For larger surfaces, prefer a global typed renderer pattern that can compose multiple node/resource types:
 
@@ -505,23 +408,17 @@ For larger surfaces, prefer a global typed renderer pattern that can compose mul
 - buttons/actions
 - custom slots/renderers when genuinely needed
 
-The AideForm pattern is the reference model: typed config describes what should exist, shared renderer infrastructure owns how it renders, and style/appearance overrides flow through controlled definition fields instead of ad hoc nested JSX. New renderers should be capable of becoming resource types inside this global renderer model rather than isolated components.
+The reference model is typed renderer config: typed config describes what should exist, shared renderer infrastructure owns how it renders, and style/appearance overrides flow through controlled definition fields instead of ad hoc nested JSX. New renderers should be capable of becoming resource types inside this global renderer model rather than isolated components.
 
 Preferred organization for this pattern:
 
 ```text
-components/forms/
-  aideform.tsx
-  inputs/
-    aideform.input.text.tsx
-    aideform.input.button.tsx
-    aideform.input.group.tsx
-    aideform.input.search.bar.tsx
-  resources/
-    aideform.resource.login.form.tsx
-    aideform.resource.application.create.tsx
-    helpers/
-      aideform.resource.user.helpers.tsx
+components/<base-renderer>/
+  <BaseRenderer>.tsx
+  resourceTypes/
+    <DomainRenderer>.tsx
+  helpers/
+    <base-renderer>.utils.ts
 ```
 
 Translated to this repo, renderer primitives should live under their base renderer family, while feature/resource definitions live under feature/resource folders as thin config and business logic.

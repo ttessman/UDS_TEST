@@ -1,6 +1,6 @@
 import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
-import type { FilterField } from "../../components/filter/filter.types.js";
-import { resourceTypeFieldDefinition, resourceTypeOptions } from "../../components/chip/resourceTypes/ResourceTypeChip.js";
+import type { FilterField } from "@uds-poc/shared-ui/components/filter/filter.types";
+import { resourceTypeFieldDefinition, resourceTypeOptions } from "@uds-poc/shared-ui/components/chip/resourceTypes/ResourceTypeChip";
 import {
   getInstalledPackageState,
   getInstalledPackageResourceType,

@@ -1,5 +1,4 @@
 import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
-import { Avatar, Chip, Stack, Typography } from "@mui/material";
 import { formatBytes, relativeAge, yesNo } from "@uds-poc/shared-ui/lib/format";
 import { IconActionButton } from "@uds-poc/shared-ui/components/button/resourceTypes/IconActionButton";
 import { ResourceCardVariant, type ResourceCardDefinition } from "@uds-poc/shared-ui/components/card/resourceTypes/ResourceCard";
@@ -7,7 +6,10 @@ import { ResourceTypeChip } from "@uds-poc/shared-ui/components/chip/resourceTyp
 import type { DefinitionField } from "@uds-poc/shared-ui/components/list/resourceTypes/DefinitionList";
 import { MetaList, type MetaListDefinition } from "@uds-poc/shared-ui/components/list/resourceTypes/MetaList";
 import { StatusIndicatorButton } from "@uds-poc/shared-ui/components/button/resourceTypes/StatusIndicatorButton";
-import type { StatusIndicatorTone } from "@uds-poc/shared-ui/components/status/status.types";
+import { KnownConfigChips } from "../KnownConfigChips.js";
+import { PackageIcon } from "../PackageIcon.js";
+import { PackageStatus } from "../PackageStatus.js";
+import { ValueChips } from "../ValueChips.js";
 import {
   canInstallPackage,
   getInstalledPackageResourceType,
@@ -15,31 +17,24 @@ import {
   getInstalledPackageStateLabel,
   getRegistryPackageResourceType,
   getRegistryPackageStateLabel,
-} from "./packageActions.js";
-import { packageActionDefinitions } from "./packageDefinitions.js";
-
-export type RegistryPackageResourceContext = {
-  disabled: boolean;
-  installed: boolean;
-  installedPackage: InstalledPackage | null;
-  onInstall: (id: string) => void;
-  onOpen: (url: string) => void;
-};
-
-export type InstalledPackageResourceContext = {
-  canManageApps?: boolean;
-  isFavorite?: boolean;
-  onUninstall?: (pkg: InstalledPackage) => void;
-  onToggleFavorite?: (pkg: InstalledPackage) => void;
-  onOpen: (url: string) => void;
-  registryPackage: RegistryPackage | null;
-};
+} from "../../utils/packageActions.js";
+import { endpointLaunchActions, getLiveLaunchUrl } from "../../utils/packageEndpoints.js";
+import {
+  getInstalledPackageTag,
+  getInstalledPackageVersion,
+  packageKindLabel
+} from "../../utils/packageMetadata.js";
+import { packageActionDefinitions } from "../../types/packageDefinitions.js";
+import type {
+  InstalledPackageResourceContext,
+  RegistryPackageResourceContext
+} from "../../types/package.types.js";
 
 const registryPackageFields = [
-  { key: "latestTag", label: "Latest tag", value: (pkg) => valueChips([pkg.latestTag ?? pkg.version ?? pkg.tag]) },
+  { key: "latestTag", label: "Latest tag", value: (pkg) => <ValueChips values={[pkg.latestTag ?? pkg.version ?? pkg.tag]} /> },
   { key: "ociReference", label: "OCI reference", value: (pkg) => pkg.ociReference },
-  { key: "architectures", label: "Architectures", value: (pkg) => valueChips([...pkg.architectures, pkg.architecture]) },
-  { key: "flavors", label: "Flavors", value: (pkg) => valueChips([...pkg.flavors, pkg.flavor]) },
+  { key: "architectures", label: "Architectures", value: (pkg) => <ValueChips values={[...pkg.architectures, pkg.architecture]} /> },
+  { key: "flavors", label: "Flavors", value: (pkg) => <ValueChips values={[...pkg.flavors, pkg.flavor]} /> },
   { key: "sizeBytes", label: "Size", value: (pkg) => formatBytes(pkg.sizeBytes) },
   { key: "authRequired", label: "Auth required", value: (pkg) => (pkg.authRequired == null ? null : yesNo(pkg.authRequired)) },
   {
@@ -50,14 +45,14 @@ const registryPackageFields = [
 ] satisfies Array<DefinitionField<RegistryPackage>>;
 
 const installedPackageFields = [
-  { key: "namespace", label: "Namespace", value: (pkg) => valueChips([pkg.namespace]) },
-  { key: "version", label: "Version", value: (pkg) => valueChips([pkg.version]) },
+  { key: "namespace", label: "Namespace", value: (pkg) => <ValueChips values={[pkg.namespace]} /> },
+  { key: "version", label: "Version", value: (pkg) => <ValueChips values={[pkg.version]} /> },
   { key: "lastUpdated", label: "Updated", value: (pkg) => relativeAge(pkg.lastUpdated) },
-  { key: "architecture", label: "Architecture", value: (pkg) => valueChips([pkg.architecture]) },
+  { key: "architecture", label: "Architecture", value: (pkg) => <ValueChips values={[pkg.architecture]} /> },
   { key: "generation", label: "Generation", value: (pkg) => pkg.generation },
   { key: "phase", label: "Phase", value: (pkg) => pkg.phase },
   { key: "status", label: "Status", value: (pkg) => pkg.status },
-  { key: "endpoints", label: "Endpoints", value: (pkg) => valueChips(pkg.endpoints) }
+  { key: "endpoints", label: "Endpoints", value: (pkg) => <ValueChips values={pkg.endpoints} /> }
 ] satisfies Array<DefinitionField<InstalledPackage>>;
 
 const registryPackageMeta = {
@@ -263,134 +258,3 @@ export const installedPackageResource = {
   aspectRatio: "4 / 3",
   minHeight: 245
 } satisfies ResourceCardDefinition<InstalledPackage, InstalledPackageResourceContext>;
-
-function getInstalledPackageVersion(item: InstalledPackage, registryPackage: RegistryPackage | null) {
-  return item.version ?? registryPackage?.version ?? null;
-}
-
-function getInstalledPackageTag(item: InstalledPackage, registryPackage: RegistryPackage | null) {
-  const version = getInstalledPackageVersion(item, registryPackage);
-  const tag = registryPackage?.latestTag ?? registryPackage?.tag ?? null;
-
-  return tag && tag !== version ? tag : null;
-}
-
-function PackageIcon({ icon, title }: { icon: string | null; title: string }) {
-  if (icon) {
-    return (
-      <Avatar
-        alt=""
-        src={icon}
-        variant="rounded"
-        sx={{ bgcolor: "transparent", flex: "0 0 auto", height: 48, width: 48 }}
-      />
-    );
-  }
-
-  return (
-    <Avatar variant="rounded" sx={{ bgcolor: "var(--app-brand-bg)", flex: "0 0 auto", fontSize: 23, fontWeight: 800, height: 48, width: 48 }}>
-      {title.slice(0, 1).toUpperCase()}
-    </Avatar>
-  );
-}
-
-function valueChips(values: Array<string | number | null | undefined>) {
-  const uniqueValues = [...new Set(values.filter((value): value is string => Boolean(value)))];
-
-  if (uniqueValues.length === 0) {
-    return null;
-  }
-
-  return (
-    <Stack direction="row" sx={{ alignItems: "center", flexWrap: "wrap", gap: 0.5 }}>
-      {uniqueValues.map((value) => (
-        <Chip key={value} label={String(value)} size="small" variant="outlined" />
-      ))}
-    </Stack>
-  );
-}
-
-function KnownConfigChips({ pkg }: { pkg: RegistryPackage }) {
-  return (
-    <Stack direction="row" sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}>
-      <Typography component="strong" sx={{ color: "var(--app-text-primary)", fontWeight: 700 }}>
-        Known config
-      </Typography>
-      {pkg.variables.map((variable) => (
-        <Chip key={variable.name} label={variable.name} size="small" variant="outlined" />
-      ))}
-    </Stack>
-  );
-}
-
-function PackageStatus({ status, view }: { status: string | null; view: "chip" | "dot" }) {
-  const ready = status === "Ready";
-  const state: StatusIndicatorTone = ready ? "success" : status ? "warning" : "neutral";
-
-  return (
-    <StatusIndicatorButton
-      label={status ?? "Reported"}
-      showIcon={view !== "chip"}
-      state={state}
-      tooltip={status ?? "Reported"}
-      view={view}
-    />
-  );
-}
-
-function getLiveLaunchUrl(item: InstalledPackage) {
-  return item.launchUrl && (item.phase === "Ready" || item.status === "Ready") ? item.launchUrl : null;
-}
-
-function endpointLaunchActions(item: InstalledPackage, onOpen: (url: string) => void) {
-  if (!(item.phase === "Ready" || item.status === "Ready")) {
-    return [];
-  }
-
-  const endpoints = getLaunchEndpoints(item);
-
-  return endpoints.map((endpoint) => {
-    const url = endpointUrl(endpoint);
-    return {
-      icon: "open" as const,
-      label: `Open ${endpointLabel(endpoint)}`,
-      onSelect: () => onOpen(url)
-    };
-  });
-}
-
-function getLaunchEndpoints(item: InstalledPackage) {
-  const launchEndpoints = "launchEndpoints" in item && Array.isArray(item.launchEndpoints) ? item.launchEndpoints : [];
-
-  return launchEndpoints.length > 0 ? launchEndpoints : item.launchUrl ? [item.launchUrl] : [];
-}
-
-function endpointUrl(endpoint: string) {
-  return /^https?:\/\//.test(endpoint) ? endpoint : `https://${endpoint}`;
-}
-
-function endpointLabel(endpoint: string) {
-  const host = endpoint.replace(/^https?:\/\//, "").replace(/\/$/, "");
-
-  if (host.startsWith("app.")) {
-    return "Frontend";
-  }
-
-  if (host.startsWith("api.")) {
-    return "API";
-  }
-
-  if (host.startsWith("docs.")) {
-    return "Docs";
-  }
-
-  return host;
-}
-
-function packageKindLabel(kind: string | null): string {
-  if (kind === "zarf") {
-    return "PACKAGE";
-  }
-
-  return (kind ?? "package").toUpperCase();
-}

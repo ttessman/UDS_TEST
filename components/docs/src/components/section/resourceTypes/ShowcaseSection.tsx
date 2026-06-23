@@ -98,7 +98,7 @@ export function ShowcaseSection({ resources }: ShowcaseSectionProps) {
             right: 18
           }}
         >
-          Static product mockup
+          Static Product Mockup
         </Chip>
       </sectionTemplate.content>
     </Section>

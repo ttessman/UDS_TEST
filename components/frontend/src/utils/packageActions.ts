@@ -7,7 +7,7 @@ import {
   registryPackagePublishedState,
   type InstalledPackageStateId,
   type RegistryPackageStateId
-} from "./packageDefinitions.js";
+} from "../types/packageDefinitions.js";
 
 export function canInstallPackage(pkg: RegistryPackage, installedPackage: InstalledPackage | null): boolean {
   return pkg.installable && Boolean(pkg.installAction) && !installedPackage;

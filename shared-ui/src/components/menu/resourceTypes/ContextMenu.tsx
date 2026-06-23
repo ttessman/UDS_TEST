@@ -49,7 +49,7 @@ export function useContextMenu(content: ContextMenuContent) {
   };
 }
 
-function ContextMenu({
+export function ContextMenu({
   anchorEl,
   content,
   onClose
@@ -174,7 +174,7 @@ function ContextMenu({
   );
 }
 
-function ContextMenuActionItem({
+export function ContextMenuActionItem({
   action,
   hasState,
   onClose

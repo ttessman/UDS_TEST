@@ -1,12 +1,14 @@
 import type { UdsStatus } from "@uds-poc/shared";
-import { Box, Stack, Typography } from "@mui/material";
 import type {
   StatusIndicatorListDefinition,
   StatusIndicatorTone
 } from "@uds-poc/shared-ui/components/list/resourceTypes/StatusIndicatorList";
+import { StatusIndicatorList } from "@uds-poc/shared-ui/components/list/resourceTypes/StatusIndicatorList";
 import { yesNo } from "@uds-poc/shared-ui/lib/format";
+import { StatusDetail } from "./StatusDetail.js";
+import { StatusTextList } from "./StatusTextList.js";
 
-export const udsStatusIndicators = {
+const udsStatusIndicators = {
   modalTitle: "UDS Environment Status",
   items: [
     {
@@ -119,6 +121,10 @@ export const udsStatusIndicators = {
   ]
 } satisfies StatusIndicatorListDefinition<UdsStatus | null>;
 
+export function UdsStatusIndicatorList({ status }: { status: UdsStatus | null }) {
+  return <StatusIndicatorList item={status} definition={udsStatusIndicators} context={undefined} />;
+}
+
 function booleanState(value: boolean | null | undefined): StatusIndicatorTone {
   return value ? "success" : "error";
 }
@@ -149,41 +155,4 @@ function registrySourceLabel(source: UdsStatus["registry"]["source"] | null | un
   }
 
   return "package refs";
-}
-
-function StatusDetail({ lines }: { lines: Array<[string, string]> }) {
-  return (
-    <Box component="dl" sx={{ display: "grid", gap: 0.75, m: 0 }}>
-      {lines.map(([label, value]) => (
-        <Box key={label} sx={{ display: "grid", gap: 0.75, gridTemplateColumns: "120px minmax(0, 1fr)" }}>
-          <Typography color="text.secondary" component="dt" sx={{ fontSize: 13 }}>
-            {label}
-          </Typography>
-          <Typography component="dd" sx={{ fontSize: 13, m: 0, overflowWrap: "anywhere" }}>
-            {value}
-          </Typography>
-        </Box>
-      ))}
-    </Box>
-  );
-}
-
-function StatusTextList({ empty, items }: { empty: string; items: string[] }) {
-  if (items.length === 0) {
-    return (
-      <Typography color="text.secondary" sx={{ fontSize: 13 }}>
-        {empty}
-      </Typography>
-    );
-  }
-
-  return (
-    <Stack component="ul" sx={{ gap: 0.5, m: 0, pl: 2 }}>
-      {items.map((item) => (
-        <Typography component="li" key={item} sx={{ fontSize: 13, overflowWrap: "anywhere" }}>
-          {item}
-        </Typography>
-      ))}
-    </Stack>
-  );
 }

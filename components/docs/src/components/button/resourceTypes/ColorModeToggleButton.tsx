@@ -1,16 +1,16 @@
 import { IconActionButton } from "@uds-poc/shared-ui/components/button/resourceTypes/IconActionButton";
-import { useColorMode } from "@uds-poc/shared-ui/store/colorMode.store";
+import { useColorMode } from "@docusaurus/theme-common";
 
 export function ColorModeToggleButton() {
-  const { mode, toggleMode } = useColorMode();
-  const nextMode = mode === "dark" ? "light" : "dark";
+  const { colorMode, setColorMode } = useColorMode();
+  const nextMode = colorMode === "dark" ? "light" : "dark";
 
   return (
     <IconActionButton
       bordered
-      icon={mode === "dark" ? "lightMode" : "darkMode"}
+      icon={colorMode === "dark" ? "lightMode" : "darkMode"}
       label={`Switch to ${nextMode} mode`}
-      onClick={toggleMode}
+      onClick={() => setColorMode(nextMode)}
       sx={{
         background: "var(--docs-control-bg)",
         borderColor: "var(--docs-control-border)",

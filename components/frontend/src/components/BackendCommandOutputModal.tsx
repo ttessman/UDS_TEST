@@ -1,50 +1,24 @@
-import type { ReactNode } from "react";
-import type { CommandState, InstalledPackage, RegistryPackage, UdsStatus } from "@uds-poc/shared";
+import type { CommandState, InstalledPackage, UdsStatus } from "@uds-poc/shared";
 import { Stack } from "@mui/material";
-import { StatusIndicatorList } from "@uds-poc/shared-ui/components/list/resourceTypes/StatusIndicatorList";
 import type { ListState } from "@uds-poc/shared-ui/components/list/list.types";
 import { CommandLogSection } from "@uds-poc/shared-ui/components/section/resourceTypes/CommandLogSection";
 import { ResourceSection, type ResourceSectionContentConfig } from "@uds-poc/shared-ui/components/section/resourceTypes/ResourceSection";
 import { ResourceCardVariant } from "@uds-poc/shared-ui/components/card/resourceTypes/ResourceCard";
 import { Modal } from "@uds-poc/shared-ui/components/modal/Modal";
-import { CatalogStoreSection } from "../packages/CatalogStoreSection.js";
-import {
-  installedPackageResource,
-  type InstalledPackageResourceContext
-} from "../packages/packageResourceDefinitions.js";
-import { udsStatusIndicators } from "../status/statusDefinitions.js";
-
-export type BackendCommandOutputModalDefinition = {
-  modalId: string;
-  title: string;
-};
+import { CatalogStoreSection } from "./CatalogStoreSection.js";
+import { UdsStatusIndicatorList } from "./UdsStatusIndicatorList.js";
+import { installedPackageResource } from "./resourceTypes/packageResourceDefinitions.js";
+import type {
+  BackendCommandOutputCatalogStore,
+  BackendCommandOutputFavoriteApps,
+  BackendCommandOutputModalDefinition
+} from "../types/backendCommandOutput.types.js";
+import type { InstalledPackageResourceContext } from "../types/package.types.js";
 
 export const backendCommandOutputModalDefinition = {
   modalId: "backend-command-output",
   title: "Backend Command Output"
 } satisfies BackendCommandOutputModalDefinition;
-
-export type BackendCommandOutputCatalogStore = {
-  busy: boolean;
-  canManageApps?: boolean;
-  canManageRegistry?: boolean;
-  filters?: ReactNode;
-  filteredPackages: RegistryPackage[];
-  installedPackagesByName: Map<string, InstalledPackage>;
-  onInstall: (id: string) => void;
-  onOpen: (url: string) => void;
-  onRefresh: () => void;
-  onSearchChange: (value: string) => void;
-  onUninstall: (pkg: InstalledPackage) => void;
-  onUnpublish: (id: string) => void;
-  packages: RegistryPackage[];
-  searchValue: string;
-};
-
-export type BackendCommandOutputFavoriteApps = {
-  getItemContext: (pkg: InstalledPackage) => InstalledPackageResourceContext;
-  items: InstalledPackage[];
-};
 
 const favoriteAppsContent = {
   title: "Favorite Apps",
@@ -88,7 +62,7 @@ export function BackendCommandOutputModal({
       modalId={definition.modalId}
     >
       <Stack sx={{ gap: 2 }}>
-        <StatusIndicatorList item={status} definition={udsStatusIndicators} context={undefined} />
+        <UdsStatusIndicatorList status={status} />
         {favoriteApps && favoriteApps.items.length > 0 ? (
           <ResourceSection<InstalledPackage, InstalledPackageResourceContext>
             data={favoriteApps.items}

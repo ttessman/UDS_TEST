@@ -1,27 +1,9 @@
-import type { ReactNode } from "react";
-import type { InstalledPackage, RegistryPackage } from "@uds-poc/shared";
 import { Stack, Typography } from "@mui/material";
 import { RefreshCountButton } from "@uds-poc/shared-ui/components/button/resourceTypes/RefreshCountButton";
 import { SearchField } from "@uds-poc/shared-ui/components/form/resourceTypes/SearchField";
 import { Section, sectionTemplate } from "@uds-poc/shared-ui/components/section/Section";
 import { RegistryPackageTable } from "./RegistryPackageTable.js";
-
-export type CatalogStoreSectionProps = {
-  busy: boolean;
-  canManageApps?: boolean;
-  canManageRegistry?: boolean;
-  filters?: ReactNode;
-  filteredPackages: RegistryPackage[];
-  installedPackagesByName: Map<string, InstalledPackage>;
-  onInstall: (id: string) => void;
-  onOpen: (url: string) => void;
-  onRefresh: () => void;
-  onSearchChange: (value: string) => void;
-  onUninstall: (pkg: InstalledPackage) => void;
-  onUnpublish: (id: string) => void;
-  packages: RegistryPackage[];
-  searchValue: string;
-};
+import type { CatalogStoreSectionProps } from "../types/package.types.js";
 
 export function CatalogStoreSection({
   busy,

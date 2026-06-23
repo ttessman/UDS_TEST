@@ -4,8 +4,11 @@ import {
   requestPackagePublish,
   requestPackageUninstall,
   requestPackageUnpublish
-} from "../../api/uds.js";
-import { packageActionDefinitions, type PackageActionId } from "./packageDefinitions.js";
+} from "../api/uds.js";
+import {
+  packageActionDefinitions,
+  type PackageActionId
+} from "../types/packageDefinitions.js";
 
 type PackageActionController = {
   refresh: () => Promise<void>;

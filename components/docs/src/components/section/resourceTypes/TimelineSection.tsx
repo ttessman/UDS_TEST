@@ -40,6 +40,7 @@ const bandedSectionSx = {
 };
 
 const listSx = {
+  "--timeline-connector-offset": "18px",
   "--timeline-gap": "20px",
   alignItems: "stretch",
   display: "grid",
@@ -97,11 +98,11 @@ const connectorSx = {
   lineHeight: 1,
   position: "absolute",
   pointerEvents: "none",
-  right: "calc(var(--timeline-gap) * -1)",
+  right: "calc(var(--timeline-connector-offset) * -1)",
   textAlign: "center",
   top: "50%",
   transform: "translateY(-50%)",
-  width: "var(--timeline-gap)",
+  width: "var(--timeline-connector-offset)",
   zIndex: 2
 };
 

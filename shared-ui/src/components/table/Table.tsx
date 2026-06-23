@@ -313,7 +313,8 @@ export function GenericTable<T extends object>({
   );
 }
 
-function getVisibleColumnsForRow<T>(
+//put the below in help file and import
+export function getVisibleColumnsForRow<T>(
   item: T,
   rowIndex: number,
   columns: Column<T>[],
@@ -327,7 +328,7 @@ function getVisibleColumnsForRow<T>(
   });
 }
 
-function getNestedColumnForRow<T>(
+export function getNestedColumnForRow<T>(
   item: T,
   rowIndex: number,
   columns: Column<T>[],
@@ -338,7 +339,7 @@ function getNestedColumnForRow<T>(
   );
 }
 
-function resolveColumnSx<T>(column: Column<T>, item: T, indexes: TableIndexes): SxProps<Theme> {
+export function resolveColumnSx<T>(column: Column<T>, item: T, indexes: TableIndexes): SxProps<Theme> {
   if (typeof column.sx === "function") {
     return (column.sx as (item: T, indexes: TableIndexes) => SxProps<Theme>)(item, indexes) ?? {};
   }
@@ -346,7 +347,7 @@ function resolveColumnSx<T>(column: Column<T>, item: T, indexes: TableIndexes): 
   return column.sx ?? {};
 }
 
-function resolveColumnRenderResult(result: ColumnRenderResult) {
+export function resolveColumnRenderResult(result: ColumnRenderResult) {
   if (typeof result === "object" && result !== null) {
     return result.node;
   }
@@ -354,7 +355,7 @@ function resolveColumnRenderResult(result: ColumnRenderResult) {
   return String(result);
 }
 
-function applyFilterField<T>(field: FilterField<T>, item: T, values: Record<string, unknown>): boolean {
+export function applyFilterField<T>(field: FilterField<T>, item: T, values: Record<string, unknown>): boolean {
   if (field.children?.length) {
     return field.children.every((child) => applyFilterField(child, item, values));
   }
@@ -362,6 +363,6 @@ function applyFilterField<T>(field: FilterField<T>, item: T, values: Record<stri
   return field.apply(item, values[field.name]);
 }
 
-function safeTestIdPart(value: string) {
+export function safeTestIdPart(value: string) {
   return value.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9._:-]/g, "_");
 }

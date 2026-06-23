@@ -1,8 +1,6 @@
-import { useSyncExternalStore } from "react";
-
 const storageKey = "uds-poc-user-preferences";
 
-type UserPreferences = {
+export type UserPreferences = {
   favoriteInstalledPackageIds: string[];
 };
 
@@ -17,38 +15,17 @@ export function getInstalledPackagePreferenceId(namespace: string, name: string)
   return `${namespace}/${name}`.toLowerCase();
 }
 
-export function useUserPreferences() {
-  const preferences = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-  const favoriteIds = new Set(preferences.favoriteInstalledPackageIds);
-
-  return {
-    favoriteInstalledPackageIds: preferences.favoriteInstalledPackageIds,
-    isFavoriteInstalledPackage: (id: string) => favoriteIds.has(id),
-    toggleFavoriteInstalledPackage: (id: string) => {
-      const existing = new Set(currentPreferences.favoriteInstalledPackageIds);
-
-      if (existing.has(id)) {
-        existing.delete(id);
-      } else {
-        existing.add(id);
-      }
-
-      updatePreferences({ favoriteInstalledPackageIds: [...existing] });
-    }
-  };
-}
-
-function subscribe(listener: () => void) {
+export function subscribeUserPreferences(listener: () => void) {
   listeners.add(listener);
 
   return () => listeners.delete(listener);
 }
 
-function getSnapshot() {
+export function getUserPreferencesSnapshot() {
   return currentPreferences;
 }
 
-function updatePreferences(nextPreferences: UserPreferences) {
+export function updateUserPreferences(nextPreferences: UserPreferences) {
   currentPreferences = nextPreferences;
   window.localStorage.setItem(storageKey, JSON.stringify(nextPreferences));
   listeners.forEach((listener) => listener());

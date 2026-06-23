@@ -72,7 +72,7 @@ export const installedPackageStateOptions = stateOptions({
   unknown: packageStateLabels.unknown
 });
 
-function stateOptions<T extends Record<string, string>>(labels: T) {
+export function stateOptions<T extends Record<string, string>>(labels: T) {
   return Object.entries(labels)
     .sort(([a], [b]) => Number(a === "unknown") - Number(b === "unknown"))
     .map(([value, label]) => ({ label, value }));

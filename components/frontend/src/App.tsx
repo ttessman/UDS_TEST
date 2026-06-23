@@ -7,23 +7,24 @@ import {
   getUdsStatus
 } from "./api/uds.js";
 import { useFilters } from "@uds-poc/shared-ui/components/filter/useFilters";
-import { StatusIndicatorList } from "@uds-poc/shared-ui/components/list/resourceTypes/StatusIndicatorList";
-import { BackendCommandOutputModal, backendCommandOutputModalDefinition } from "./features/logs/BackendCommandOutputModal.js";
+import { BackendCommandOutputModal, backendCommandOutputModalDefinition } from "./components/BackendCommandOutputModal.js";
 import type { ResourceSectionContentConfig } from "@uds-poc/shared-ui/components/section/resourceTypes/ResourceSection";
 import { ResourceSection } from "@uds-poc/shared-ui/components/section/resourceTypes/ResourceSection";
 import { SiteShell, siteContentSx, siteTemplate } from "@uds-poc/shared-ui/components/site/SiteShell";
 import { SiteFooter } from "@uds-poc/shared-ui/components/site/SiteFooter";
 import { SiteHeader } from "@uds-poc/shared-ui/components/site/SiteHeader";
-import {
-  installedPackageResource,
-  type InstalledPackageResourceContext
-} from "./features/packages/packageResourceDefinitions.js";
+import { UdsStatusIndicatorList } from "./components/UdsStatusIndicatorList.js";
+import { installedPackageResource } from "./components/resourceTypes/packageResourceDefinitions.js";
+import type { InstalledPackageResourceContext } from "./types/package.types.js";
 import { ResourceCardVariant } from "@uds-poc/shared-ui/components/card/resourceTypes/ResourceCard";
-import { getInstalledPackageResourceType } from "./features/packages/packageActions.js";
-import { getInstalledPackageFilterFields, getRegistryPackageFilterFields } from "./features/packages/packageFilters.js";
-import { usePackageActions } from "./features/packages/usePackageActions.js";
-import { udsStatusIndicators } from "./features/status/statusDefinitions.js";
-import { getInstalledPackagePreferenceId, useUserPreferences } from "./store/userPreferences.store.js";
+import {
+  mergeRegistryAndInstalledCorePackages,
+  sortFavoriteInstalledPackages
+} from "./utils/packageCatalog.js";
+import { getInstalledPackageFilterFields, getRegistryPackageFilterFields } from "./utils/packageFilters.js";
+import { usePackageActions } from "./hooks/usePackageActions.js";
+import { useUserPreferences } from "./hooks/useUserPreferences.js";
+import { getInstalledPackagePreferenceId } from "./store/userPreferences.store.js";
 
 const canManageApps = true;
 const canManageRegistry = true;
@@ -224,7 +225,7 @@ export function App() {
       <siteTemplate.content>
         <Container maxWidth={false} sx={{ ...siteContentSx, py: 3 }}>
           <Stack sx={{ gap: 3.25 }}>  
-            <StatusIndicatorList item={status} definition={udsStatusIndicators} context={undefined} />
+            <UdsStatusIndicatorList status={status} />
             {error ? <Alert severity="error">{error}</Alert> : null}
             <ResourceSection<InstalledPackage, InstalledPackageResourceContext>
               data={installedPackageFilters.filteredItems}
@@ -293,86 +294,4 @@ export function App() {
       </siteTemplate.footer>
     </SiteShell>
   );
-}
-
-function mergeRegistryAndInstalledCorePackages(
-  registryPackages: RegistryPackage[],
-  installedPackages: InstalledPackage[]
-) {
-  const byPackageName = new Map(registryPackages.map((pkg) => [pkg.packageName.toLowerCase(), pkg]));
-  const rows = [...registryPackages];
-
-  installedPackages.forEach((pkg) => {
-    if (getInstalledPackageResourceType(pkg) !== "core") {
-      return;
-    }
-
-    const key = pkg.name.toLowerCase();
-    if (byPackageName.has(key)) {
-      return;
-    }
-
-    rows.push(installedCorePackageToRegistryPackage(pkg));
-  });
-
-  return rows;
-}
-
-function installedCorePackageToRegistryPackage(pkg: InstalledPackage): RegistryPackage {
-  return {
-    id: `installed:${pkg.namespace}/${pkg.name}`,
-    displayTitle: pkg.name,
-    packageName: pkg.name,
-    kind: "kubernetes-package",
-    repoName: null,
-    orgName: null,
-    icon: null,
-    tagline: `${pkg.name} is installed in the cluster as Core/platform infrastructure.`,
-    version: pkg.version,
-    tag: null,
-    latestTag: null,
-    ociReference: "",
-    registry: null,
-    architecture: pkg.architecture,
-    architectures: [],
-    flavor: null,
-    flavors: [],
-    categories: ["core"],
-    tagCount: null,
-    sizeBytes: null,
-    lastUpdated: pkg.lastUpdated,
-    lastBuild: null,
-    description: `Reported by Package CR ${pkg.namespace}/${pkg.name}. This POC treats it as always-on infrastructure, not an install candidate.`,
-    authRequired: null,
-    udsCoreRequired: true,
-    variables: [],
-    installable: false,
-    installAction: null,
-    rawMetadata: pkg.sourcePackageData,
-    sources: ["kubernetes-package-crd", "backend-derived"],
-    errors: []
-  };
-}
-
-function sortFavoriteInstalledPackages(items: InstalledPackage[], favoriteIds: string[]) {
-  const favoriteOrder = new Map(favoriteIds.map((id, index) => [id, index]));
-
-  return [...items].sort((a, b) => {
-    const aOrder = favoriteOrder.get(getInstalledPackagePreferenceId(a.namespace, a.name));
-    const bOrder = favoriteOrder.get(getInstalledPackagePreferenceId(b.namespace, b.name));
-
-    if (aOrder == null && bOrder == null) {
-      return 0;
-    }
-
-    if (aOrder == null) {
-      return 1;
-    }
-
-    if (bOrder == null) {
-      return -1;
-    }
-
-    return aOrder - bOrder;
-  });
 }

@@ -7,7 +7,7 @@ import {
   getRegistryPackageState,
   getRegistryPackageResourceType,
 } from "./packageActions.js";
-import { installedPackageStateOptions, packageStateFieldDefinition, registryPackageStateOptions } from "./packageDefinitions.js";
+import { installedPackageStateOptions, packageStateFieldDefinition, registryPackageStateOptions } from "../types/packageDefinitions.js";
 
 export function getRegistryPackageFilterFields({
   getInstalledPackage

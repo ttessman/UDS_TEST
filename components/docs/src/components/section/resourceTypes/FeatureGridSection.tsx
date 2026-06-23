@@ -19,16 +19,19 @@ const headerSx = {
 
 const sectionSx = {
   background: "var(--docs-band-bg)",
-  maxWidth: 1160,
-  mt: "26px",
+  mb: { xs: "42px", lg: "60px" },
+  mt: { xs: "32px", lg: "44px" },
   mx: "auto",
-  p: { xs: "30px 18px", sm: "30px 42px" }
+  p: { xs: "34px 18px", sm: "38px 42px" },
+  width: "100%"
 };
 
 const listSx = {
   display: "grid",
   gap: "20px",
-  gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(4, minmax(0, 1fr))" }
+  gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(4, minmax(0, 1fr))" },
+  maxWidth: 1160,
+  mx: "auto"
 };
 
 const itemSx = {

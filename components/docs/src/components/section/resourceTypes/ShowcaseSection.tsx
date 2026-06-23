@@ -1,4 +1,3 @@
-import Link from "@docusaurus/Link";
 import { Box } from "@mui/material";
 import type { InstalledPackage } from "@uds-poc/shared";
 import {
@@ -7,6 +6,7 @@ import {
   ResourceCardVariant,
   type ResourceCardDefinition
 } from "@uds-poc/shared-ui/components/card/resourceTypes/ResourceCard";
+import type { DefinitionField } from "@uds-poc/shared-ui/components/list/resourceTypes/DefinitionList";
 import { MetaList, type MetaListDefinition } from "@uds-poc/shared-ui/components/list/resourceTypes/MetaList";
 import { ModalProvider } from "@uds-poc/shared-ui/store/modal.store";
 import { CtaButton } from "../../button/CtaButton";
@@ -18,17 +18,19 @@ type ShowcaseSectionProps = {
   resources: InstalledPackage[];
 };
 
-type ShowcaseContext = Record<string, never>;
+type ShowcaseContext = {
+  onOpen: (url: string) => void;
+};
 
 export function ShowcaseSection({ resources }: ShowcaseSectionProps) {
   return (
     <Section
       context={{
         sx: {
-          background: "rgba(255, 255, 255, 0.06)",
-          border: "1px solid rgba(255, 255, 255, 0.14)",
+          background: "var(--docs-showcase-bg)",
+          border: "1px solid var(--docs-showcase-border)",
           borderRadius: "8px",
-          boxShadow: "0 28px 80px rgba(8, 13, 32, 0.34)",
+          boxShadow: "var(--docs-showcase-shadow)",
           p: { xs: 2.25, md: 3 },
           pb: { xs: 5.5, md: 5.25 },
           position: "relative",
@@ -38,16 +40,16 @@ export function ShowcaseSection({ resources }: ShowcaseSectionProps) {
     >
       <sectionTemplate.content>
         <Box sx={{ alignItems: "center", display: "flex", justifyContent: "space-between", mb: 2.25 }}>
-          <Box component="strong" sx={{ color: "#ffffff", fontSize: 18 }}>
+          <Box component="strong" sx={{ color: "var(--docs-showcase-title)", fontSize: 18 }}>
             Installed Resources
           </Box>
           <Box
             aria-hidden="true"
             component="span"
             sx={{
-              background: "#8b5cf6",
+              background: "var(--docs-showcase-orb)",
               borderRadius: "50%",
-              boxShadow: "0 0 28px rgba(139, 92, 246, 0.75)",
+              boxShadow: "var(--docs-showcase-orb-shadow)",
               height: 8,
               width: 8
             }}
@@ -65,7 +67,7 @@ export function ShowcaseSection({ resources }: ShowcaseSectionProps) {
           <ModalProvider>
             {resources.map((resource) => (
               <ResourceCard
-                context={{}}
+                context={{ onOpen: openExternalUrl }}
                 definition={showcaseResourceDefinition}
                 item={resource}
                 key={resource.id}
@@ -75,7 +77,7 @@ export function ShowcaseSection({ resources }: ShowcaseSectionProps) {
           </ModalProvider>
         </Box>
         <CtaButton
-          component={Link}
+          href="/#/learn/product-model"
           sx={{
             display: "flex",
             fontWeight: 800,
@@ -90,10 +92,10 @@ export function ShowcaseSection({ resources }: ShowcaseSectionProps) {
         </CtaButton>
         <Chip
           sx={{
-            background: "rgba(219, 234, 254, 0.08)",
+            background: "var(--docs-showcase-chip-bg)",
             bottom: 14,
-            border: "1px solid rgba(219, 234, 254, 0.14)",
-            color: "rgba(219, 234, 254, 0.68)",
+            border: "1px solid var(--docs-showcase-chip-border)",
+            color: "var(--docs-showcase-chip-text)",
             position: "absolute",
             right: 18
           }}
@@ -124,19 +126,43 @@ const showcaseMetaDefinition = {
   omitEmptyValues: true
 } satisfies MetaListDefinition<InstalledPackage, ShowcaseContext>;
 
+const showcaseFields = [
+  { key: "namespace", label: "Namespace", value: (pkg) => pkg.namespace },
+  { key: "version", label: "Version", value: (pkg) => pkg.version },
+  { key: "launchUrl", label: "Launch endpoint", value: (pkg) => hostFromUrl(pkg.launchUrl) },
+  { key: "phase", label: "Phase", value: (pkg) => pkg.phase ?? pkg.status }
+] satisfies Array<DefinitionField<InstalledPackage>>;
+
 const showcaseResourceDefinition = {
+  fields: showcaseFields,
   label: () => "Installed package",
   mediaBackground: ResourceCardMediaBackground.Auto,
-  menu: { enabled: false },
-  meta: ({ context, item, presentation }) =>
-    presentation === "overlayIconOnly" ? (
-      <MetaList
-        context={context}
-        definition={showcaseMetaDefinition}
-        item={item}
-        presentation={presentation}
-      />
-    ) : null,
+  menuActions: ({ context, item }) => {
+    const launchUrl = item.launchUrl;
+
+    return launchUrl
+      ? [
+          {
+            icon: "open",
+            label: `Open ${titleForPackage(item.name)}`,
+            onSelect: () => context.onOpen(launchUrl)
+          }
+        ]
+      : [];
+  },
+  meta: ({ context, item, presentation }) => (
+    <MetaList
+      context={context}
+      definition={showcaseMetaDefinition}
+      item={item}
+      presentation={presentation}
+    />
+  ),
+  onSelect: ({ context, item }) => {
+    if (item.launchUrl) {
+      context.onOpen(item.launchUrl);
+    }
+  },
   title: ({ item }) => titleForPackage(item.name),
   variant: ResourceCardVariant.Compact
 } satisfies ResourceCardDefinition<InstalledPackage, ShowcaseContext>;
@@ -170,4 +196,12 @@ function titleForPackage(value: string) {
   };
 
   return titles[value] ?? titleCase(value);
+}
+
+function openExternalUrl(url: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.open(url, "_blank", "noopener,noreferrer");
 }

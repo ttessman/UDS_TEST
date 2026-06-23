@@ -23,28 +23,28 @@ const headerSx = {
 };
 
 const standardSectionSx = {
-  mb: { xs: "34px", lg: "56px" },
+  mb: { xs: "48px", lg: "76px" },
   maxWidth: 1080,
   mx: "auto",
-  pb: { xs: "18px", lg: "28px" },
+  pb: { xs: "22px", lg: "34px" },
   pt: "46px",
   px: { xs: "18px", sm: "32px" }
 };
 
 const bandedSectionSx = {
   background: "var(--docs-band-bg)",
-  maxWidth: 1160,
-  mt: "22px",
+  mb: { xs: "48px", lg: "68px" },
+  mt: { xs: "34px", lg: "48px" },
   mx: "auto",
-  p: { xs: "32px 18px", sm: "32px 42px" }
+  p: { xs: "34px 18px", sm: "38px 42px" },
+  width: "100%"
 };
 
 const listSx = {
-  "--timeline-connector-offset": "18px",
-  "--timeline-gap": "20px",
+  "--timeline-connector-space": "42px",
   alignItems: "stretch",
   display: "grid",
-  gap: "var(--timeline-gap)",
+  gap: { xs: "20px", md: "22px", lg: "var(--timeline-connector-space)" },
   gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))", lg: "repeat(4, minmax(0, 1fr))" }
 };
 
@@ -61,6 +61,9 @@ const cardSx = {
     borderRadius: "8px",
     height: 42,
     width: 42
+  },
+  "& .icon + h3": {
+    mt: "12px"
   },
   "& h3": {
     color: "var(--docs-text-primary)",
@@ -83,26 +86,28 @@ const cardSx = {
 };
 
 const borderByTone: Record<TimelineItemTone, string> = {
-  blue: "#d8e2f1",
-  green: "#bbf7d0",
-  navy: "#c7d2fe",
-  purple: "#ddd6fe"
+  blue: "var(--docs-timeline-border-blue)",
+  green: "var(--docs-timeline-border-green)",
+  navy: "var(--docs-timeline-border-navy)",
+  purple: "var(--docs-timeline-border-purple)"
 };
 
 const connectorSx = {
+  alignItems: "center",
   color: "var(--docs-muted)",
-  display: { xs: "none", lg: "block" },
+  display: { xs: "none", lg: "flex" },
   fontSize: 14,
   fontWeight: 800,
+  justifyContent: "center",
   letterSpacing: 0,
   lineHeight: 1,
   position: "absolute",
   pointerEvents: "none",
-  right: "calc(var(--timeline-connector-offset) * -1)",
+  right: "calc(var(--timeline-connector-space) * -1)",
   textAlign: "center",
   top: "50%",
   transform: "translateY(-50%)",
-  width: "var(--timeline-connector-offset)",
+  width: "var(--timeline-connector-space)",
   zIndex: 2
 };
 
@@ -118,10 +123,15 @@ export function TimelineSection<T extends { color?: TimelineItemTone }>({
         headerSx,
         itemSx: (item) => ({
           ...cardSx,
-          borderColor: item.color ? borderByTone[item.color] : cardSx.border,
+          ...(item.color
+            ? { borderColor: borderByTone[item.color] }
+            : {
+                background: "var(--docs-timeline-card-background)",
+                border: "1px solid transparent"
+              }),
           minHeight: variant === "banded" ? 154 : cardSx.minHeight
         }),
-        listSx,
+        listSx: variant === "banded" ? { ...listSx, maxWidth: 1160, mx: "auto" } : listSx,
         sx: variant === "banded" ? bandedSectionSx : standardSectionSx,
         variant: "timeline"
       }}

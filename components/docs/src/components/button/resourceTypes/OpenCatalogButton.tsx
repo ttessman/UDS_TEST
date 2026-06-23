@@ -21,6 +21,9 @@ export function OpenCatalogButton({
         background: "var(--docs-control-bg)",
         borderColor: "var(--docs-control-border)",
         color: "var(--docs-control-text)",
+        height: "var(--docs-control-size)",
+        minHeight: "var(--docs-control-size)",
+        width: "var(--docs-control-size)",
         "&:hover": {
           background: "var(--docs-control-bg-hover)",
           borderColor: "var(--docs-control-border-hover)"

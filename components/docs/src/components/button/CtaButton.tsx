@@ -165,6 +165,7 @@ export function CtaButton({
               borderRadius: "8px",
               color: "#ffffff",
               display: "inline-flex",
+              flex: "0 0 34px",
               height: 34,
               justifyContent: "center",
               width: 34,

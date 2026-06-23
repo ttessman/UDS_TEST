@@ -17,7 +17,17 @@ export function NavbarControls({
         background: "var(--docs-control-cluster-bg)",
         borderColor: "var(--docs-control-border)",
         boxShadow: "var(--docs-control-shadow)",
-        ml: { md: 1 }
+        gap: "3px",
+        ml: { md: 1 },
+        p: "3px",
+        "& .MuiIconButton-root": {
+          height: "var(--docs-control-size)",
+          minHeight: "var(--docs-control-size)",
+          width: "var(--docs-control-size)"
+        },
+        "& .MuiIconButton-root svg": {
+          fontSize: 18
+        }
       }}
     >
       <OpenCatalogButton href={href} label={label} />

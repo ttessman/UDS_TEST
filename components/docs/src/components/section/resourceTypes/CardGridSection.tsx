@@ -21,9 +21,10 @@ const headerSx = {
 };
 
 const sectionSx = {
+  mb: { xs: "44px", lg: "64px" },
   maxWidth: 1080,
   mx: "auto",
-  pt: "46px",
+  pt: "50px",
   px: { xs: "18px", sm: "32px" }
 };
 

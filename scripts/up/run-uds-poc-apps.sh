@@ -25,16 +25,24 @@ stop_existing_port_forward() {
 
   while IFS= read -r pid; do
     local command
+    local process_name
 
     [ -z "${pid}" ] && continue
 
     command="$(ps -p "${pid}" -o command= 2>/dev/null || true)"
+    process_name="$(lsof -nP -iTCP:"${port}" -sTCP:LISTEN 2>/dev/null | awk -v pid="${pid}" '$2 == pid {print $1; exit}')"
     case "${command}" in
       *kubectl*port-forward*)
         echo "Stopping existing kubectl port-forward on localhost:${port} (pid ${pid})"
         kill "${pid}" 2>/dev/null || true
         ;;
       *)
+        if [ "${process_name}" = "kubectl" ]; then
+          echo "Stopping existing kubectl listener on localhost:${port} (pid ${pid})"
+          kill "${pid}" 2>/dev/null || true
+          continue
+        fi
+
         echo "Port ${port} is already used by a non-port-forward process:" >&2
         echo "  pid ${pid}: ${command}" >&2
         echo "Stop that process or set UDS_POC_*_PORT before running make up." >&2
@@ -42,6 +50,16 @@ stop_existing_port_forward() {
         ;;
     esac
   done <<< "${pids_on_port}"
+
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    if [ -z "$(lsof -ti "tcp:${port}" 2>/dev/null || true)" ]; then
+      return 0
+    fi
+    sleep 0.2
+  done
+
+  echo "Port ${port} is still busy after stopping existing kubectl port-forward process(es)." >&2
+  return 1
 }
 
 cleanup() {

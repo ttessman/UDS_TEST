@@ -46,7 +46,7 @@ make build
 make up
 ```
 
-By the end of `make up`, frontend, backend, and docs should be deployed in the cluster from the images produced by `make build`. The command stays running to hold localhost port-forwards open.
+By the end of `make up`, frontend, backend, and docs should be deployed in the cluster from the images produced by `make build`. The command refreshes existing POC `kubectl port-forward` listeners, then stays running to hold the current localhost port-forwards open.
 
 `make up` also refreshes the local UDS tenant/admin gateways after app deployment. This keeps the named routes usable when long-running local clusters have stale Istio gateway workload certificates.
 

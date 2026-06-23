@@ -36,10 +36,26 @@ export function summarizeCommand(log: CommandState): CommandSummary {
   }
 
   if (log.command === "kubectl config current-context") {
+    const errorMessage = firstErrorMessage(log);
+    const isInClusterAccess = !log.ok && errorMessage?.includes("current-context is not set");
+
+    if (isInClusterAccess) {
+      return {
+        description: "The backend can reach Kubernetes from inside the cluster. A local kubeconfig context is not required in this mode.",
+        fields: [
+          ["Cluster API", "Available"],
+          ["Access method", "Service account"]
+        ],
+        message: null,
+        tone: "success",
+        title: "Cluster API access"
+      };
+    }
+
     return {
       description: "Reads the active kubeconfig context used by kubectl.",
       fields: [["Context", trimOutput(log.stdout) || "Not reported"]],
-      message: log.ok ? null : firstErrorMessage(log),
+      message: log.ok ? null : errorMessage,
       tone: log.ok ? "success" : "error",
       title: "Cluster context"
     };
@@ -69,14 +85,15 @@ export function summarizeCommand(log: CommandState): CommandSummary {
 
   if (log.command.startsWith("zarf package inspect definition")) {
     const registryRef = log.command.replace("zarf package inspect definition ", "").replace(" --log-format json", "");
+
     return {
       description: log.ok
-        ? "Read package metadata from the registry for catalog modeling."
-        : "Registry metadata could not be read. The catalog card falls back to the OCI ref only.",
-      fields: [["Registry ref", registryRef]],
+        ? "Read metadata for one configured package ref. This proves that package ref is readable, not registry-wide health."
+        : "Could not read metadata for one configured package ref. Other configured refs may still be readable.",
+      fields: [["Package ref", registryRef]],
       message: firstErrorMessage(log),
       tone: log.ok ? "success" : "error",
-      title: "Registry package inspection"
+      title: "Package metadata inspection"
     };
   }
 

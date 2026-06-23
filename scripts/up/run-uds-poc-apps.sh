@@ -9,6 +9,41 @@ docs_port="${UDS_POC_DOCS_PORT:-3002}"
 
 pids=()
 
+stop_existing_port_forward() {
+  local port="$1"
+  local pids_on_port
+
+  if ! command -v lsof >/dev/null 2>&1; then
+    echo "lsof not found; cannot refresh existing listener on port ${port}."
+    return 0
+  fi
+
+  pids_on_port="$(lsof -ti "tcp:${port}" 2>/dev/null || true)"
+  if [ -z "${pids_on_port}" ]; then
+    return 0
+  fi
+
+  while IFS= read -r pid; do
+    local command
+
+    [ -z "${pid}" ] && continue
+
+    command="$(ps -p "${pid}" -o command= 2>/dev/null || true)"
+    case "${command}" in
+      *kubectl*port-forward*)
+        echo "Stopping existing kubectl port-forward on localhost:${port} (pid ${pid})"
+        kill "${pid}" 2>/dev/null || true
+        ;;
+      *)
+        echo "Port ${port} is already used by a non-port-forward process:" >&2
+        echo "  pid ${pid}: ${command}" >&2
+        echo "Stop that process or set UDS_POC_*_PORT before running make up." >&2
+        return 1
+        ;;
+    esac
+  done <<< "${pids_on_port}"
+}
+
 cleanup() {
   for pid in "${pids[@]}"; do
     kill "${pid}" 2>/dev/null || true
@@ -16,6 +51,11 @@ cleanup() {
 }
 
 trap cleanup EXIT INT TERM
+
+echo "Refreshing localhost port-forwards for Kubernetes-hosted POC apps"
+stop_existing_port_forward "${frontend_port}"
+stop_existing_port_forward "${backend_port}"
+stop_existing_port_forward "${docs_port}"
 
 echo "Starting localhost port-forwards for Kubernetes-hosted POC apps"
 kubectl -n "${UDS_POC_PLATFORM_NAMESPACE}" port-forward svc/frontend "${frontend_port}:5173" &
